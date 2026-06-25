@@ -266,27 +266,30 @@ function Page() {
     return { rows: rowsArr, epochs: [...epochsSet].sort((a, b) => a - b) };
   }, [data, lookups, scope, slDivision, nlDivision, contCompetition, intlCompetition, yearFrom, yearTo, countryFilter]);
 
+  const factorOf = (r: CountryAgg) => (norm === "normalized" ? 1 / Math.max(1, r.coaches.size) : 1);
+
   const sorted = useMemo(() => {
     const list = [...rows];
     const sign = dir === "desc" ? -1 : 1;
     list.sort((a, b) => {
-      const va = sort === "total" ? a.total : a.perEpoch[sort] ?? 0;
-      const vb = sort === "total" ? b.total : b.perEpoch[sort] ?? 0;
+      const fa = norm === "normalized" ? 1 / Math.max(1, a.coaches.size) : 1;
+      const fb = norm === "normalized" ? 1 / Math.max(1, b.coaches.size) : 1;
+      const va = (sort === "total" ? a.total : a.perEpoch[sort] ?? 0) * fa;
+      const vb = (sort === "total" ? b.total : b.perEpoch[sort] ?? 0) * fb;
       return (va - vb) * sign;
     });
     return list;
-  }, [rows, sort, dir]);
+  }, [rows, sort, dir, norm]);
 
   // History for chart: respects scope + scope filters but ignores year range.
-  // We rebuild by collapsing rows' perEpoch but using full year range. Simpler:
-  // re-derive by clearing year filter via a memoized recompute.
   const historyChart = useMemo(() => {
     if (!lookups || !sorted.length) return [];
     const focus = selectedCountry || sorted[0].pais;
     const r = sorted.find((x) => x.pais === focus) ?? sorted[0];
     const allYears = lookups.allYears;
-    return allYears.map((y) => ({ year: y, value: Math.round((r.perEpoch[y] ?? 0) * 100) / 100, name: r.pais }));
-  }, [sorted, selectedCountry, lookups]);
+    const f = factorOf(r);
+    return allYears.map((y) => ({ year: y, value: Math.round(((r.perEpoch[y] ?? 0) * f) * 100) / 100, name: r.pais }));
+  }, [sorted, selectedCountry, lookups, norm]);
 
   const focusName = selectedCountry || sorted[0]?.pais || "";
 
