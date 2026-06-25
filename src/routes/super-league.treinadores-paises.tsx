@@ -58,6 +58,7 @@ function Page() {
   const [scope, setScope] = useState<Scope>("superleague");
   const [sort, setSort] = useState<"total" | number>("total");
   const [dir, setDir] = useState<"asc" | "desc">("desc");
+  const [norm, setNorm] = useState<"total" | "normalized">("total");
 
   // Common filters
   const [countryFilter, setCountryFilter] = useState<string>("");
