@@ -14,6 +14,86 @@ export type Database = {
   }
   public: {
     Tables: {
+      apps: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          description: string | null
+          icon_url: string | null
+          id: string
+          is_favorite: boolean
+          last_accessed_at: string | null
+          name: string
+          password: string | null
+          position: number
+          updated_at: string
+          url: string
+          username: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          icon_url?: string | null
+          id?: string
+          is_favorite?: boolean
+          last_accessed_at?: string | null
+          name: string
+          password?: string | null
+          position?: number
+          updated_at?: string
+          url: string
+          username?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          icon_url?: string | null
+          id?: string
+          is_favorite?: boolean
+          last_accessed_at?: string | null
+          name?: string
+          password?: string | null
+          position?: number
+          updated_at?: string
+          url?: string
+          username?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apps_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      categories: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          name: string
+          position: number
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+          position?: number
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          position?: number
+        }
+        Relationships: []
+      }
       clubs: {
         Row: {
           country_id: string | null
