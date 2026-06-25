@@ -532,14 +532,20 @@ function Page() {
                           </Link>
                         </td>
                         {epochs.map((y) => {
-                          const v = r.perEpoch[y] ?? 0;
+                          const f = factorOf(r);
+                          const v = (r.perEpoch[y] ?? 0) * f;
                           return (
                             <td key={y} className={`p-3 text-right tabular-nums ${v ? "" : "text-muted-foreground/30"}`}>
                               {v ? fmtPts(v) : "—"}
                             </td>
                           );
                         })}
-                        <td className="p-3 text-right tabular-nums font-semibold">{fmtPts(r.total)}</td>
+                        <td className="p-3 text-right tabular-nums font-semibold">
+                          {fmtPts(r.total * factorOf(r))}
+                          {norm === "normalized" && (
+                            <span className="ml-1 text-[10px] text-muted-foreground">/{r.coaches.size}</span>
+                          )}
+                        </td>
                         <td className="p-3 text-right">
                           <Tooltip>
                             <TooltipTrigger asChild>
