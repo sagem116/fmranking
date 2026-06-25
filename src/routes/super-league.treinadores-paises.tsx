@@ -58,6 +58,7 @@ function Page() {
   const [scope, setScope] = useState<Scope>("superleague");
   const [sort, setSort] = useState<"total" | number>("total");
   const [dir, setDir] = useState<"asc" | "desc">("desc");
+  const [norm, setNorm] = useState<"total" | "normalized">("total");
 
   // Common filters
   const [countryFilter, setCountryFilter] = useState<string>("");
@@ -265,27 +266,30 @@ function Page() {
     return { rows: rowsArr, epochs: [...epochsSet].sort((a, b) => a - b) };
   }, [data, lookups, scope, slDivision, nlDivision, contCompetition, intlCompetition, yearFrom, yearTo, countryFilter]);
 
+  const factorOf = (r: CountryAgg) => (norm === "normalized" ? 1 / Math.max(1, r.coaches.size) : 1);
+
   const sorted = useMemo(() => {
     const list = [...rows];
     const sign = dir === "desc" ? -1 : 1;
     list.sort((a, b) => {
-      const va = sort === "total" ? a.total : a.perEpoch[sort] ?? 0;
-      const vb = sort === "total" ? b.total : b.perEpoch[sort] ?? 0;
+      const fa = norm === "normalized" ? 1 / Math.max(1, a.coaches.size) : 1;
+      const fb = norm === "normalized" ? 1 / Math.max(1, b.coaches.size) : 1;
+      const va = (sort === "total" ? a.total : a.perEpoch[sort] ?? 0) * fa;
+      const vb = (sort === "total" ? b.total : b.perEpoch[sort] ?? 0) * fb;
       return (va - vb) * sign;
     });
     return list;
-  }, [rows, sort, dir]);
+  }, [rows, sort, dir, norm]);
 
   // History for chart: respects scope + scope filters but ignores year range.
-  // We rebuild by collapsing rows' perEpoch but using full year range. Simpler:
-  // re-derive by clearing year filter via a memoized recompute.
   const historyChart = useMemo(() => {
     if (!lookups || !sorted.length) return [];
     const focus = selectedCountry || sorted[0].pais;
     const r = sorted.find((x) => x.pais === focus) ?? sorted[0];
     const allYears = lookups.allYears;
-    return allYears.map((y) => ({ year: y, value: Math.round((r.perEpoch[y] ?? 0) * 100) / 100, name: r.pais }));
-  }, [sorted, selectedCountry, lookups]);
+    const f = factorOf(r);
+    return allYears.map((y) => ({ year: y, value: Math.round(((r.perEpoch[y] ?? 0) * f) * 100) / 100, name: r.pais }));
+  }, [sorted, selectedCountry, lookups, norm]);
 
   const focusName = selectedCountry || sorted[0]?.pais || "";
 
@@ -367,6 +371,28 @@ function Page() {
                   </ToggleGroupItem>
                 ))}
               </ToggleGroup>
+            </div>
+
+            <div>
+              <Label className="text-xs text-muted-foreground mb-2 block">Normalização</Label>
+              <ToggleGroup
+                type="single"
+                value={norm}
+                onValueChange={(v) => v && setNorm(v as "total" | "normalized")}
+                className="flex flex-wrap gap-1 justify-start"
+              >
+                <ToggleGroupItem value="total" className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+                  Total
+                </ToggleGroupItem>
+                <ToggleGroupItem value="normalized" className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+                  Por treinador
+                </ToggleGroupItem>
+              </ToggleGroup>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                {norm === "normalized"
+                  ? "Pontos divididos pelo número de treinadores do país no âmbito atual."
+                  : "Soma dos pontos de todos os treinadores do país."}
+              </p>
             </div>
 
             {/* Filters */}
@@ -506,14 +532,20 @@ function Page() {
                           </Link>
                         </td>
                         {epochs.map((y) => {
-                          const v = r.perEpoch[y] ?? 0;
+                          const f = factorOf(r);
+                          const v = (r.perEpoch[y] ?? 0) * f;
                           return (
                             <td key={y} className={`p-3 text-right tabular-nums ${v ? "" : "text-muted-foreground/30"}`}>
                               {v ? fmtPts(v) : "—"}
                             </td>
                           );
                         })}
-                        <td className="p-3 text-right tabular-nums font-semibold">{fmtPts(r.total)}</td>
+                        <td className="p-3 text-right tabular-nums font-semibold">
+                          {fmtPts(r.total * factorOf(r))}
+                          {norm === "normalized" && (
+                            <span className="ml-1 text-[10px] text-muted-foreground">/{r.coaches.size}</span>
+                          )}
+                        </td>
                         <td className="p-3 text-right">
                           <Tooltip>
                             <TooltipTrigger asChild>
