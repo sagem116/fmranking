@@ -373,6 +373,28 @@ function Page() {
               </ToggleGroup>
             </div>
 
+            <div>
+              <Label className="text-xs text-muted-foreground mb-2 block">Normalização</Label>
+              <ToggleGroup
+                type="single"
+                value={norm}
+                onValueChange={(v) => v && setNorm(v as "total" | "normalized")}
+                className="flex flex-wrap gap-1 justify-start"
+              >
+                <ToggleGroupItem value="total" className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+                  Total
+                </ToggleGroupItem>
+                <ToggleGroupItem value="normalized" className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+                  Por treinador
+                </ToggleGroupItem>
+              </ToggleGroup>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                {norm === "normalized"
+                  ? "Pontos divididos pelo número de treinadores do país no âmbito atual."
+                  : "Soma dos pontos de todos os treinadores do país."}
+              </p>
+            </div>
+
             {/* Filters */}
             <div className="border-t border-border pt-4">
               <div className="flex items-center gap-2 mb-3 text-sm font-medium">
