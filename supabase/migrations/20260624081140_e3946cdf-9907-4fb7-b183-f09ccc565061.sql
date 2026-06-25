@@ -1,0 +1,7 @@
+ALTER TABLE public.continental_results
+  ADD COLUMN IF NOT EXISTS sf1 text,
+  ADD COLUMN IF NOT EXISTS sf2 text,
+  ADD COLUMN IF NOT EXISTS qf1 text,
+  ADD COLUMN IF NOT EXISTS qf2 text,
+  ADD COLUMN IF NOT EXISTS qf3 text,
+  ADD COLUMN IF NOT EXISTS qf4 text;

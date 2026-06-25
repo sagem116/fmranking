@@ -16,8 +16,6 @@ const buttonVariants = cva(
         secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
-        neon: "bg-[image:var(--gradient-neon)] text-primary-foreground shadow-[var(--glow-purple)] hover:brightness-110 hover:shadow-[0_0_60px_color-mix(in_oklab,var(--neon-purple)_60%,transparent)]",
-        glass: "glass-panel text-foreground hover:border-[color:var(--neon-purple)]/40",
       },
       size: {
         default: "h-9 px-4 py-2",

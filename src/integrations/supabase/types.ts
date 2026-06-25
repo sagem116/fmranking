@@ -14,83 +14,571 @@ export type Database = {
   }
   public: {
     Tables: {
-      apps: {
+      clubs: {
         Row: {
-          category_id: string | null
+          country_id: string | null
           created_at: string
-          description: string | null
-          icon_url: string | null
           id: string
-          is_favorite: boolean
-          last_accessed_at: string | null
           name: string
-          password: string | null
-          position: number
-          updated_at: string
-          url: string
-          username: string | null
         }
         Insert: {
-          category_id?: string | null
+          country_id?: string | null
           created_at?: string
-          description?: string | null
-          icon_url?: string | null
           id?: string
-          is_favorite?: boolean
-          last_accessed_at?: string | null
           name: string
-          password?: string | null
-          position?: number
-          updated_at?: string
-          url: string
-          username?: string | null
         }
         Update: {
-          category_id?: string | null
+          country_id?: string | null
           created_at?: string
-          description?: string | null
-          icon_url?: string | null
           id?: string
-          is_favorite?: boolean
-          last_accessed_at?: string | null
           name?: string
-          password?: string | null
-          position?: number
-          updated_at?: string
-          url?: string
-          username?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "apps_category_id_fkey"
-            columns: ["category_id"]
+            foreignKeyName: "clubs_country_id_fkey"
+            columns: ["country_id"]
             isOneToOne: false
-            referencedRelation: "categories"
+            referencedRelation: "countries"
             referencedColumns: ["id"]
           },
         ]
       }
-      categories: {
+      coach_assignments: {
         Row: {
-          color: string
+          club_id: string | null
+          club_name: string | null
+          coach_id: string
+          coach_name: string
+          created_at: string
+          id: string
+          info: string | null
+          module: Database["public"]["Enums"]["module_type"]
+          season_id: string
+        }
+        Insert: {
+          club_id?: string | null
+          club_name?: string | null
+          coach_id: string
+          coach_name: string
+          created_at?: string
+          id?: string
+          info?: string | null
+          module: Database["public"]["Enums"]["module_type"]
+          season_id: string
+        }
+        Update: {
+          club_id?: string | null
+          club_name?: string | null
+          coach_id?: string
+          coach_name?: string
+          created_at?: string
+          id?: string
+          info?: string | null
+          module?: Database["public"]["Enums"]["module_type"]
+          season_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_assignments_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_assignments_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_assignments_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaches: {
+        Row: {
           created_at: string
           id: string
           name: string
-          position: number
+          nationality: string | null
         }
         Insert: {
-          color?: string
           created_at?: string
           id?: string
           name: string
-          position?: number
+          nationality?: string | null
         }
         Update: {
-          color?: string
           created_at?: string
           id?: string
           name?: string
-          position?: number
+          nationality?: string | null
+        }
+        Relationships: []
+      }
+      config_weights: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          key: string
+          profile_id: string
+          value: number
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          key: string
+          profile_id: string
+          value?: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          key?: string
+          profile_id?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "config_weights_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "weight_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      continental_results: {
+        Row: {
+          club1_id: string | null
+          club2_id: string | null
+          competition: string
+          created_at: string
+          id: string
+          qf1: string | null
+          qf2: string | null
+          qf3: string | null
+          qf4: string | null
+          result: string | null
+          season_id: string
+          sf1: string | null
+          sf2: string | null
+          team1: string | null
+          team2: string | null
+          winner_club_id: string | null
+        }
+        Insert: {
+          club1_id?: string | null
+          club2_id?: string | null
+          competition: string
+          created_at?: string
+          id?: string
+          qf1?: string | null
+          qf2?: string | null
+          qf3?: string | null
+          qf4?: string | null
+          result?: string | null
+          season_id: string
+          sf1?: string | null
+          sf2?: string | null
+          team1?: string | null
+          team2?: string | null
+          winner_club_id?: string | null
+        }
+        Update: {
+          club1_id?: string | null
+          club2_id?: string | null
+          competition?: string
+          created_at?: string
+          id?: string
+          qf1?: string | null
+          qf2?: string | null
+          qf3?: string | null
+          qf4?: string | null
+          result?: string | null
+          season_id?: string
+          sf1?: string | null
+          sf2?: string | null
+          team1?: string | null
+          team2?: string | null
+          winner_club_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "continental_results_club1_id_fkey"
+            columns: ["club1_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "continental_results_club2_id_fkey"
+            columns: ["club2_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "continental_results_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "continental_results_winner_club_id_fkey"
+            columns: ["winner_club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      countries: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      imports: {
+        Row: {
+          created_at: string
+          filename: string | null
+          id: string
+          module: Database["public"]["Enums"]["module_type"]
+          season_id: string
+          status: string
+          warnings: Json
+        }
+        Insert: {
+          created_at?: string
+          filename?: string | null
+          id?: string
+          module: Database["public"]["Enums"]["module_type"]
+          season_id: string
+          status?: string
+          warnings?: Json
+        }
+        Update: {
+          created_at?: string
+          filename?: string | null
+          id?: string
+          module?: Database["public"]["Enums"]["module_type"]
+          season_id?: string
+          status?: string
+          warnings?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imports_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      international_results: {
+        Row: {
+          coach1: string | null
+          coach2: string | null
+          competition: string
+          created_at: string
+          id: string
+          qf1: string | null
+          qf1_coach: string | null
+          qf2: string | null
+          qf2_coach: string | null
+          qf3: string | null
+          qf3_coach: string | null
+          qf4: string | null
+          qf4_coach: string | null
+          result: string | null
+          season_id: string
+          sf1: string | null
+          sf1_coach: string | null
+          sf2: string | null
+          sf2_coach: string | null
+          team1: string | null
+          team2: string | null
+          winner: string | null
+        }
+        Insert: {
+          coach1?: string | null
+          coach2?: string | null
+          competition: string
+          created_at?: string
+          id?: string
+          qf1?: string | null
+          qf1_coach?: string | null
+          qf2?: string | null
+          qf2_coach?: string | null
+          qf3?: string | null
+          qf3_coach?: string | null
+          qf4?: string | null
+          qf4_coach?: string | null
+          result?: string | null
+          season_id: string
+          sf1?: string | null
+          sf1_coach?: string | null
+          sf2?: string | null
+          sf2_coach?: string | null
+          team1?: string | null
+          team2?: string | null
+          winner?: string | null
+        }
+        Update: {
+          coach1?: string | null
+          coach2?: string | null
+          competition?: string
+          created_at?: string
+          id?: string
+          qf1?: string | null
+          qf1_coach?: string | null
+          qf2?: string | null
+          qf2_coach?: string | null
+          qf3?: string | null
+          qf3_coach?: string | null
+          qf4?: string | null
+          qf4_coach?: string | null
+          result?: string | null
+          season_id?: string
+          sf1?: string | null
+          sf1_coach?: string | null
+          sf2?: string | null
+          sf2_coach?: string | null
+          team1?: string | null
+          team2?: string | null
+          winner?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "international_results_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      players: {
+        Row: {
+          age: number | null
+          ast: number
+          ca: number
+          club_id: string | null
+          club_name: string | null
+          cp: number
+          created_at: string
+          gls: number
+          id: string
+          idu: string | null
+          info: string | null
+          league: string | null
+          module: string
+          name: string
+          ra: number
+          rec: string | null
+          rm: number
+          salary: number
+          season_id: string
+          vp: number
+        }
+        Insert: {
+          age?: number | null
+          ast?: number
+          ca?: number
+          club_id?: string | null
+          club_name?: string | null
+          cp?: number
+          created_at?: string
+          gls?: number
+          id?: string
+          idu?: string | null
+          info?: string | null
+          league?: string | null
+          module?: string
+          name: string
+          ra?: number
+          rec?: string | null
+          rm?: number
+          salary?: number
+          season_id: string
+          vp?: number
+        }
+        Update: {
+          age?: number | null
+          ast?: number
+          ca?: number
+          club_id?: string | null
+          club_name?: string | null
+          cp?: number
+          created_at?: string
+          gls?: number
+          id?: string
+          idu?: string | null
+          info?: string | null
+          league?: string | null
+          module?: string
+          name?: string
+          ra?: number
+          rec?: string | null
+          rm?: number
+          salary?: number
+          season_id?: string
+          vp?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "players_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seasons: {
+        Row: {
+          created_at: string
+          id: string
+          label: string | null
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label?: string | null
+          year: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string | null
+          year?: number
+        }
+        Relationships: []
+      }
+      standings: {
+        Row: {
+          club_id: string | null
+          club_name: string
+          created_at: string
+          division_label: string | null
+          division_num: number | null
+          draws: number | null
+          ga: number | null
+          gd: number | null
+          gf: number | null
+          id: string
+          info: string | null
+          is_champion: boolean
+          losses: number | null
+          module: Database["public"]["Enums"]["module_type"]
+          played: number | null
+          points: number | null
+          position: number | null
+          season_id: string
+          wins: number | null
+        }
+        Insert: {
+          club_id?: string | null
+          club_name: string
+          created_at?: string
+          division_label?: string | null
+          division_num?: number | null
+          draws?: number | null
+          ga?: number | null
+          gd?: number | null
+          gf?: number | null
+          id?: string
+          info?: string | null
+          is_champion?: boolean
+          losses?: number | null
+          module: Database["public"]["Enums"]["module_type"]
+          played?: number | null
+          points?: number | null
+          position?: number | null
+          season_id: string
+          wins?: number | null
+        }
+        Update: {
+          club_id?: string | null
+          club_name?: string
+          created_at?: string
+          division_label?: string | null
+          division_num?: number | null
+          draws?: number | null
+          ga?: number | null
+          gd?: number | null
+          gf?: number | null
+          id?: string
+          info?: string | null
+          is_champion?: boolean
+          losses?: number | null
+          module?: Database["public"]["Enums"]["module_type"]
+          played?: number | null
+          points?: number | null
+          position?: number | null
+          season_id?: string
+          wins?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "standings_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "standings_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weight_profiles: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
         }
         Relationships: []
       }
@@ -102,7 +590,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      module_type: "superleague" | "national" | "continental"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -229,6 +717,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      module_type: ["superleague", "national", "continental"],
+    },
   },
 } as const
