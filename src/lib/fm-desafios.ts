@@ -68,12 +68,25 @@ export const SUBJECT_LABEL: Record<Subject, string> = {
 
 export const ALL_SUBJECTS: Subject[] = ["clubs", "coaches", "countries"];
 
+function stableId(seed: string): string {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  }
+  return `desafio-${hash.toString(36)}`;
+}
+
+function createClientId(seed: string): string {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
+  return `${stableId(seed)}-${Date.now().toString(36)}`;
+}
+
 export function normalizeDesafio(d: any): Desafio {
   const subjects: Subject[] = Array.isArray(d.subjects) && d.subjects.length > 0
     ? d.subjects.filter((s: any) => ALL_SUBJECTS.includes(s))
     : d.subject && ALL_SUBJECTS.includes(d.subject) ? [d.subject as Subject] : ["clubs"];
   return {
-    id: d.id ?? (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : String(Math.random())),
+    id: d.id ?? stableId(`${d.name ?? "Desafio"}|${JSON.stringify(d.requirements ?? [])}`),
     name: d.name ?? "Desafio",
     description: d.description ?? "",
     subjects: subjects.length ? subjects : ["clubs"],
@@ -493,29 +506,27 @@ export function buildDesafioBreakdownBySubject(
 }
 
 // ===== Preset library =====
-const uid = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `p-${Math.random().toString(36).slice(2)}`);
-
 export const DESAFIO_PRESETS: Desafio[] = [
   {
-    id: uid(), name: "Tri-campeão da SuperLeague",
+    id: "preset-tri-campeao-superleague", name: "Tri-campeão da SuperLeague",
     description: "Vencer a SuperLeague em 3 épocas consecutivas (clube ou treinador).",
     subjects: ["clubs", "coaches"], sameYear: false, bonus: 1500,
     requirements: [{ type: "superleague-champion", match: "", count: 3, consecutive: true }],
   },
   {
-    id: uid(), name: "Penta-campeão da SuperLeague",
+    id: "preset-penta-campeao-superleague", name: "Penta-campeão da SuperLeague",
     description: "5 títulos da SuperLeague (não precisam ser seguidos).",
     subjects: ["clubs", "coaches"], sameYear: false, bonus: 3000,
     requirements: [{ type: "superleague-champion", match: "", count: 5, consecutive: false }],
   },
   {
-    id: uid(), name: "Dinastia Continental",
+    id: "preset-dinastia-continental", name: "Dinastia Continental",
     description: "Vencer uma competição continental 3 anos seguidos.",
     subjects: ["clubs", "coaches"], sameYear: false, bonus: 2500,
     requirements: [{ type: "continental-winner", match: "", count: 3, consecutive: true }],
   },
   {
-    id: uid(), name: "Dobradinha Continental",
+    id: "preset-dobradinha-continental", name: "Dobradinha Continental",
     description: "Campeão SuperLeague + Vencedor Continental no mesmo ano.",
     subjects: ["clubs", "coaches"], sameYear: true, bonus: 1200,
     requirements: [
@@ -524,55 +535,55 @@ export const DESAFIO_PRESETS: Desafio[] = [
     ],
   },
   {
-    id: uid(), name: "Lenda do Hall of Fame",
+    id: "preset-lenda-hall-of-fame", name: "Lenda do Hall of Fame",
     description: "Permanecer no Top 10 do Hall of Fame durante 5 anos consecutivos.",
     subjects: ["clubs", "coaches"], sameYear: false, bonus: 2000,
     requirements: [{ type: "hall-of-fame", match: "", count: 5, consecutive: true, hofTopN: 10 }],
   },
   {
-    id: uid(), name: "Elite do Hall of Fame",
+    id: "preset-elite-hall-of-fame", name: "Elite do Hall of Fame",
     description: "10 presenças no Top 5 do Hall of Fame (não precisam ser seguidas).",
     subjects: ["clubs", "coaches"], sameYear: false, bonus: 2500,
     requirements: [{ type: "hall-of-fame", match: "", count: 10, consecutive: false, hofTopN: 5 }],
   },
   {
-    id: uid(), name: "Invencível na SuperLeague",
+    id: "preset-invencivel-superleague", name: "Invencível na SuperLeague",
     description: "Concluir uma época da SuperLeague sem derrotas.",
     subjects: ["clubs", "coaches"], sameYear: false, bonus: 1000,
     requirements: [{ type: "unbeaten-season", match: "", count: 1, consecutive: false, leagueScope: "superleague" }],
   },
   {
-    id: uid(), name: "Invencível Nacional",
+    id: "preset-invencivel-nacional", name: "Invencível Nacional",
     description: "Vencer uma liga nacional sem perder.",
     subjects: ["clubs", "coaches"], sameYear: false, bonus: 800,
     requirements: [{ type: "unbeaten-season", match: "", count: 1, consecutive: false, leagueScope: "national" }],
   },
   {
-    id: uid(), name: "Recorde de pontos",
+    id: "preset-recorde-pontos", name: "Recorde de pontos",
     description: "Bater o recorde de pontos numa liga/divisão.",
     subjects: ["clubs", "coaches"], sameYear: false, bonus: 600,
     requirements: [{ type: "points-record", match: "", count: 1, consecutive: false, leagueScope: "any" }],
   },
   {
-    id: uid(), name: "Promoção Express",
+    id: "preset-promocao-express", name: "Promoção Express",
     description: "Duas promoções (ou títulos) consecutivas na SuperLeague.",
     subjects: ["clubs", "coaches"], sameYear: false, bonus: 700,
     requirements: [{ type: "superleague-promotion", match: "", count: 2, consecutive: true }],
   },
   {
-    id: uid(), name: "Glória Internacional",
+    id: "preset-gloria-internacional", name: "Glória Internacional",
     description: "Conquistar uma competição internacional de seleções.",
     subjects: ["countries"], sameYear: false, bonus: 1500,
     requirements: [{ type: "international-winner", match: "", count: 1, consecutive: false }],
   },
   {
-    id: uid(), name: "Bicampeão Internacional",
+    id: "preset-bicampeao-internacional", name: "Bicampeão Internacional",
     description: "Vencer 2 competições internacionais de seleções.",
     subjects: ["countries"], sameYear: false, bonus: 2500,
     requirements: [{ type: "international-winner", match: "", count: 2, consecutive: false }],
   },
   {
-    id: uid(), name: "Império de um país",
+    id: "preset-imperio-de-um-pais", name: "Império de um país",
     description: "Selecção + Clube do país vencem competições internacional e continental no mesmo ano.",
     subjects: ["countries"], sameYear: true, bonus: 3000,
     requirements: [
@@ -581,13 +592,13 @@ export const DESAFIO_PRESETS: Desafio[] = [
     ],
   },
   {
-    id: uid(), name: "Domínio Nacional",
+    id: "preset-dominio-nacional", name: "Domínio Nacional",
     description: "5 títulos de liga nacional (qualquer país).",
     subjects: ["clubs", "coaches"], sameYear: false, bonus: 1200,
     requirements: [{ type: "national-champion", match: "", count: 5, consecutive: false }],
   },
   {
-    id: uid(), name: "Coleção Continental",
+    id: "preset-colecao-continental", name: "Coleção Continental",
     description: "Vencer 5 competições continentais.",
     subjects: ["clubs", "coaches"], sameYear: false, bonus: 4000,
     requirements: [{ type: "continental-winner", match: "", count: 5, consecutive: false }],
@@ -595,5 +606,5 @@ export const DESAFIO_PRESETS: Desafio[] = [
 ];
 
 export function clonePresetForInsertion(p: Desafio): Desafio {
-  return { ...p, id: uid(), requirements: p.requirements.map((r) => ({ ...r })) };
+  return { ...p, id: createClientId(p.id), requirements: p.requirements.map((r) => ({ ...r })) };
 }
