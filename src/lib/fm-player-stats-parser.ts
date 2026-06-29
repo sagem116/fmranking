@@ -172,7 +172,7 @@ export function parsePlayerStatsWorkbook(buffer: ArrayBuffer, seasonYear: number
       let competition: string;
       if (comp_type === "superleague") {
         const n = num(divRaw);
-        competition = n > 0 ? `Super League D${n}` : (str(divRaw) ?? "Super League");
+        competition = n > 0 ? `Super League ${n}` : (str(divRaw) ?? "Super League");
       } else {
         competition = str(divRaw) ?? "—";
       }
