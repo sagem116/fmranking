@@ -169,13 +169,7 @@ export function parsePlayerStatsWorkbook(buffer: ArrayBuffer, seasonYear: number
       const name = str(row[idx.nome]);
       if (!name) continue;
       const divRaw = idx.divisao != null ? row[idx.divisao] : "";
-      let competition: string;
-      if (comp_type === "superleague") {
-        const n = num(divRaw);
-        competition = n > 0 ? `Super League ${n}` : (str(divRaw) ?? "Super League");
-      } else {
-        competition = str(divRaw) ?? "—";
-      }
+      const competition: string = str(divRaw) ?? "—";
       const country = idx.pais != null ? str(row[idx.pais]) : null;
       const continent = comp_type === "continental" ? continentFromCompetition(competition) : null;
       rows.push({
