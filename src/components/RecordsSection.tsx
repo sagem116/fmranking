@@ -197,3 +197,62 @@ export function ClubRecordsSection({ clubName }: { clubName: string }) {
     </div>
   );
 }
+
+export function CountryRecordsSection({
+  countryName,
+  clubCountry,
+}: {
+  countryName: string;
+  clubCountry: Record<string, string | null>;
+}) {
+  const { data, isLoading } = usePlayerStatsData();
+  const sections = useMemo(() => {
+    if (!data) return null;
+    const targetCountry = norm(countryName);
+    // Derive NAC aliases: any nationality that co-occurs with clubs from this country
+    const aliasNacs = new Set<string>();
+    for (const r of data.players) {
+      const cc = r.club ? clubCountry[r.club] : null;
+      if (cc && norm(cc) === targetCountry && r.nationality) {
+        aliasNacs.add(norm(r.nationality));
+      }
+    }
+    // Add naive matches: full country name or its first 3 letters
+    aliasNacs.add(targetCountry);
+    if (targetCountry.length >= 3) aliasNacs.add(targetCountry.slice(0, 3));
+
+    const rows = data.players.filter((r) => {
+      const cc = r.club ? clubCountry[r.club] : null;
+      if (cc && norm(cc) === targetCountry) return true;
+      if (r.nationality && aliasNacs.has(norm(r.nationality))) return true;
+      return false;
+    }) as PRow[];
+    if (!rows.length) return null;
+    const allTime = STATS.map((s) => ({ stat: s.key, label: s.label, fmt: s.fmt, best: aggregateByPlayer(rows, s.key, s.agg) }));
+    const bestSeason = STATS.map((s) => ({ stat: s.key, label: s.label, fmt: s.fmt, best: bestSingleSeason(rows, s.key) }));
+    const byCompetition = new Map<string, PRow[]>();
+    for (const r of rows) {
+      const arr = byCompetition.get(r.competition) ?? [];
+      arr.push(r);
+      byCompetition.set(r.competition, arr);
+    }
+    const perCompetition = [...byCompetition.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0], "pt-PT"))
+      .map(([competition, rs]) => ({
+        competition,
+        rows: STATS.map((s) => ({ stat: s.key, label: s.label, fmt: s.fmt, best: aggregateByPlayer(rs, s.key, s.agg) })),
+      }));
+    return { allTime, bestSeason, perCompetition };
+  }, [data, countryName, clubCountry]);
+
+  if (isLoading || !sections) return null;
+  return (
+    <div className="space-y-6">
+      <RecordsTable title="Recordes do país (todas as competições)" rows={sections.allTime} showClub showSeason showCompetition />
+      <RecordsTable title="Melhor época pelo país (registo único)" rows={sections.bestSeason} showClub showSeason showCompetition />
+      {sections.perCompetition.map((c) => (
+        <RecordsTable key={c.competition} title={`Recordes do país — ${c.competition}`} rows={c.rows} showClub showSeason />
+      ))}
+    </div>
+  );
+}
