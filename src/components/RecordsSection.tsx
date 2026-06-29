@@ -209,29 +209,33 @@ export function CountryRecordsSection({
   const sections = useMemo(() => {
     if (!data) return null;
     const targetCountry = norm(countryName);
-    // Derive NAC aliases: any nationality that co-occurs with clubs from this country
-    const aliasNacs = new Set<string>();
+    // Derive NAC codes (3-letter abbreviations) used by players in clubs from this country
+    const nacCounts = new Map<string, number>();
     for (const r of data.players) {
       const cc = r.club ? clubCountry[r.club] : null;
       if (cc && norm(cc) === targetCountry && r.nationality) {
-        aliasNacs.add(norm(r.nationality));
+        const k = norm(r.nationality);
+        nacCounts.set(k, (nacCounts.get(k) ?? 0) + 1);
       }
     }
-    // Add naive matches: full country name or its first 3 letters
-    aliasNacs.add(targetCountry);
-    if (targetCountry.length >= 3) aliasNacs.add(targetCountry.slice(0, 3));
+    // Top NAC alias (most common nationality among clubs of this country)
+    const aliasNacs = new Set<string>([targetCountry]);
+    const sorted = [...nacCounts.entries()].sort((a, b) => b[1] - a[1]);
+    if (sorted.length) aliasNacs.add(sorted[0][0]);
 
+    // Filter ONLY by player nationality
     const rows = data.players.filter((r) => {
-      const cc = r.club ? clubCountry[r.club] : null;
-      if (cc && norm(cc) === targetCountry) return true;
-      if (r.nationality && aliasNacs.has(norm(r.nationality))) return true;
-      return false;
+      if (!r.nationality) return false;
+      return aliasNacs.has(norm(r.nationality));
     }) as PRow[];
     if (!rows.length) return null;
     const allTime = STATS.map((s) => ({ stat: s.key, label: s.label, fmt: s.fmt, best: aggregateByPlayer(rows, s.key, s.agg) }));
     const bestSeason = STATS.map((s) => ({ stat: s.key, label: s.label, fmt: s.fmt, best: bestSingleSeason(rows, s.key) }));
+    // Per-competition: SOMENTE competições internacionais cujo nome contém o nome do país
     const byCompetition = new Map<string, PRow[]>();
     for (const r of rows) {
+      if (r.comp_type !== "international") continue;
+      if (!norm(r.competition).includes(targetCountry)) continue;
       const arr = byCompetition.get(r.competition) ?? [];
       arr.push(r);
       byCompetition.set(r.competition, arr);
