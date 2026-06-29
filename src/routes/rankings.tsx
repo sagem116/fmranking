@@ -1060,6 +1060,7 @@ function RankingsPage() {
           </Tabs>
         )
       )}
+      </>}
     </div>
   );
 }
