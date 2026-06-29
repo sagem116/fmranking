@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TreinadoresRouteImport } from './routes/treinadores'
+import { Route as SugestaoPesosRouteImport } from './routes/sugestao-pesos'
 import { Route as RankingsRouteImport } from './routes/rankings'
 import { Route as RankingHistoricoRouteImport } from './routes/ranking-historico'
 import { Route as PaisesRouteImport } from './routes/paises'
@@ -54,6 +55,11 @@ import { Route as ClubesNameRouteImport } from './routes/clubes.$name'
 const TreinadoresRoute = TreinadoresRouteImport.update({
   id: '/treinadores',
   path: '/treinadores',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SugestaoPesosRoute = SugestaoPesosRouteImport.update({
+  id: '/sugestao-pesos',
+  path: '/sugestao-pesos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RankingsRoute = RankingsRouteImport.update({
@@ -284,6 +290,7 @@ export interface FileRoutesByFullPath {
   '/paises': typeof PaisesRouteWithChildren
   '/ranking-historico': typeof RankingHistoricoRoute
   '/rankings': typeof RankingsRoute
+  '/sugestao-pesos': typeof SugestaoPesosRoute
   '/treinadores': typeof TreinadoresRouteWithChildren
   '/clubes/$name': typeof ClubesNameRoute
   '/competicoes/$name': typeof CompeticoesNameRoute
@@ -325,6 +332,7 @@ export interface FileRoutesByTo {
   '/importar': typeof ImportarRoute
   '/ranking-historico': typeof RankingHistoricoRoute
   '/rankings': typeof RankingsRoute
+  '/sugestao-pesos': typeof SugestaoPesosRoute
   '/clubes/$name': typeof ClubesNameRoute
   '/competicoes/$name': typeof CompeticoesNameRoute
   '/jogadores/$name': typeof JogadoresNameRoute
@@ -368,6 +376,7 @@ export interface FileRoutesById {
   '/paises': typeof PaisesRouteWithChildren
   '/ranking-historico': typeof RankingHistoricoRoute
   '/rankings': typeof RankingsRoute
+  '/sugestao-pesos': typeof SugestaoPesosRoute
   '/treinadores': typeof TreinadoresRouteWithChildren
   '/clubes/$name': typeof ClubesNameRoute
   '/competicoes/$name': typeof CompeticoesNameRoute
@@ -413,6 +422,7 @@ export interface FileRouteTypes {
     | '/paises'
     | '/ranking-historico'
     | '/rankings'
+    | '/sugestao-pesos'
     | '/treinadores'
     | '/clubes/$name'
     | '/competicoes/$name'
@@ -454,6 +464,7 @@ export interface FileRouteTypes {
     | '/importar'
     | '/ranking-historico'
     | '/rankings'
+    | '/sugestao-pesos'
     | '/clubes/$name'
     | '/competicoes/$name'
     | '/jogadores/$name'
@@ -496,6 +507,7 @@ export interface FileRouteTypes {
     | '/paises'
     | '/ranking-historico'
     | '/rankings'
+    | '/sugestao-pesos'
     | '/treinadores'
     | '/clubes/$name'
     | '/competicoes/$name'
@@ -540,6 +552,7 @@ export interface RootRouteChildren {
   PaisesRoute: typeof PaisesRouteWithChildren
   RankingHistoricoRoute: typeof RankingHistoricoRoute
   RankingsRoute: typeof RankingsRoute
+  SugestaoPesosRoute: typeof SugestaoPesosRoute
   TreinadoresRoute: typeof TreinadoresRouteWithChildren
   CompeticoesNameRoute: typeof CompeticoesNameRoute
   JogadoresNameRoute: typeof JogadoresNameRoute
@@ -566,6 +579,13 @@ declare module '@tanstack/react-router' {
       path: '/treinadores'
       fullPath: '/treinadores'
       preLoaderRoute: typeof TreinadoresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sugestao-pesos': {
+      id: '/sugestao-pesos'
+      path: '/sugestao-pesos'
+      fullPath: '/sugestao-pesos'
+      preLoaderRoute: typeof SugestaoPesosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rankings': {
@@ -910,6 +930,7 @@ const rootRouteChildren: RootRouteChildren = {
   PaisesRoute: PaisesRouteWithChildren,
   RankingHistoricoRoute: RankingHistoricoRoute,
   RankingsRoute: RankingsRoute,
+  SugestaoPesosRoute: SugestaoPesosRoute,
   TreinadoresRoute: TreinadoresRouteWithChildren,
   CompeticoesNameRoute: CompeticoesNameRoute,
   JogadoresNameRoute: JogadoresNameRoute,
