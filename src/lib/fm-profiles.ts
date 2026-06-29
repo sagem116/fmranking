@@ -103,6 +103,18 @@ export interface CountryProfile {
   titles: number;
   seasonsActive: number;
   chart: ChartPoint[];
+  internationalTitles: number;
+  finalsReached: number;
+  semifinalsReached: number;
+  quarterfinalsReached: number;
+  internationalAppearances: Array<{
+    year: number;
+    competition: string;
+    stage: "Final" | "Meia-final" | "Quarto-final";
+    role: "winner" | "runner-up" | "semifinalist" | "quarterfinalist";
+    opponent: string | null;
+    others: string[];
+  }>;
 }
 
 function hasPromotionToken(info?: string | null): boolean {
