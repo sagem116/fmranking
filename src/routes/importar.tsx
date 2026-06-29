@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { parseWorkbook, type ParseResult, type Severity } from "@/lib/fm-parser";
 import { importSeason, fetchImports, deleteImport, type ImportLogRow } from "@/lib/fm-db";
 import { computeHighlightsForYears, pushHighlightBatch } from "@/lib/fm-notifications";
+import { PlayerStatsImporter } from "@/components/PlayerStatsImporter";
 
 export const Route = createFileRoute("/importar")({
   head: () => ({
@@ -230,6 +231,7 @@ function ImportPage() {
         </div>
       )}
       <ImportsHistory />
+      <PlayerStatsImporter />
     </div>
   );
 }
