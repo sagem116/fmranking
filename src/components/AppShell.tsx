@@ -65,6 +65,7 @@ const NAV_GROUPS: NavGroup[] = [
       { to: "/national/estatisticas-ligas", label: "Estatísticas Ligas Nacionais", icon: BarChart3 },
       { to: "/super-league/estatisticas-divisoes", label: "Estatísticas Divisões", icon: BarChart3 },
       { to: "/super-league/treinadores-paises", label: "Treinadores por País", icon: Globe2 },
+      { to: "/sugestao-pesos", label: "Sugestão de Pesos", icon: SlidersHorizontal },
     ],
   },
   {
