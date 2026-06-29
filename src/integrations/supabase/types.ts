@@ -202,6 +202,63 @@ export type Database = {
         }
         Relationships: []
       }
+      competition_stats: {
+        Row: {
+          age_avg: number | null
+          ca_avg: number | null
+          comp_type: string
+          competition: string
+          continent: string | null
+          country: string | null
+          cp_avg: number | null
+          created_at: string
+          id: string
+          n_players: number | null
+          ra_avg: number | null
+          rc_avg: number | null
+          rm_avg: number | null
+          salary_avg: number | null
+          season_year: number
+          vp_avg: number | null
+        }
+        Insert: {
+          age_avg?: number | null
+          ca_avg?: number | null
+          comp_type: string
+          competition: string
+          continent?: string | null
+          country?: string | null
+          cp_avg?: number | null
+          created_at?: string
+          id?: string
+          n_players?: number | null
+          ra_avg?: number | null
+          rc_avg?: number | null
+          rm_avg?: number | null
+          salary_avg?: number | null
+          season_year: number
+          vp_avg?: number | null
+        }
+        Update: {
+          age_avg?: number | null
+          ca_avg?: number | null
+          comp_type?: string
+          competition?: string
+          continent?: string | null
+          country?: string | null
+          cp_avg?: number | null
+          created_at?: string
+          id?: string
+          n_players?: number | null
+          ra_avg?: number | null
+          rc_avg?: number | null
+          rm_avg?: number | null
+          salary_avg?: number | null
+          season_year?: number
+          vp_avg?: number | null
+        }
+        Relationships: []
+      }
       config_weights: {
         Row: {
           category: string
@@ -461,6 +518,84 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      player_stats: {
+        Row: {
+          age: number | null
+          ast: number | null
+          ca: number | null
+          club: string | null
+          comp_type: string
+          competition: string
+          continent: string | null
+          country: string | null
+          cp: number | null
+          created_at: string
+          games: number | null
+          gls: number | null
+          hdj: number | null
+          id: string
+          idu: string | null
+          nationality: string | null
+          player_name: string
+          ra: number | null
+          rc: number | null
+          rm: number | null
+          salary: number | null
+          season_year: number
+          vp: number | null
+        }
+        Insert: {
+          age?: number | null
+          ast?: number | null
+          ca?: number | null
+          club?: string | null
+          comp_type: string
+          competition: string
+          continent?: string | null
+          country?: string | null
+          cp?: number | null
+          created_at?: string
+          games?: number | null
+          gls?: number | null
+          hdj?: number | null
+          id?: string
+          idu?: string | null
+          nationality?: string | null
+          player_name: string
+          ra?: number | null
+          rc?: number | null
+          rm?: number | null
+          salary?: number | null
+          season_year: number
+          vp?: number | null
+        }
+        Update: {
+          age?: number | null
+          ast?: number | null
+          ca?: number | null
+          club?: string | null
+          comp_type?: string
+          competition?: string
+          continent?: string | null
+          country?: string | null
+          cp?: number | null
+          created_at?: string
+          games?: number | null
+          gls?: number | null
+          hdj?: number | null
+          id?: string
+          idu?: string | null
+          nationality?: string | null
+          player_name?: string
+          ra?: number | null
+          rc?: number | null
+          rm?: number | null
+          salary?: number | null
+          season_year?: number
+          vp?: number | null
+        }
+        Relationships: []
       }
       players: {
         Row: {
