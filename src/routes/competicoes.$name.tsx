@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useRankings } from "@/lib/useRankings";
 import { CompetitionNewStatsSection } from "@/components/NewStatsSections";
+import { CompetitionRecordsSection } from "@/components/RecordsSection";
 
 export const Route = createFileRoute("/competicoes/$name")({
   component: CompetitionPage,
@@ -125,10 +126,12 @@ function CompetitionPage() {
         <>
           <p className="text-muted-foreground">Sem campeões registados para esta competição.</p>
           <CompetitionNewStatsSection competition={decoded} />
+          <CompetitionRecordsSection competition={decoded} />
         </>
       ) : (
         <>
           <CompetitionNewStatsSection competition={decoded} />
+          <CompetitionRecordsSection competition={decoded} />
           <div className="flex items-center gap-3 flex-wrap">
             <span className="text-sm text-muted-foreground">Mostrar:</span>
             <div className="flex rounded-lg border border-border p-1">
