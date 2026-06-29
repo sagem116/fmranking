@@ -12,6 +12,7 @@ import { parseWorkbook, type ParseResult, type Severity } from "@/lib/fm-parser"
 import { importSeason, fetchImports, deleteImport, type ImportLogRow } from "@/lib/fm-db";
 import { computeHighlightsForYears, pushHighlightBatch } from "@/lib/fm-notifications";
 import { PlayerStatsImporter } from "@/components/PlayerStatsImporter";
+import { ClubReputationImporter } from "@/components/ClubReputationImporter";
 
 export const Route = createFileRoute("/importar")({
   head: () => ({
@@ -232,6 +233,7 @@ function ImportPage() {
       )}
       <ImportsHistory />
       <PlayerStatsImporter />
+      <ClubReputationImporter />
     </div>
   );
 }

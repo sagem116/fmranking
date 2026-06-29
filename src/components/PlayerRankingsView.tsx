@@ -262,7 +262,7 @@ export function CompetitionRankingsView({ mode, withDecay }: { mode: "weighted" 
   );
   const [compFilter, setCompFilter] = useState<CompType | "all">("all");
   const [filters, setFilters] = useState<CompFilters>(emptyCompFilters());
-  const [sortKey, setSortKey] = useState<keyof CompetitionRankRow>("ca");
+  const [sortKey, setSortKey] = useState<string>("reputation");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 25;
@@ -318,7 +318,7 @@ export function CompetitionRankingsView({ mode, withDecay }: { mode: "weighted" 
   const totalPages = Math.max(1, Math.ceil(ranked.length / PAGE_SIZE));
   const pageRows = ranked.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
-  const Th = ({ k, label, align = "right" as "left" | "right" }: { k: keyof CompetitionRankRow; label: string; align?: "left" | "right" }) => (
+  const Th = ({ k, label, align = "right" as "left" | "right" }: { k: string; label: string; align?: "left" | "right" }) => (
     <th
       className={`px-3 py-2 ${align === "right" ? "text-right" : "text-left"} cursor-pointer hover:text-primary select-none`}
       onClick={() => {
@@ -406,6 +406,7 @@ export function CompetitionRankingsView({ mode, withDecay }: { mode: "weighted" 
                 <Th k="rm" label="RM" />
                 <Th k="rc" label="RC" />
                 <Th k="age" label="Idade" />
+                <Th k="reputation" label="Reputação" />
               </tr>
             </thead>
             <tbody>
@@ -428,6 +429,7 @@ export function CompetitionRankingsView({ mode, withDecay }: { mode: "weighted" 
                   <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.rm, 2)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.rc, 2)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.age, 2)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums font-semibold">{r.reputation == null ? "—" : fmtNum(r.reputation, 2)}</td>
                 </tr>
               ))}
               {pageRows.length === 0 && (<tr><td colSpan={14} className="px-3 py-8 text-center text-muted-foreground">Sem resultados.</td></tr>)}
