@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { usePlayerStatsData } from "@/lib/usePlayerStatsData";
-import { fmtNum } from "@/lib/fmt";
+import { fmtNum, fmtMoney } from "@/lib/fmt";
 import type { CompType } from "@/lib/fm-player-stats-db";
 
 const COMP_LABEL: Record<CompType, string> = {
@@ -210,12 +210,12 @@ export function ClubNewStatsSection({ clubName }: { clubName: string }) {
                 <td className="p-3 text-right tabular-nums">{fmtNum(s.hdj, 2)}</td>
                 <td className="p-3 text-right tabular-nums">{fmtNum(s.ca, 2)}</td>
                 <td className="p-3 text-right tabular-nums">{fmtNum(s.cp, 2)}</td>
-                <td className="p-3 text-right tabular-nums">{fmtNum(s.vp, 2)}</td>
+                <td className="p-3 text-right tabular-nums">{fmtMoney(s.vp)}</td>
                 <td className="p-3 text-right tabular-nums">{fmtNum(s.ra, 2)}</td>
                 <td className="p-3 text-right tabular-nums">{fmtNum(s.rm, 2)}</td>
                 <td className="p-3 text-right tabular-nums">{fmtNum(s.rc, 2)}</td>
                 <td className="p-3 text-right tabular-nums">{fmtNum(s.age, 2)}</td>
-                <td className="p-3 text-right tabular-nums">{fmtNum(s.salary, 2)}</td>
+                <td className="p-3 text-right tabular-nums">{fmtMoney(s.salary)}</td>
               </tr>
             ))}
           </tbody>
@@ -264,8 +264,8 @@ export function CompetitionNewStatsSection({ competition }: { competition: strin
                 <td className="p-3 text-right tabular-nums">{s.n_players}</td>
                 <td className="p-3 text-right tabular-nums">{fmtNum(s.ca_avg, 2)}</td>
                 <td className="p-3 text-right tabular-nums">{fmtNum(s.cp_avg, 2)}</td>
-                <td className="p-3 text-right tabular-nums">{fmtNum(s.vp_avg, 2)}</td>
-                <td className="p-3 text-right tabular-nums">{fmtNum(s.salary_avg, 2)}</td>
+                <td className="p-3 text-right tabular-nums">{fmtMoney(s.vp_avg)}</td>
+                <td className="p-3 text-right tabular-nums">{fmtMoney(s.salary_avg)}</td>
                 <td className="p-3 text-right tabular-nums">{fmtNum(s.ra_avg, 2)}</td>
                 <td className="p-3 text-right tabular-nums">{fmtNum(s.rm_avg, 2)}</td>
                 <td className="p-3 text-right tabular-nums">{fmtNum(s.rc_avg, 2)}</td>
