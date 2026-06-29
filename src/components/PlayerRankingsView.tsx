@@ -132,8 +132,8 @@ export function PlayerRankingsView({ mode, withDecay }: { mode: "weighted" | "ra
             </Select>
           </div>
           <div>
-            <Label className="text-xs">País</Label>
-            <Input value={filters.country} onChange={(e) => { setFilters({ ...filters, country: e.target.value }); setPage(0); }} placeholder="exato" />
+            <Label className="text-xs">País (NAC)</Label>
+            <Input value={filters.country} onChange={(e) => { setFilters({ ...filters, country: e.target.value }); setPage(0); }} placeholder="nacionalidade exata" />
           </div>
           <div>
             <Label className="text-xs">Clube</Label>
@@ -165,6 +165,7 @@ export function PlayerRankingsView({ mode, withDecay }: { mode: "weighted" | "ra
                     <tr>
                       <th className="px-3 py-2 text-left">#</th>
                       <th className="px-3 py-2 text-left">Jogador</th>
+                      <th className="px-3 py-2 text-left">NAC</th>
                       <th className="px-3 py-2 text-left">Clube</th>
                       <th className="px-3 py-2 text-left">Competição</th>
                       <th className="px-3 py-2 text-left">Época</th>
@@ -177,15 +178,16 @@ export function PlayerRankingsView({ mode, withDecay }: { mode: "weighted" | "ra
                       <tr key={r.key} className="border-t border-border/50 hover:bg-muted/30">
                         <td className="px-3 py-2 text-muted-foreground tabular-nums">{page * PAGE_SIZE + i + 1}</td>
                         <td className="px-3 py-2 font-medium">{r.player_name} {r.idu && <Badge variant="outline" className="ml-1 text-[10px]">{r.idu}</Badge>}</td>
+                        <td className="px-3 py-2 text-muted-foreground">{r.nationality ?? "—"}</td>
                         <td className="px-3 py-2">{r.club ?? "—"}</td>
                         <td className="px-3 py-2">{r.competition}</td>
                         <td className="px-3 py-2 tabular-nums">{compFilter === "unified" ? "—" : r.season_year}</td>
-                        <td className="px-3 py-2 text-right tabular-nums font-semibold">{fmtNum(r.raw)}</td>
-                        <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{mode === "weighted" ? fmtNum(r.value, 1) : ""}</td>
+                        <td className="px-3 py-2 text-right tabular-nums font-semibold">{fmtNum(r.raw, 2)}</td>
+                        <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{mode === "weighted" ? fmtNum(r.value, 2) : ""}</td>
                       </tr>
                     ))}
                     {pageRows.length === 0 && (
-                      <tr><td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">Sem resultados.</td></tr>
+                      <tr><td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">Sem resultados.</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -329,14 +331,14 @@ export function CompetitionRankingsView({ mode, withDecay }: { mode: "weighted" 
                   {showCountry && <td className="px-3 py-2">{r.country ?? "—"}</td>}
                   {showContinent && <td className="px-3 py-2">{r.continent ?? "—"}</td>}
                   <td className="px-3 py-2 text-right tabular-nums">{r.n_players}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.ca, 1)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.cp, 1)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.vp, 0)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.salary, 0)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.ca, 2)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.cp, 2)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.vp, 2)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.salary, 2)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.ra, 2)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.rm, 2)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.rc, 2)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.age, 1)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.age, 2)}</td>
                 </tr>
               ))}
               {pageRows.length === 0 && (<tr><td colSpan={14} className="px-3 py-8 text-center text-muted-foreground">Sem resultados.</td></tr>)}

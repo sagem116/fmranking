@@ -87,9 +87,10 @@ export function filterPlayerRows(rows: PlayerStatRow[], f: PlayerFilters, contin
     if (f.comp_type !== "all" && r.comp_type !== f.comp_type) return false;
     if (f.yearFrom != null && r.season_year < f.yearFrom) return false;
     if (f.yearTo != null && r.season_year > f.yearTo) return false;
-    if (f.country && (r.country ?? "") !== f.country) return false;
+    // País / Continente do JOGADOR — usa NAC (nationality), não o país do clube
+    if (f.country && (r.nationality ?? "") !== f.country) return false;
     if (f.continent) {
-      const cont = r.continent ?? continentOf(r.country);
+      const cont = continentOf(r.nationality);
       if (cont !== f.continent) return false;
     }
     if (f.club && (r.club ?? "") !== f.club) return false;
