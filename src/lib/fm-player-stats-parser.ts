@@ -95,6 +95,21 @@ function num(v: unknown): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+// Jogos no XLSX pode vir como "X(Y)" (titular(suplente)) — somar ambos.
+function parseGames(v: unknown): number {
+  if (v == null || v === "") return 0;
+  if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+  const s = String(v);
+  const matches = s.match(/-?\d+(?:[.,]\d+)?/g);
+  if (!matches) return 0;
+  let total = 0;
+  for (const m of matches) {
+    const n = Number(m.replace(",", "."));
+    if (Number.isFinite(n)) total += n;
+  }
+  return total;
+}
+
 // VP no XLSX: sufixo "m" = milhares, "M" = milhões. Sem sufixo = valor bruto.
 // Aceita também separadores de milhar com vírgula (1,234.5M).
 function parseVP(v: unknown): number {
@@ -184,7 +199,7 @@ export function parsePlayerStatsWorkbook(buffer: ArrayBuffer, seasonYear: number
         club: idx.clube != null ? str(row[idx.clube]) : null,
         gls: num(row[idx.gls]),
         ast: num(row[idx.ast]),
-        games: num(row[idx.jogos]),
+        games: parseGames(row[idx.jogos]),
         hdj: num(row[idx.hdj]),
         ca: num(row[idx.ca]),
         cp: num(row[idx.cp]),
