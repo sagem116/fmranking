@@ -22,6 +22,7 @@ import { Route as DesafiosRouteImport } from './routes/desafios'
 import { Route as DebugTreinadoresRouteImport } from './routes/debug-treinadores'
 import { Route as DebugPontosRouteImport } from './routes/debug-pontos'
 import { Route as DebugJogadoresRouteImport } from './routes/debug-jogadores'
+import { Route as DebugContinentesRouteImport } from './routes/debug-continentes'
 import { Route as DebugContinentaisRouteImport } from './routes/debug-continentais'
 import { Route as DebugClubesRouteImport } from './routes/debug-clubes'
 import { Route as ConquistasRouteImport } from './routes/conquistas'
@@ -115,6 +116,11 @@ const DebugPontosRoute = DebugPontosRouteImport.update({
 const DebugJogadoresRoute = DebugJogadoresRouteImport.update({
   id: '/debug-jogadores',
   path: '/debug-jogadores',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DebugContinentesRoute = DebugContinentesRouteImport.update({
+  id: '/debug-continentes',
+  path: '/debug-continentes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DebugContinentaisRoute = DebugContinentaisRouteImport.update({
@@ -279,6 +285,7 @@ export interface FileRoutesByFullPath {
   '/conquistas': typeof ConquistasRoute
   '/debug-clubes': typeof DebugClubesRoute
   '/debug-continentais': typeof DebugContinentaisRoute
+  '/debug-continentes': typeof DebugContinentesRoute
   '/debug-jogadores': typeof DebugJogadoresRoute
   '/debug-pontos': typeof DebugPontosRoute
   '/debug-treinadores': typeof DebugTreinadoresRoute
@@ -322,6 +329,7 @@ export interface FileRoutesByTo {
   '/conquistas': typeof ConquistasRoute
   '/debug-clubes': typeof DebugClubesRoute
   '/debug-continentais': typeof DebugContinentaisRoute
+  '/debug-continentes': typeof DebugContinentesRoute
   '/debug-jogadores': typeof DebugJogadoresRoute
   '/debug-pontos': typeof DebugPontosRoute
   '/debug-treinadores': typeof DebugTreinadoresRoute
@@ -365,6 +373,7 @@ export interface FileRoutesById {
   '/conquistas': typeof ConquistasRoute
   '/debug-clubes': typeof DebugClubesRoute
   '/debug-continentais': typeof DebugContinentaisRoute
+  '/debug-continentes': typeof DebugContinentesRoute
   '/debug-jogadores': typeof DebugJogadoresRoute
   '/debug-pontos': typeof DebugPontosRoute
   '/debug-treinadores': typeof DebugTreinadoresRoute
@@ -411,6 +420,7 @@ export interface FileRouteTypes {
     | '/conquistas'
     | '/debug-clubes'
     | '/debug-continentais'
+    | '/debug-continentes'
     | '/debug-jogadores'
     | '/debug-pontos'
     | '/debug-treinadores'
@@ -454,6 +464,7 @@ export interface FileRouteTypes {
     | '/conquistas'
     | '/debug-clubes'
     | '/debug-continentais'
+    | '/debug-continentes'
     | '/debug-jogadores'
     | '/debug-pontos'
     | '/debug-treinadores'
@@ -496,6 +507,7 @@ export interface FileRouteTypes {
     | '/conquistas'
     | '/debug-clubes'
     | '/debug-continentais'
+    | '/debug-continentes'
     | '/debug-jogadores'
     | '/debug-pontos'
     | '/debug-treinadores'
@@ -541,6 +553,7 @@ export interface RootRouteChildren {
   ConquistasRoute: typeof ConquistasRoute
   DebugClubesRoute: typeof DebugClubesRoute
   DebugContinentaisRoute: typeof DebugContinentaisRoute
+  DebugContinentesRoute: typeof DebugContinentesRoute
   DebugJogadoresRoute: typeof DebugJogadoresRoute
   DebugPontosRoute: typeof DebugPontosRoute
   DebugTreinadoresRoute: typeof DebugTreinadoresRoute
@@ -663,6 +676,13 @@ declare module '@tanstack/react-router' {
       path: '/debug-jogadores'
       fullPath: '/debug-jogadores'
       preLoaderRoute: typeof DebugJogadoresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/debug-continentes': {
+      id: '/debug-continentes'
+      path: '/debug-continentes'
+      fullPath: '/debug-continentes'
+      preLoaderRoute: typeof DebugContinentesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/debug-continentais': {
@@ -919,6 +939,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConquistasRoute: ConquistasRoute,
   DebugClubesRoute: DebugClubesRoute,
   DebugContinentaisRoute: DebugContinentaisRoute,
+  DebugContinentesRoute: DebugContinentesRoute,
   DebugJogadoresRoute: DebugJogadoresRoute,
   DebugPontosRoute: DebugPontosRoute,
   DebugTreinadoresRoute: DebugTreinadoresRoute,
