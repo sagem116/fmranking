@@ -95,6 +95,32 @@ function num(v: unknown): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+// VP no XLSX: sufixo "m" = milhares, "M" = milhões. Sem sufixo = valor bruto.
+// Aceita também separadores de milhar com vírgula (1,234.5M).
+function parseVP(v: unknown): number {
+  if (v == null || v === "") return 0;
+  if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+  const raw = String(v).trim();
+  const m = raw.match(/^([\d.,\s-]+)\s*([mMkKbB])?\s*€?$/);
+  if (!m) return 0;
+  const numStr = m[1].replace(/\s/g, "").replace(/,/g, "");
+  const n = Number(numStr);
+  if (!Number.isFinite(n)) return 0;
+  const suf = m[2];
+  if (suf === "M" || suf === "b" || suf === "B") return n * 1_000_000;
+  if (suf === "m" || suf === "k" || suf === "K") return n * 1_000;
+  return n;
+}
+
+// Salário no XLSX: vírgula como separador de milhares (88,440 ou 1,200,000).
+function parseSalary(v: unknown): number {
+  if (v == null || v === "") return 0;
+  if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+  const s = String(v).replace(/[^\d.,-]/g, "").replace(/,/g, "");
+  const n = Number(s);
+  return Number.isFinite(n) ? n : 0;
+}
+
 function str(v: unknown): string | null {
   if (v == null) return null;
   const s = String(v).trim();
@@ -168,8 +194,8 @@ export function parsePlayerStatsWorkbook(buffer: ArrayBuffer, seasonYear: number
         hdj: num(row[idx.hdj]),
         ca: num(row[idx.ca]),
         cp: num(row[idx.cp]),
-        vp: num(row[idx.vp]),
-        salary: num(row[idx.salario]),
+        vp: parseVP(row[idx.vp]),
+        salary: parseSalary(row[idx.salario]),
         ra: num(row[idx.ra]),
         rm: num(row[idx.rm]),
         rc: num(row[idx.rc]),

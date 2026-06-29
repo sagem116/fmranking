@@ -13,7 +13,7 @@ import { useActiveConfig } from "@/lib/useRankings";
 import { rankPlayers, filterPlayerRows, emptyFilters, rankCompetitions, emptyCompFilters, type StatField, type PlayerFilters, type CompFilters, type CompetitionRankRow } from "@/lib/fm-player-rankings";
 import type { CompType, PlayerStatRow } from "@/lib/fm-player-stats-db";
 import { continentOf, CONTINENTS } from "@/lib/fm-continents";
-import { fmtNum } from "@/lib/fmt";
+import { fmtNum, fmtMoney } from "@/lib/fmt";
 
 function uniqueSorted(values: Array<string | null | undefined>) {
   return [...new Set(values.filter((v): v is string => Boolean(v?.trim())))]
@@ -387,8 +387,8 @@ export function CompetitionRankingsView({ mode, withDecay }: { mode: "weighted" 
                   <td className="px-3 py-2 text-right tabular-nums">{r.n_players}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.ca, 2)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.cp, 2)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.vp, 2)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.salary, 2)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(r.vp)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(r.salary)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.ra, 2)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.rm, 2)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.rc, 2)}</td>
