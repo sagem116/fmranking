@@ -242,7 +242,7 @@ export async function importSeason(parse: ParseResult, year: number, filename: s
 export interface ImportLogRow {
   id: string;
   filename: string | null;
-  module: "superleague" | "national";
+  module: "superleague" | "national" | "player_stats";
   status: string;
   created_at: string;
   season_id: string;
@@ -258,7 +258,7 @@ export async function fetchImports(): Promise<ImportLogRow[]> {
   return (imports ?? []).map((i) => ({
     id: i.id,
     filename: i.filename,
-    module: i.module as "superleague" | "national",
+    module: i.module as ImportLogRow["module"],
     status: i.status,
     created_at: i.created_at,
     season_id: i.season_id,
@@ -268,14 +268,19 @@ export async function fetchImports(): Promise<ImportLogRow[]> {
 
 export async function deleteImport(row: ImportLogRow): Promise<void> {
   // Remove the data slice for this season+module, then the import log entry.
-  await supabase.from("standings").delete().eq("season_id", row.season_id).eq("module", row.module);
-  await supabase.from("coach_assignments").delete().eq("season_id", row.season_id).eq("module", row.module);
-  if (row.module === "national") {
-    await supabase.from("continental_results").delete().eq("season_id", row.season_id);
-    await supabase.from("international_results").delete().eq("season_id", row.season_id);
-  }
-  if (row.module === "superleague") {
-    await supabase.from("players").delete().eq("season_id", row.season_id);
+  if (row.module === "player_stats") {
+    await supabase.from("player_stats").delete().eq("season_year", row.season_year);
+    await supabase.from("competition_stats").delete().eq("season_year", row.season_year);
+  } else {
+    await supabase.from("standings").delete().eq("season_id", row.season_id).eq("module", row.module);
+    await supabase.from("coach_assignments").delete().eq("season_id", row.season_id).eq("module", row.module);
+    if (row.module === "national") {
+      await supabase.from("continental_results").delete().eq("season_id", row.season_id);
+      await supabase.from("international_results").delete().eq("season_id", row.season_id);
+    }
+    if (row.module === "superleague") {
+      await supabase.from("players").delete().eq("season_id", row.season_id);
+    }
   }
   await supabase.from("imports").delete().eq("id", row.id);
 }
