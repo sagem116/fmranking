@@ -10,6 +10,7 @@ import { PlayerAttrsChart } from "@/components/PlayerAttrsChart";
 import { DesafiosProfileCard } from "@/components/DesafiosProfileCard";
 import { fmtPts } from "@/lib/fmt";
 import { ClubNewStatsSection } from "@/components/NewStatsSections";
+import { ClubRecordsSection } from "@/components/RecordsSection";
 
 export const Route = createFileRoute("/clubes/$name")({
   component: ClubProfilePage,
@@ -98,6 +99,7 @@ function ClubProfilePage() {
       <DesafiosProfileCard results={data?.desafioResults} subject="clubs" entity={profile.name} />
 
       <ClubNewStatsSection clubName={profile.name} />
+      <ClubRecordsSection clubName={profile.name} />
 
       <Card>
         <CardHeader><CardTitle className="text-base">Histórico de classificações</CardTitle></CardHeader>
