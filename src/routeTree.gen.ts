@@ -21,6 +21,7 @@ import { Route as DesafiosDashboardRouteImport } from './routes/desafios-dashboa
 import { Route as DesafiosRouteImport } from './routes/desafios'
 import { Route as DebugTreinadoresRouteImport } from './routes/debug-treinadores'
 import { Route as DebugPontosRouteImport } from './routes/debug-pontos'
+import { Route as DebugPaisesRouteImport } from './routes/debug-paises'
 import { Route as DebugJogadoresRouteImport } from './routes/debug-jogadores'
 import { Route as DebugContinentesRouteImport } from './routes/debug-continentes'
 import { Route as DebugContinentaisRouteImport } from './routes/debug-continentais'
@@ -111,6 +112,11 @@ const DebugTreinadoresRoute = DebugTreinadoresRouteImport.update({
 const DebugPontosRoute = DebugPontosRouteImport.update({
   id: '/debug-pontos',
   path: '/debug-pontos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DebugPaisesRoute = DebugPaisesRouteImport.update({
+  id: '/debug-paises',
+  path: '/debug-paises',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DebugJogadoresRoute = DebugJogadoresRouteImport.update({
@@ -287,6 +293,7 @@ export interface FileRoutesByFullPath {
   '/debug-continentais': typeof DebugContinentaisRoute
   '/debug-continentes': typeof DebugContinentesRoute
   '/debug-jogadores': typeof DebugJogadoresRoute
+  '/debug-paises': typeof DebugPaisesRoute
   '/debug-pontos': typeof DebugPontosRoute
   '/debug-treinadores': typeof DebugTreinadoresRoute
   '/desafios': typeof DesafiosRoute
@@ -331,6 +338,7 @@ export interface FileRoutesByTo {
   '/debug-continentais': typeof DebugContinentaisRoute
   '/debug-continentes': typeof DebugContinentesRoute
   '/debug-jogadores': typeof DebugJogadoresRoute
+  '/debug-paises': typeof DebugPaisesRoute
   '/debug-pontos': typeof DebugPontosRoute
   '/debug-treinadores': typeof DebugTreinadoresRoute
   '/desafios': typeof DesafiosRoute
@@ -375,6 +383,7 @@ export interface FileRoutesById {
   '/debug-continentais': typeof DebugContinentaisRoute
   '/debug-continentes': typeof DebugContinentesRoute
   '/debug-jogadores': typeof DebugJogadoresRoute
+  '/debug-paises': typeof DebugPaisesRoute
   '/debug-pontos': typeof DebugPontosRoute
   '/debug-treinadores': typeof DebugTreinadoresRoute
   '/desafios': typeof DesafiosRoute
@@ -422,6 +431,7 @@ export interface FileRouteTypes {
     | '/debug-continentais'
     | '/debug-continentes'
     | '/debug-jogadores'
+    | '/debug-paises'
     | '/debug-pontos'
     | '/debug-treinadores'
     | '/desafios'
@@ -466,6 +476,7 @@ export interface FileRouteTypes {
     | '/debug-continentais'
     | '/debug-continentes'
     | '/debug-jogadores'
+    | '/debug-paises'
     | '/debug-pontos'
     | '/debug-treinadores'
     | '/desafios'
@@ -509,6 +520,7 @@ export interface FileRouteTypes {
     | '/debug-continentais'
     | '/debug-continentes'
     | '/debug-jogadores'
+    | '/debug-paises'
     | '/debug-pontos'
     | '/debug-treinadores'
     | '/desafios'
@@ -555,6 +567,7 @@ export interface RootRouteChildren {
   DebugContinentaisRoute: typeof DebugContinentaisRoute
   DebugContinentesRoute: typeof DebugContinentesRoute
   DebugJogadoresRoute: typeof DebugJogadoresRoute
+  DebugPaisesRoute: typeof DebugPaisesRoute
   DebugPontosRoute: typeof DebugPontosRoute
   DebugTreinadoresRoute: typeof DebugTreinadoresRoute
   DesafiosRoute: typeof DesafiosRoute
@@ -669,6 +682,13 @@ declare module '@tanstack/react-router' {
       path: '/debug-pontos'
       fullPath: '/debug-pontos'
       preLoaderRoute: typeof DebugPontosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/debug-paises': {
+      id: '/debug-paises'
+      path: '/debug-paises'
+      fullPath: '/debug-paises'
+      preLoaderRoute: typeof DebugPaisesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/debug-jogadores': {
@@ -941,6 +961,7 @@ const rootRouteChildren: RootRouteChildren = {
   DebugContinentaisRoute: DebugContinentaisRoute,
   DebugContinentesRoute: DebugContinentesRoute,
   DebugJogadoresRoute: DebugJogadoresRoute,
+  DebugPaisesRoute: DebugPaisesRoute,
   DebugPontosRoute: DebugPontosRoute,
   DebugTreinadoresRoute: DebugTreinadoresRoute,
   DesafiosRoute: DesafiosRoute,

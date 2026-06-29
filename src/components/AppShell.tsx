@@ -114,6 +114,8 @@ const DEBUG_ITEMS: NavItem[] = [
   { to: "/debug-pontos", label: "Pontos", icon: Bug },
   { to: "/debug-clubes", label: "Clubes", icon: Bug },
   { to: "/debug-jogadores", label: "Jogadores", icon: Bug },
+  { to: "/debug-continentes", label: "Continentes", icon: Bug },
+  { to: "/debug-paises", label: "Países", icon: Bug },
 ];
 
 function SidebarLink({ item, active }: { item: NavItem; active: boolean }) {
