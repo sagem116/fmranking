@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -14,6 +14,7 @@ import { rankPlayers, filterPlayerRows, emptyFilters, rankCompetitions, emptyCom
 import type { CompType, PlayerStatRow } from "@/lib/fm-player-stats-db";
 import { continentOf, CONTINENTS } from "@/lib/fm-continents";
 import { fmtNum, fmtMoney } from "@/lib/fmt";
+import { loadReputations, loadClubAliases, reputationFor, onReputationChanged } from "@/lib/fm-club-reputation";
 
 function uniqueSorted(values: Array<string | null | undefined>) {
   return [...new Set(values.filter((v): v is string => Boolean(v?.trim())))]
@@ -252,6 +253,13 @@ export function PlayerRankingsView({ mode, withDecay }: { mode: "weighted" | "ra
 export function CompetitionRankingsView({ mode, withDecay }: { mode: "weighted" | "raw"; withDecay: boolean }) {
   const data = usePlayerStatsData();
   const cfg = useActiveConfig();
+  useSyncExternalStore(
+    (cb) => onReputationChanged(cb),
+    () => {
+      try { return (window.localStorage.getItem("fm-club-reputation-v1") ?? "") + "|" + (window.localStorage.getItem("fm-club-name-aliases-v1") ?? ""); } catch { return ""; }
+    },
+    () => "",
+  );
   const [compFilter, setCompFilter] = useState<CompType | "all">("all");
   const [filters, setFilters] = useState<CompFilters>(emptyCompFilters());
   const [sortKey, setSortKey] = useState<keyof CompetitionRankRow>("ca");
@@ -260,9 +268,33 @@ export function CompetitionRankingsView({ mode, withDecay }: { mode: "weighted" 
   const PAGE_SIZE = 25;
 
   const comps = data.data?.competitions ?? [];
+  const playersAll = data.data?.players ?? [];
   const years = useMemo(() => [...new Set(comps.map((c) => c.season_year))].sort((a, b) => b - a), [comps]);
   const latestYear = years[0] ?? new Date().getFullYear();
   const countries = useMemo(() => uniqueSorted(comps.map((c) => c.country)), [comps]);
+
+  // Average reputation per competition: avg of (most-frequent-club reputation) across the competition's clubs.
+  const repByCompetition = useMemo(() => {
+    const aliases = loadClubAliases();
+    const reps = loadReputations();
+    const map = new Map<string, { sum: number; n: number }>();
+    const seen = new Set<string>();
+    for (const p of playersAll) {
+      if (!p.club) continue;
+      const k = `${p.comp_type}|${p.competition}|${p.club}`;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      const r = reputationFor(p.club, aliases, reps);
+      if (r == null) continue;
+      const ck = `${p.comp_type}|${p.competition}`;
+      const cur = map.get(ck) ?? { sum: 0, n: 0 };
+      cur.sum += r; cur.n += 1;
+      map.set(ck, cur);
+    }
+    const out: Record<string, number> = {};
+    for (const [k, v] of map) out[k] = v.n ? v.sum / v.n : 0;
+    return out;
+  }, [playersAll]);
 
   const ranked = useMemo(() => {
     if (!cfg.data) return [];
@@ -272,13 +304,16 @@ export function CompetitionRankingsView({ mode, withDecay }: { mode: "weighted" 
       withDecay,
       latestYear,
     });
+    const enriched = rows.map((r) => ({ ...r, reputation: repByCompetition[`${r.comp_type}|${r.competition}`] ?? null }));
     const dir = sortDir === "asc" ? 1 : -1;
-    return [...rows].sort((a, b) => {
-      const av = a[sortKey]; const bv = b[sortKey];
-      if (typeof av === "number" && typeof bv === "number") return (av - bv) * dir;
-      return String(av ?? "").localeCompare(String(bv ?? "")) * dir;
+    return [...enriched].sort((a, b) => {
+      const av = (a as Record<string, unknown>)[sortKey as string]; const bv = (b as Record<string, unknown>)[sortKey as string];
+      const an = av == null ? -Infinity : av;
+      const bn = bv == null ? -Infinity : bv;
+      if (typeof an === "number" && typeof bn === "number") return (an - bn) * dir;
+      return String(an ?? "").localeCompare(String(bn ?? "")) * dir;
     });
-  }, [comps, filters, compFilter, mode, withDecay, cfg.data, latestYear, sortKey, sortDir]);
+  }, [comps, filters, compFilter, mode, withDecay, cfg.data, latestYear, sortKey, sortDir, repByCompetition]);
 
   const totalPages = Math.max(1, Math.ceil(ranked.length / PAGE_SIZE));
   const pageRows = ranked.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
