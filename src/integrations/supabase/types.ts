@@ -805,7 +805,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      module_type: "superleague" | "national" | "continental"
+      module_type: "superleague" | "national" | "continental" | "player_stats"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -933,7 +933,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      module_type: ["superleague", "national", "continental"],
+      module_type: ["superleague", "national", "continental", "player_stats"],
     },
   },
 } as const

@@ -242,8 +242,10 @@ function ImportsHistory() {
   const [busy, setBusy] = useState<string | null>(null);
 
   async function handleDelete(row: ImportLogRow) {
-    const label = `${row.module === "superleague" ? "SuperLeague" : "Ligas Nacionais"} · ${row.season_year} · ${row.filename ?? "—"}`;
-    if (!confirm(`Eliminar importação "${label}"?\n\nIsto remove TODOS os dados desta época para este módulo (classificações, treinadores${row.module === "national" ? ", continentais" : ", jogadores"}).`)) return;
+    const moduleLabel = row.module === "superleague" ? "SuperLeague" : row.module === "national" ? "Ligas Nacionais" : "Jogadores & Competições";
+    const extra = row.module === "national" ? ", continentais" : row.module === "superleague" ? ", jogadores" : "";
+    const label = `${moduleLabel} · ${row.season_year} · ${row.filename ?? "—"}`;
+    if (!confirm(`Eliminar importação "${label}"?\n\nIsto remove TODOS os dados desta época para este módulo (${row.module === "player_stats" ? "estatísticas de jogadores e competições" : `classificações, treinadores${extra}`}).`)) return;
     setBusy(row.id);
     try {
       await deleteImport(row);
@@ -286,7 +288,7 @@ function ImportsHistory() {
                     <td className="py-2 pr-3 whitespace-nowrap">{new Date(r.created_at).toLocaleString("pt-PT")}</td>
                     <td className="py-2 pr-3 font-medium">{r.season_year}</td>
                     <td className="py-2 pr-3">
-                      <Badge variant="secondary">{r.module === "superleague" ? "SuperLeague" : "Ligas Nacionais"}</Badge>
+                      <Badge variant="secondary">{r.module === "superleague" ? "SuperLeague" : r.module === "national" ? "Ligas Nacionais" : "Jogadores & Competições"}</Badge>
                     </td>
                     <td className="py-2 pr-3 truncate max-w-[260px]">{r.filename ?? "—"}</td>
                     <td className="py-2 pr-3">

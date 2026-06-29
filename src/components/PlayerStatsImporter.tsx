@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { parsePlayerStatsWorkbook, type PlayerStatsParseResult } from "@/lib/fm-player-stats-parser";
-import { importPlayerStats } from "@/lib/fm-player-stats-db";
+import { importPlayerStats, logPlayerStatsImport } from "@/lib/fm-player-stats-db";
 
 interface FileEntry {
   file: File;
@@ -55,6 +55,7 @@ export function PlayerStatsImporter() {
         const buf = await e.file.arrayBuffer();
         const parse = parsePlayerStatsWorkbook(buf, year);
         const result = await importPlayerStats(parse.rows, year);
+        await logPlayerStatsImport(year, e.file.name, parse.skippedSheets);
         toast.success(
           `${e.file.name}: ${result.inserted} registos importados (${result.types.map((t) => COMP_LABEL[t]).join(", ")})`,
         );

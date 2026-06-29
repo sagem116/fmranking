@@ -13,6 +13,30 @@ async function chunkInsert(table: string, rows: Record<string, unknown>[]) {
   }
 }
 
+async function ensureSeasonId(seasonYear: number): Promise<string> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = supabase as any;
+  const existing = await sb.from("seasons").select("id").eq("year", seasonYear).maybeSingle();
+  if (existing.error) throw new Error(`seasons lookup: ${existing.error.message}`);
+  if (existing.data?.id) return existing.data.id as string;
+  const ins = await sb.from("seasons").insert({ year: seasonYear, label: String(seasonYear) }).select("id").single();
+  if (ins.error) throw new Error(`seasons insert: ${ins.error.message}`);
+  return ins.data.id as string;
+}
+
+export async function logPlayerStatsImport(seasonYear: number, filename: string, warnings: unknown[] = []) {
+  const seasonId = await ensureSeasonId(seasonYear);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any).from("imports").insert({
+    season_id: seasonId,
+    module: "player_stats",
+    filename,
+    status: "ok",
+    warnings,
+  });
+  if (error) throw new Error(`imports log: ${error.message}`);
+}
+
 export async function importPlayerStats(rows: PlayerStatRow[], seasonYear: number): Promise<{ inserted: number; types: CompType[] }> {
   const presentTypes = [...new Set(rows.map((r) => r.comp_type))];
   if (presentTypes.length === 0) return { inserted: 0, types: [] };
