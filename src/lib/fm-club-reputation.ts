@@ -6,6 +6,7 @@ import * as XLSX from "xlsx";
 
 const REP_KEY = "fm-club-reputation-v1";
 const ALIAS_KEY = "fm-club-name-aliases-v1";
+const IMPORTS_KEY = "fm-club-reputation-imports-v1";
 const EVT = "fm:club-reputation-changed";
 
 type Dict<T> = Record<string, T>;
@@ -67,6 +68,47 @@ export function removeClubAlias(raw: string) {
   const a = loadClubAliases();
   delete a[raw];
   saveClubAliases(a);
+}
+
+// ---------- Import history ----------
+
+export interface ReputationImportRecord {
+  id: string;
+  created_at: string;
+  year: number;
+  filename: string;
+  entries: Record<string, number>;             // canonical -> reputation
+  aliasesAdded: Record<string, string>;        // raw -> canonical
+  unmatched?: Record<string, number>;          // raw -> reputation (when saved as-is)
+}
+
+export function loadReputationImports(): ReputationImportRecord[] {
+  const list = read<ReputationImportRecord[]>(IMPORTS_KEY, []);
+  return Array.isArray(list) ? list : [];
+}
+function saveReputationImports(list: ReputationImportRecord[]) {
+  write(IMPORTS_KEY, list);
+}
+
+/** Rebuild reps + aliases from the full import history (chronological, latest wins). */
+function rebuildFromImports(imports: ReputationImportRecord[]): { reps: Dict<number>; aliases: Dict<string> } {
+  const reps: Dict<number> = {};
+  const aliases: Dict<string> = {};
+  const sorted = [...imports].sort((a, b) => a.created_at.localeCompare(b.created_at));
+  for (const imp of sorted) {
+    for (const [club, value] of Object.entries(imp.entries || {})) reps[club] = value;
+    for (const [raw, canonical] of Object.entries(imp.aliasesAdded || {})) aliases[raw] = canonical;
+    if (imp.unmatched) for (const [raw, value] of Object.entries(imp.unmatched)) reps[raw] = value;
+  }
+  return { reps, aliases };
+}
+
+export function deleteReputationImport(id: string) {
+  const imports = loadReputationImports().filter((i) => i.id !== id);
+  saveReputationImports(imports);
+  const { reps, aliases } = rebuildFromImports(imports);
+  saveReputations(reps);
+  saveClubAliases(aliases);
 }
 
 export function onReputationChanged(cb: () => void): () => void {
@@ -208,21 +250,46 @@ export function matchReputations(rows: ReputationParseRow[], knownClubs: string[
   return { matched, unmatched, total: rows.length };
 }
 
-export function applyReputationImport(result: ReputationImportResult, opts: { saveUnmatched?: boolean } = {}) {
+export function applyReputationImport(
+  result: ReputationImportResult,
+  opts: { saveUnmatched?: boolean; year?: number; filename?: string } = {},
+) {
   const reps = loadReputations();
   const aliases = loadClubAliases();
+  const entries: Record<string, number> = {};
+  const aliasesAdded: Record<string, string> = {};
   for (const { raw, canonical, reputation, reason } of result.matched) {
     reps[canonical] = reputation;
+    entries[canonical] = reputation;
     // Persist alias when source name differs from canonical (skip pure alias-hits to avoid noise).
-    if (raw !== canonical && reason !== "alias") aliases[raw] = canonical;
+    if (raw !== canonical && reason !== "alias") {
+      aliases[raw] = canonical;
+      aliasesAdded[raw] = canonical;
+    }
   }
+  const unmatched: Record<string, number> = {};
   if (opts.saveUnmatched) {
     for (const { raw, reputation } of result.unmatched) {
       reps[raw] = reputation;
+      unmatched[raw] = reputation;
     }
   }
   saveReputations(reps);
   saveClubAliases(aliases);
+  // Log import
+  if (opts.year !== undefined || opts.filename !== undefined) {
+    const list = loadReputationImports();
+    list.push({
+      id: `rep-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      created_at: new Date().toISOString(),
+      year: opts.year ?? new Date().getFullYear(),
+      filename: opts.filename ?? "—",
+      entries,
+      aliasesAdded,
+      unmatched: opts.saveUnmatched ? unmatched : undefined,
+    });
+    saveReputationImports(list);
+  }
 }
 
 /** Resolve a club name (anywhere in the app) to its stored reputation, honoring aliases. */

@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
-import { UploadCloud, FileSpreadsheet, Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
+import { UploadCloud, FileSpreadsheet, Loader2, CheckCircle2, AlertTriangle, History, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { fetchAllPlayerStats } from "@/lib/fm-player-stats-db";
 import { fetchAllData } from "@/lib/fm-db";
@@ -12,10 +13,14 @@ import {
   parseClubReputationWorkbook,
   matchReputations,
   applyReputationImport,
+  loadReputationImports,
+  deleteReputationImport,
+  onReputationChanged,
   type ReputationImportResult,
 } from "@/lib/fm-club-reputation";
 
 export function ClubReputationImporter() {
+  const [year, setYear] = useState<number>(new Date().getFullYear());
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<ReputationImportResult | null>(null);
   const [busy, setBusy] = useState(false);
@@ -56,7 +61,7 @@ export function ClubReputationImporter() {
     if (!preview) return;
     setBusy(true);
     try {
-      applyReputationImport(preview, { saveUnmatched });
+      applyReputationImport(preview, { saveUnmatched, year, filename: file?.name });
       toast.success(`Reputação atualizada · ${preview.matched.length} clubes${saveUnmatched ? ` (+${preview.unmatched.length} sem normalização)` : ""}`);
       setFile(null);
       setPreview(null);
@@ -68,6 +73,7 @@ export function ClubReputationImporter() {
   }
 
   return (
+    <div className="space-y-4">
     <Card>
       <CardHeader>
         <CardTitle className="text-base">Importar Reputação de Clubes</CardTitle>
@@ -76,6 +82,13 @@ export function ClubReputationImporter() {
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="flex items-end gap-3 max-w-xs">
+          <div className="flex-1">
+            <Label htmlFor="rep-year">Ano da época</Label>
+            <Input id="rep-year" type="number" value={year} onChange={(e) => setYear(Number(e.target.value))} className="mt-1" />
+          </div>
+        </div>
+
         <label
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
           onDragLeave={() => setDragOver(false)}
@@ -120,6 +133,74 @@ export function ClubReputationImporter() {
               </Button>
             )}
             <Button variant="ghost" onClick={() => { setFile(null); setPreview(null); }} disabled={busy}>Limpar</Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+      <ReputationImportsHistory />
+    </div>
+  );
+}
+
+function useReputationImports() {
+  return useSyncExternalStore(
+    (cb) => onReputationChanged(cb),
+    () => {
+      try { return window.localStorage.getItem("fm-club-reputation-imports-v1") ?? ""; } catch { return ""; }
+    },
+    () => "",
+  );
+}
+
+function ReputationImportsHistory() {
+  useReputationImports();
+  const imports = loadReputationImports().sort((a, b) => b.created_at.localeCompare(a.created_at));
+
+  function handleDelete(id: string, label: string) {
+    if (!confirm(`Eliminar importação "${label}"?\n\nA reputação será reconstruída a partir das restantes importações.`)) return;
+    deleteReputationImport(id);
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2"><History className="size-4 text-primary" /> Importações de Reputação</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {imports.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Sem importações registadas.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-left text-xs uppercase text-muted-foreground border-b border-border">
+                <tr>
+                  <th className="py-2 pr-3">Data</th>
+                  <th className="py-2 pr-3">Época</th>
+                  <th className="py-2 pr-3">Ficheiro</th>
+                  <th className="py-2 pr-3">Clubes</th>
+                  <th className="py-2 pr-3 text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {imports.map((r) => {
+                  const count = Object.keys(r.entries || {}).length + Object.keys(r.unmatched || {}).length;
+                  return (
+                    <tr key={r.id} className="border-b border-border/50 hover:bg-muted/40">
+                      <td className="py-2 pr-3 whitespace-nowrap">{new Date(r.created_at).toLocaleString("pt-PT")}</td>
+                      <td className="py-2 pr-3 font-medium">{r.year}</td>
+                      <td className="py-2 pr-3 truncate max-w-[260px]"><FileSpreadsheet className="inline size-3.5 mr-1 text-primary" />{r.filename}</td>
+                      <td className="py-2 pr-3"><Badge variant="secondary">{count}</Badge></td>
+                      <td className="py-2 pr-3 text-right">
+                        <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive"
+                          onClick={() => handleDelete(r.id, `${r.year} · ${r.filename}`)}>
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </CardContent>
