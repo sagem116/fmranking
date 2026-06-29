@@ -11,6 +11,8 @@ const KEYS = [
   "fm.country.continentOverrides.v1",
   "fm.country.aliasOverrides.v1",
   "fm-theme",
+  "fm-club-reputation-v1",
+  "fm-club-name-aliases-v1",
 ] as const;
 
 export interface GlobalBackup {

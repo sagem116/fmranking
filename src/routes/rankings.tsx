@@ -18,6 +18,7 @@ import { SeasonsRankTable, type ExtraCol } from "@/components/SeasonsRankTable";
 import { buildDesafioExtraCol } from "@/lib/fm-desafios-col";
 import { SeasonFilter } from "@/components/SeasonFilter";
 import { PlayerRankingsView, CompetitionRankingsView } from "@/components/PlayerRankingsView";
+import { ClubStatsRankingsView } from "@/components/ClubStatsRankingsView";
 
 type SeasonView = "total" | number;
 
@@ -138,7 +139,7 @@ function RankingLegend() {
 
 function RankingsPage() {
   const [decayMode, setDecayMode] = useState<"with" | "without">("with");
-  const [view, setView] = useState<"standard" | "players" | "competitions">("standard");
+  const [view, setView] = useState<"standard" | "players" | "competitions" | "clubs_stats">("standard");
   const withDecay = useRankings();
   const noDecay = useRankingsNoDecay();
   const data = decayMode === "with" ? withDecay.data : noDecay.data;
@@ -775,6 +776,7 @@ function RankingsPage() {
         <Button size="sm" variant={view === "standard" ? "default" : "outline"} onClick={() => setView("standard")}>Clubes · Treinadores · Países</Button>
         <Button size="sm" variant={view === "players" ? "default" : "outline"} onClick={() => setView("players")}>Jogadores</Button>
         <Button size="sm" variant={view === "competitions" ? "default" : "outline"} onClick={() => setView("competitions")}>Competições</Button>
+        <Button size="sm" variant={view === "clubs_stats" ? "default" : "outline"} onClick={() => setView("clubs_stats")}>Clubes (estatísticas)</Button>
       </div>
 
       {view === "players" && (
@@ -782,6 +784,9 @@ function RankingsPage() {
       )}
       {view === "competitions" && (
         <CompetitionRankingsView mode={mode} withDecay={decayMode === "with"} />
+      )}
+      {view === "clubs_stats" && (
+        <ClubStatsRankingsView mode={mode} withDecay={decayMode === "with"} />
       )}
       {view === "standard" && <>
       <div className="flex flex-wrap gap-2">
