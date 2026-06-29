@@ -435,6 +435,18 @@ function SugestaoPesosPage() {
               </SelectContent>
             </Select>
           </div>
+          <div>
+            <Label className="text-xs">Limite de métricas ativas</Label>
+            <Select value={String(formula.maxActive ?? 0)} onValueChange={(v) => setMaxActive(Number(v))}>
+              <SelectTrigger className="w-[160px] mt-1"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">Sem limite</SelectItem>
+                <SelectItem value="1">Apenas 1 métrica</SelectItem>
+                <SelectItem value="2">Apenas 2 métricas</SelectItem>
+                <SelectItem value="3">Apenas 3 métricas</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="flex-1 min-w-[200px]">
             <Label className="text-xs">Fórmulas guardadas</Label>
             <Select value={formula.name} onValueChange={loadFormula}>
