@@ -30,6 +30,20 @@ function divisionFromCompetition(label: string): number | null {
   return m ? Number(m[1]) : null;
 }
 
+function normText(value: string | null | undefined): string {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
+function matchesFilter(value: string | null | undefined, filter: string): boolean {
+  const q = normText(filter);
+  if (!q) return true;
+  return normText(value).includes(q);
+}
+
 export function compWeight(cfg: FmConfig, r: PlayerStatRow | CompetitionStatRow): number {
   const cw = cfg.competitionWeights;
   switch (r.comp_type) {
@@ -82,24 +96,24 @@ export function emptyFilters(): PlayerFilters {
 }
 
 export function filterPlayerRows(rows: PlayerStatRow[], f: PlayerFilters, continentOf: (c: string | null | undefined) => string | null): PlayerStatRow[] {
-  const q = f.search.trim().toLowerCase();
+  const q = normText(f.search);
   return rows.filter((r) => {
     if (f.comp_type !== "all" && r.comp_type !== f.comp_type) return false;
     if (f.yearFrom != null && r.season_year < f.yearFrom) return false;
     if (f.yearTo != null && r.season_year > f.yearTo) return false;
     // País / Continente do JOGADOR — usa NAC (nationality), não o país do clube
-    if (f.country && (r.nationality ?? "") !== f.country) return false;
+    if (!matchesFilter(r.nationality, f.country)) return false;
     if (f.continent) {
       const cont = continentOf(r.nationality);
       if (cont !== f.continent) return false;
     }
-    if (f.club && (r.club ?? "") !== f.club) return false;
-    if (f.competition && r.competition !== f.competition) return false;
-    if (f.nationality && (r.nationality ?? "") !== f.nationality) return false;
+    if (!matchesFilter(r.club, f.club)) return false;
+    if (!matchesFilter(r.competition, f.competition)) return false;
+    if (!matchesFilter(r.nationality, f.nationality)) return false;
     if (f.ageMin != null && (!r.age || r.age < f.ageMin)) return false;
     if (f.ageMax != null && (!r.age || r.age > f.ageMax)) return false;
     if (q) {
-      const hay = `${r.player_name} ${r.club ?? ""} ${r.competition} ${r.country ?? ""} ${r.nationality ?? ""}`.toLowerCase();
+      const hay = normText(`${r.player_name} ${r.club ?? ""} ${r.competition} ${r.country ?? ""} ${r.nationality ?? ""}`);
       if (!hay.includes(q)) return false;
     }
     return true;
@@ -221,15 +235,18 @@ export function rankCompetitions(
   mode: "weighted" | "raw",
   ctx: RankingsContext,
 ): CompetitionRankRow[] {
-  const q = f.search.trim().toLowerCase();
+  const q = normText(f.search);
   const filtered = rows.filter((r) => {
     if (f.comp_type !== "all" && r.comp_type !== f.comp_type) return false;
     if (f.yearFrom != null && r.season_year < f.yearFrom) return false;
     if (f.yearTo != null && r.season_year > f.yearTo) return false;
-    if (f.country && (r.country ?? "") !== f.country) return false;
-    if (f.continent && (r.continent ?? "") !== f.continent) return false;
+    if (!matchesFilter(r.country, f.country)) return false;
+    if (f.continent) {
+      const cont = r.continent ?? null;
+      if (cont !== f.continent) return false;
+    }
     if (q) {
-      const hay = `${r.competition} ${r.country ?? ""} ${r.continent ?? ""}`.toLowerCase();
+      const hay = normText(`${r.competition} ${r.country ?? ""} ${r.continent ?? ""}`);
       if (!hay.includes(q)) return false;
     }
     return true;

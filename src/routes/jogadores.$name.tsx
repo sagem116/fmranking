@@ -29,6 +29,12 @@ function divisionText(h: { module: string | null; division: number | null; divis
   return "—";
 }
 
+function competitionProfileName(h: { module: string | null; division: number | null; divisionLabel: string | null; league: string | null }) {
+  if (h.module === "superleague" && h.division) return `Div. ${h.division}`;
+  if (h.module === "national" && h.divisionLabel) return h.divisionLabel;
+  return h.league;
+}
+
 function PlayerProfilePage() {
   const { name } = Route.useParams();
   const { data, isLoading } = useRankings();
@@ -105,7 +111,13 @@ function PlayerProfilePage() {
                       </Link>
                     ) : "—"}
                   </td>
-                  <td className="p-3 text-muted-foreground">{divisionText(h)}</td>
+                  <td className="p-3 text-muted-foreground">
+                    {competitionProfileName(h) ? (
+                      <Link to="/competicoes/$name" params={{ name: competitionProfileName(h)! }} className="hover:text-primary hover:underline">
+                        {divisionText(h)}
+                      </Link>
+                    ) : divisionText(h)}
+                  </td>
                   <td className="p-3 text-right tabular-nums">{h.age ?? "—"}</td>
                   <td className="p-3 text-right tabular-nums">{h.gls}</td>
                   <td className="p-3 text-right tabular-nums">{h.ast}</td>
