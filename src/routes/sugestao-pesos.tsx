@@ -62,6 +62,8 @@ interface Formula {
   weights: Record<MetricKey, number>;
   normalize: boolean;
   scale: Scale;
+  /** Maximum number of metrics that can be enabled at once. 0 = no limit. */
+  maxActive?: number;
 }
 
 const DEFAULT_FORMULA: Formula = {
@@ -78,6 +80,7 @@ const DEFAULT_FORMULA: Formula = {
   },
   normalize: true,
   scale: 10,
+  maxActive: 0,
 };
 
 const STORAGE_KEY = "fm-sugestao-pesos-formulas";
@@ -255,14 +258,41 @@ function SugestaoPesosPage() {
 
   const setMetric = (k: MetricKey, patch: Partial<{ enabled: boolean; weight: number }>) => {
     setFormula((f) => {
-      const nextEnabled = patch.enabled !== undefined ? { ...f.enabled, [k]: patch.enabled } : f.enabled;
+      let nextEnabled = patch.enabled !== undefined ? { ...f.enabled, [k]: patch.enabled } : f.enabled;
       let nextWeights = patch.weight !== undefined ? { ...f.weights, [k]: patch.weight } : f.weights;
       // Auto-assign a sensible weight when activating a metric that is at 0,
       // so the user can use a single variable without getting a flat 0 result.
       if (patch.enabled === true && (!f.weights[k] || f.weights[k] === 0)) {
         nextWeights = { ...nextWeights, [k]: 1 };
       }
+      // Enforce maxActive: when enabling would exceed the limit, drop the
+      // oldest enabled metric (by METRICS order) so the new one fits.
+      const limit = f.maxActive ?? 0;
+      if (patch.enabled === true && limit > 0) {
+        const active = METRICS.map((m) => m.key).filter((mk) => nextEnabled[mk]);
+        if (active.length > limit) {
+          const drop = active.filter((mk) => mk !== k).slice(0, active.length - limit);
+          const e = { ...nextEnabled };
+          for (const mk of drop) e[mk] = false;
+          nextEnabled = e;
+        }
+      }
       return { ...f, enabled: nextEnabled, weights: nextWeights };
+    });
+  };
+
+  const setMaxActive = (limit: number) => {
+    setFormula((f) => {
+      let nextEnabled = { ...f.enabled };
+      if (limit > 0) {
+        const active = METRICS.map((m) => m.key).filter((mk) => nextEnabled[mk]);
+        if (active.length > limit) {
+          // Keep the first N (by METRICS order); disable the rest.
+          const keep = new Set(active.slice(0, limit));
+          for (const mk of active) if (!keep.has(mk)) nextEnabled[mk] = false;
+        }
+      }
+      return { ...f, maxActive: limit, enabled: nextEnabled };
     });
   };
 
