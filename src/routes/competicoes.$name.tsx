@@ -4,6 +4,7 @@ import { ArrowLeft, Loader2, Trophy, Crown } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useRankings } from "@/lib/useRankings";
+import { CompetitionNewStatsSection } from "@/components/NewStatsSections";
 
 export const Route = createFileRoute("/competicoes/$name")({
   component: CompetitionPage,
@@ -121,9 +122,13 @@ function CompetitionPage() {
       </div>
 
       {!rows.length ? (
-        <p className="text-muted-foreground">Sem campeões registados para esta competição.</p>
+        <>
+          <p className="text-muted-foreground">Sem campeões registados para esta competição.</p>
+          <CompetitionNewStatsSection competition={decoded} />
+        </>
       ) : (
         <>
+          <CompetitionNewStatsSection competition={decoded} />
           <div className="flex items-center gap-3 flex-wrap">
             <span className="text-sm text-muted-foreground">Mostrar:</span>
             <div className="flex rounded-lg border border-border p-1">
