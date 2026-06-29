@@ -58,15 +58,15 @@ function CoachProfilePage() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Stat label="Pontos" value={fmtPts(profile.totalWeighted)} />
+        <Stat label="Pontos brutos" value={fmtPts(profile.totalRaw)} />
         <Stat label="Títulos" value={profile.titles} />
         <Stat label="Épocas" value={profile.seasonsCount} />
         <Stat label="Clubes" value={profile.clubs.length} />
       </div>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Evolução histórica</CardTitle></CardHeader>
-        <CardContent><EvolutionChart data={profile.chart} /></CardContent>
+        <CardHeader><CardTitle className="text-base">Evolução histórica bruta</CardTitle></CardHeader>
+        <CardContent><EvolutionChart data={profile.chart} showModeToggle={false} mode="raw" /></CardContent>
       </Card>
 
       <DesafiosProfileCard results={data?.desafioResults} subject="coaches" entity={profile.name} />
@@ -202,7 +202,7 @@ function CoachProfilePage() {
                     {s.champion && <Crown className="size-3 inline ml-1 text-gold" />}
                   </td>
                   <td className="p-3 text-right tabular-nums">{s.position ?? "—"}</td>
-                  <td className="p-3 text-right tabular-nums">{fmtPts(s.weighted)}</td>
+                  <td className="p-3 text-right tabular-nums">{fmtPts(s.raw)}</td>
                 </tr>
               ))}
             </tbody>

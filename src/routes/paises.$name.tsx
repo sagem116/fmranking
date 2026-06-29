@@ -7,6 +7,7 @@ import { buildCountryProfile } from "@/lib/fm-profiles";
 import { EvolutionChart } from "@/components/EvolutionChart";
 import { DesafiosProfileCard } from "@/components/DesafiosProfileCard";
 import { fmtPts } from "@/lib/fmt";
+import { CountryRecordsSection } from "@/components/RecordsSection";
 
 export const Route = createFileRoute("/paises/$name")({
   component: CountryProfilePage,
@@ -57,17 +58,19 @@ function CountryProfilePage() {
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        <Stat label="Pontos" value={fmtPts(profile.totalWeighted)} />
+        <Stat label="Pontos brutos" value={fmtPts(profile.totalRaw)} />
         <Stat label="Títulos" value={profile.titles} />
         <Stat label="Clubes" value={profile.clubs.length} />
       </div>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Evolução histórica</CardTitle></CardHeader>
-        <CardContent><EvolutionChart data={profile.chart} /></CardContent>
+        <CardHeader><CardTitle className="text-base">Evolução histórica bruta</CardTitle></CardHeader>
+        <CardContent><EvolutionChart data={profile.chart} showModeToggle={false} mode="raw" /></CardContent>
       </Card>
 
       <DesafiosProfileCard results={data?.desafioResults} subject="countries" entity={profile.name} />
+
+      <CountryRecordsSection countryName={profile.name} clubCountry={data!.data.clubCountry} />
 
       <Card>
         <CardHeader><CardTitle className="text-base">Clubes contribuintes</CardTitle></CardHeader>
@@ -91,7 +94,7 @@ function CountryProfilePage() {
                     </Link>
                   </td>
                   <td className="p-3 text-right tabular-nums">{c.titles}</td>
-                  <td className="p-3 text-right font-semibold tabular-nums">{fmtPts(c.weighted)}</td>
+                  <td className="p-3 text-right font-semibold tabular-nums">{fmtPts(c.raw)}</td>
                 </tr>
               ))}
             </tbody>
