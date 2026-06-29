@@ -17,6 +17,7 @@ import type { ComputeResult, RankingEntry } from "@/lib/fm-rankings";
 import { SeasonsRankTable, type ExtraCol } from "@/components/SeasonsRankTable";
 import { buildDesafioExtraCol } from "@/lib/fm-desafios-col";
 import { SeasonFilter } from "@/components/SeasonFilter";
+import { PlayerRankingsView, CompetitionRankingsView } from "@/components/PlayerRankingsView";
 
 type SeasonView = "total" | number;
 
@@ -137,6 +138,7 @@ function RankingLegend() {
 
 function RankingsPage() {
   const [decayMode, setDecayMode] = useState<"with" | "without">("with");
+  const [view, setView] = useState<"standard" | "players" | "competitions">("standard");
   const withDecay = useRankings();
   const noDecay = useRankingsNoDecay();
   const data = decayMode === "with" ? withDecay.data : noDecay.data;
@@ -770,6 +772,19 @@ function RankingsPage() {
       </div>
 
       <div className="flex flex-wrap gap-2">
+        <Button size="sm" variant={view === "standard" ? "default" : "outline"} onClick={() => setView("standard")}>Clubes · Treinadores · Países</Button>
+        <Button size="sm" variant={view === "players" ? "default" : "outline"} onClick={() => setView("players")}>Jogadores</Button>
+        <Button size="sm" variant={view === "competitions" ? "default" : "outline"} onClick={() => setView("competitions")}>Competições</Button>
+      </div>
+
+      {view === "players" && (
+        <PlayerRankingsView mode={mode} withDecay={decayMode === "with"} />
+      )}
+      {view === "competitions" && (
+        <CompetitionRankingsView mode={mode} withDecay={decayMode === "with"} />
+      )}
+      {view === "standard" && <>
+      <div className="flex flex-wrap gap-2">
         {MODULE_FILTERS.map((f) => (
           <Button
             key={f.value}
@@ -1045,6 +1060,7 @@ function RankingsPage() {
           </Tabs>
         )
       )}
+      </>}
     </div>
   );
 }

@@ -3,3 +3,8 @@ export function fmtPts(v: number | null | undefined, maxFractionDigits = 2): str
   if (v == null || !Number.isFinite(v)) return "—";
   return Number(v).toLocaleString("pt-PT", { maximumFractionDigits: maxFractionDigits });
 }
+
+export function fmtNum(v: number | null | undefined, maxFractionDigits = 0): string {
+  if (v == null || !Number.isFinite(v)) return "—";
+  return Number(v).toLocaleString("pt-PT", { maximumFractionDigits: maxFractionDigits });
+}
