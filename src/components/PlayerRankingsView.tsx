@@ -331,14 +331,14 @@ export function CompetitionRankingsView({ mode, withDecay }: { mode: "weighted" 
                   {showCountry && <td className="px-3 py-2">{r.country ?? "—"}</td>}
                   {showContinent && <td className="px-3 py-2">{r.continent ?? "—"}</td>}
                   <td className="px-3 py-2 text-right tabular-nums">{r.n_players}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.ca, 1)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.cp, 1)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.vp, 0)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.salary, 0)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.ca, 2)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.cp, 2)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.vp, 2)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.salary, 2)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.ra, 2)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.rm, 2)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.rc, 2)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.age, 1)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.age, 2)}</td>
                 </tr>
               ))}
               {pageRows.length === 0 && (<tr><td colSpan={14} className="px-3 py-8 text-center text-muted-foreground">Sem resultados.</td></tr>)}
