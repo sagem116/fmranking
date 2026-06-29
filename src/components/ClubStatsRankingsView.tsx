@@ -37,6 +37,7 @@ const COMP_TABS: { value: CompType | "unified"; label: string }[] = [
   { value: "superleague", label: "Super Leagues" },
   { value: "national", label: "Ligas Nacionais" },
   { value: "continental", label: "Continentais" },
+  { value: "international", label: "Internacional" },
 ];
 
 function normText(s: string | null | undefined) {
@@ -77,7 +78,12 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
 
   const years = useMemo(() => [...new Set(players.map((p) => p.season_year))].sort((a, b) => b - a), [players]);
   const latestYear = years[0] ?? new Date().getFullYear();
-  const competitions = useMemo(() => uniqueSorted(players.map((p) => p.competition)), [players]);
+  const competitions = useMemo(
+    () => uniqueSorted(
+      players.filter((p) => compFilter === "unified" || p.comp_type === compFilter).map((p) => p.competition),
+    ),
+    [players, compFilter],
+  );
 
   // Derive club -> most common country (from competition country in player_stats)
   const clubCountry = useMemo(() => {
@@ -109,6 +115,7 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
       club: string; country: string | null; n_players: number; gls: number; ast: number;
       sumCA: number; sumCP: number; sumRA: number; sumRM: number; sumRC: number;
       sumVP: number; sumSalary: number; sumAge: number; wSum: number;
+      sumVPRaw: number; sumSalaryRaw: number;
     };
     const map = new Map<string, Agg>();
     const filtered: PlayerStatRow[] = [];
@@ -128,7 +135,8 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
       let a = map.get(club);
       if (!a) {
         a = { club, country: clubCountry[club] ?? null, n_players: 0, gls: 0, ast: 0,
-          sumCA: 0, sumCP: 0, sumRA: 0, sumRM: 0, sumRC: 0, sumVP: 0, sumSalary: 0, sumAge: 0, wSum: 0 };
+          sumCA: 0, sumCP: 0, sumRA: 0, sumRM: 0, sumRC: 0, sumVP: 0, sumSalary: 0, sumAge: 0, wSum: 0,
+          sumVPRaw: 0, sumSalaryRaw: 0 };
         map.set(club, a);
       }
       a.n_players++;
@@ -143,6 +151,8 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
       a.sumSalary += (p.salary || 0) * w;
       a.sumAge += (p.age || 0) * w;
       a.wSum += w;
+      a.sumVPRaw += p.vp || 0;
+      a.sumSalaryRaw += p.salary || 0;
     }
     let out: Row[] = [...map.values()].map((a) => {
       const k = a.wSum || 1;
@@ -150,7 +160,9 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
         club: a.club, country: a.country, n_players: a.n_players,
         gls: a.gls, ast: a.ast,
         ca: a.sumCA / k, cp: a.sumCP / k, ra: a.sumRA / k, rm: a.sumRM / k, rc: a.sumRC / k,
-        vp: a.sumVP / k, salary: a.sumSalary / k, age: a.sumAge / k,
+        vp: compFilter === "unified" ? a.sumVPRaw : a.sumVP / k,
+        salary: compFilter === "unified" ? a.sumSalaryRaw : a.sumSalary / k,
+        age: a.sumAge / k,
         reputation: reputationFor(a.club, aliases, reps),
       };
     });
@@ -195,7 +207,7 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
         {COMP_TABS.map((t) => (
-          <Button key={t.value} size="sm" variant={compFilter === t.value ? "secondary" : "outline"} onClick={() => { setCompFilter(t.value); setPage(0); }}>
+          <Button key={t.value} size="sm" variant={compFilter === t.value ? "secondary" : "outline"} onClick={() => { setCompFilter(t.value); setCompetition(""); setPage(0); }}>
             {t.label}
           </Button>
         ))}
