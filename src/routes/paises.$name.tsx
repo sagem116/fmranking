@@ -13,6 +13,19 @@ export const Route = createFileRoute("/paises/$name")({
   component: CountryProfilePage,
 });
 
+function CountryLink({ name }: { name: string | null | undefined }) {
+  if (!name) return <span className="text-muted-foreground">—</span>;
+  return (
+    <Link
+      to="/paises/$name"
+      params={{ name }}
+      className="hover:text-primary hover:underline"
+    >
+      {name}
+    </Link>
+  );
+}
+
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <Card>
@@ -63,6 +76,18 @@ function CountryProfilePage() {
         <Stat label="Clubes" value={profile.clubs.length} />
       </div>
 
+      {(profile.internationalTitles > 0 ||
+        profile.finalsReached > 0 ||
+        profile.semifinalsReached > 0 ||
+        profile.quarterfinalsReached > 0) && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <Stat label="Títulos internacionais" value={profile.internationalTitles} />
+          <Stat label="Finais alcançadas" value={profile.finalsReached} />
+          <Stat label="Meias-finais" value={profile.semifinalsReached} />
+          <Stat label="Quartos de final" value={profile.quarterfinalsReached} />
+        </div>
+      )}
+
       <Card>
         <CardHeader><CardTitle className="text-base">Evolução histórica bruta</CardTitle></CardHeader>
         <CardContent><EvolutionChart data={profile.chart} showModeToggle={false} mode="raw" /></CardContent>
@@ -71,6 +96,56 @@ function CountryProfilePage() {
       <DesafiosProfileCard results={data?.desafioResults} subject="countries" entity={profile.name} />
 
       <CountryRecordsSection countryName={profile.name} clubCountry={data!.data.clubCountry} />
+
+      {profile.internationalAppearances.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Percurso internacional</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-muted-foreground text-xs uppercase">
+                  <th className="text-left p-3 w-20">Época</th>
+                  <th className="text-left p-3">Competição</th>
+                  <th className="text-left p-3">Fase</th>
+                  <th className="text-left p-3">Resultado</th>
+                  <th className="text-left p-3">Adversário(s)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {profile.internationalAppearances.map((a, i) => (
+                  <tr key={i} className="border-b border-border/50 hover:bg-muted/50">
+                    <td className="p-3 tabular-nums">{a.year}</td>
+                    <td className="p-3">{a.competition}</td>
+                    <td className="p-3">{a.stage}</td>
+                    <td className="p-3">
+                      {a.role === "winner" && <span className="text-gold font-semibold">Vencedor</span>}
+                      {a.role === "runner-up" && <span>Finalista</span>}
+                      {a.role === "semifinalist" && <span>Semifinalista</span>}
+                      {a.role === "quarterfinalist" && <span>Quarto-finalista</span>}
+                    </td>
+                    <td className="p-3">
+                      {a.opponent ? (
+                        <CountryLink name={a.opponent} />
+                      ) : a.others.length > 0 ? (
+                        a.others.map((o, idx) => (
+                          <span key={idx}>
+                            {idx > 0 && ", "}
+                            <CountryLink name={o} />
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader><CardTitle className="text-base">Clubes contribuintes</CardTitle></CardHeader>

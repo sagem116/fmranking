@@ -103,6 +103,18 @@ export interface CountryProfile {
   titles: number;
   seasonsActive: number;
   chart: ChartPoint[];
+  internationalTitles: number;
+  finalsReached: number;
+  semifinalsReached: number;
+  quarterfinalsReached: number;
+  internationalAppearances: Array<{
+    year: number;
+    competition: string;
+    stage: "Final" | "Meia-final" | "Quarto-final";
+    role: "winner" | "runner-up" | "semifinalist" | "quarterfinalist";
+    opponent: string | null;
+    others: string[];
+  }>;
 }
 
 function hasPromotionToken(info?: string | null): boolean {
@@ -678,6 +690,10 @@ export function buildCountryProfile(data: AllData, name: string, cfg: FmConfig =
   let intlW = 0;
   let intlR = 0;
   let intlTitles = 0;
+  let finalsReached = 0;
+  let semifinalsReached = 0;
+  let quarterfinalsReached = 0;
+  const internationalAppearances: CountryProfile["internationalAppearances"] = [];
   for (const r of intlRows) {
     const isTeam1 = r.team1 === name;
     const team = isTeam1 ? r.team1 : r.team2;
@@ -690,10 +706,51 @@ export function buildCountryProfile(data: AllData, name: string, cfg: FmConfig =
     intlW += w;
     intlR += raw;
     if (won) intlTitles++;
+    finalsReached++;
+    const opponent = isTeam1 ? r.team2 ?? null : r.team1 ?? null;
+    internationalAppearances.push({
+      year: r.season_year,
+      competition: r.competition,
+      stage: "Final",
+      role: won ? "winner" : "runner-up",
+      opponent,
+      others: [],
+    });
     byYearW.set(r.season_year, (byYearW.get(r.season_year) ?? 0) + w);
     byYearR.set(r.season_year, (byYearR.get(r.season_year) ?? 0) + raw);
     years.add(r.season_year);
   }
+  // Semi-finals (lost in SF) and quarter-finals (lost in QF) appearances
+  for (const r of data.international) {
+    const sfs = [r.sf1, r.sf2].filter((x): x is string => !!x);
+    const qfs = [r.qf1, r.qf2, r.qf3, r.qf4].filter((x): x is string => !!x);
+    if (sfs.includes(name)) {
+      semifinalsReached++;
+      internationalAppearances.push({
+        year: r.season_year,
+        competition: r.competition,
+        stage: "Meia-final",
+        role: "semifinalist",
+        opponent: null,
+        others: [r.team1, r.team2].filter((x): x is string => !!x),
+      });
+    }
+    if (qfs.includes(name)) {
+      quarterfinalsReached++;
+      internationalAppearances.push({
+        year: r.season_year,
+        competition: r.competition,
+        stage: "Quarto-final",
+        role: "quarterfinalist",
+        opponent: null,
+        others: [r.team1, r.team2].filter((x): x is string => !!x),
+      });
+    }
+  }
+  // Totals: SF includes those who reached final; QF includes SF and Final
+  semifinalsReached += finalsReached;
+  quarterfinalsReached += semifinalsReached;
+  internationalAppearances.sort((a, b) => b.year - a.year);
 
   const clubs = [...clubAgg.entries()]
     .map(([n, v]) => ({ name: n, weighted: v.weighted, raw: v.raw, titles: v.titles }))
@@ -709,5 +766,10 @@ export function buildCountryProfile(data: AllData, name: string, cfg: FmConfig =
     titles: clubs.reduce((a, c) => a + c.titles, 0) + intlTitles,
     seasonsActive: years.size,
     chart: chartWithRanks(byYearW, byYearR, countryYearW, countryYearR, name),
+    internationalTitles: intlTitles,
+    finalsReached,
+    semifinalsReached,
+    quarterfinalsReached,
+    internationalAppearances,
   };
 }

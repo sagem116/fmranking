@@ -1,5 +1,7 @@
 // Lightweight country → continent mapping used by league-stats filters.
 // Covers most commonly-imported football nations; unknown returns null.
+import { getAliasOverrides, getContinentOverrides } from "./fm-country-overrides";
+
 const MAP: Record<string, string> = {};
 const add = (cont: string, names: string[]) => names.forEach((n) => (MAP[n.toLowerCase()] = cont));
 
@@ -72,14 +74,41 @@ const COUNTRY_ALIASES: Record<string, string> = {
 export function normalizeCountry<T extends string | null | undefined>(country: T): T {
   if (!country) return country;
   const key = String(country).trim().toLowerCase();
-  const canon = COUNTRY_ALIASES[key];
+  const userAlias = getAliasOverrides()[key];
+  const canon = userAlias ?? COUNTRY_ALIASES[key];
   return (canon ?? country) as T;
 }
 
 export function continentOf(country: string | null | undefined): string | null {
   if (!country) return null;
   const norm = normalizeCountry(country);
+  const overrides = getContinentOverrides();
+  const ov =
+    overrides[String(norm).toLowerCase()] ??
+    overrides[String(country).toLowerCase()];
+  if (ov) return ov;
   return MAP[String(norm).toLowerCase()] ?? MAP[country.toLowerCase()] ?? null;
 }
 
 export const CONTINENTS = ["Europa","América do Sul","América do Norte","África","Ásia","Oceânia"] as const;
+
+// ---- Introspection helpers (used by debug pages) ----
+
+/** Built-in continent for a country key (ignores user overrides). */
+export function builtInContinentOf(country: string | null | undefined): string | null {
+  if (!country) return null;
+  const key = String(country).trim().toLowerCase();
+  const canonAlias = COUNTRY_ALIASES[key];
+  const lookup = canonAlias ? canonAlias.toLowerCase() : key;
+  return MAP[lookup] ?? MAP[key] ?? null;
+}
+
+/** All hard-coded country/abbreviation keys with their built-in continent. */
+export function listBuiltInContinents(): Array<{ key: string; continent: string }> {
+  return Object.entries(MAP).map(([key, continent]) => ({ key, continent }));
+}
+
+/** All hard-coded aliases (alias → canonical). */
+export function listBuiltInAliases(): Array<{ alias: string; canonical: string }> {
+  return Object.entries(COUNTRY_ALIASES).map(([alias, canonical]) => ({ alias, canonical }));
+}

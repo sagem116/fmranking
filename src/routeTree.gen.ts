@@ -21,7 +21,9 @@ import { Route as DesafiosDashboardRouteImport } from './routes/desafios-dashboa
 import { Route as DesafiosRouteImport } from './routes/desafios'
 import { Route as DebugTreinadoresRouteImport } from './routes/debug-treinadores'
 import { Route as DebugPontosRouteImport } from './routes/debug-pontos'
+import { Route as DebugPaisesRouteImport } from './routes/debug-paises'
 import { Route as DebugJogadoresRouteImport } from './routes/debug-jogadores'
+import { Route as DebugContinentesRouteImport } from './routes/debug-continentes'
 import { Route as DebugContinentaisRouteImport } from './routes/debug-continentais'
 import { Route as DebugClubesRouteImport } from './routes/debug-clubes'
 import { Route as ConquistasRouteImport } from './routes/conquistas'
@@ -112,9 +114,19 @@ const DebugPontosRoute = DebugPontosRouteImport.update({
   path: '/debug-pontos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DebugPaisesRoute = DebugPaisesRouteImport.update({
+  id: '/debug-paises',
+  path: '/debug-paises',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DebugJogadoresRoute = DebugJogadoresRouteImport.update({
   id: '/debug-jogadores',
   path: '/debug-jogadores',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DebugContinentesRoute = DebugContinentesRouteImport.update({
+  id: '/debug-continentes',
+  path: '/debug-continentes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DebugContinentaisRoute = DebugContinentaisRouteImport.update({
@@ -279,7 +291,9 @@ export interface FileRoutesByFullPath {
   '/conquistas': typeof ConquistasRoute
   '/debug-clubes': typeof DebugClubesRoute
   '/debug-continentais': typeof DebugContinentaisRoute
+  '/debug-continentes': typeof DebugContinentesRoute
   '/debug-jogadores': typeof DebugJogadoresRoute
+  '/debug-paises': typeof DebugPaisesRoute
   '/debug-pontos': typeof DebugPontosRoute
   '/debug-treinadores': typeof DebugTreinadoresRoute
   '/desafios': typeof DesafiosRoute
@@ -322,7 +336,9 @@ export interface FileRoutesByTo {
   '/conquistas': typeof ConquistasRoute
   '/debug-clubes': typeof DebugClubesRoute
   '/debug-continentais': typeof DebugContinentaisRoute
+  '/debug-continentes': typeof DebugContinentesRoute
   '/debug-jogadores': typeof DebugJogadoresRoute
+  '/debug-paises': typeof DebugPaisesRoute
   '/debug-pontos': typeof DebugPontosRoute
   '/debug-treinadores': typeof DebugTreinadoresRoute
   '/desafios': typeof DesafiosRoute
@@ -365,7 +381,9 @@ export interface FileRoutesById {
   '/conquistas': typeof ConquistasRoute
   '/debug-clubes': typeof DebugClubesRoute
   '/debug-continentais': typeof DebugContinentaisRoute
+  '/debug-continentes': typeof DebugContinentesRoute
   '/debug-jogadores': typeof DebugJogadoresRoute
+  '/debug-paises': typeof DebugPaisesRoute
   '/debug-pontos': typeof DebugPontosRoute
   '/debug-treinadores': typeof DebugTreinadoresRoute
   '/desafios': typeof DesafiosRoute
@@ -411,7 +429,9 @@ export interface FileRouteTypes {
     | '/conquistas'
     | '/debug-clubes'
     | '/debug-continentais'
+    | '/debug-continentes'
     | '/debug-jogadores'
+    | '/debug-paises'
     | '/debug-pontos'
     | '/debug-treinadores'
     | '/desafios'
@@ -454,7 +474,9 @@ export interface FileRouteTypes {
     | '/conquistas'
     | '/debug-clubes'
     | '/debug-continentais'
+    | '/debug-continentes'
     | '/debug-jogadores'
+    | '/debug-paises'
     | '/debug-pontos'
     | '/debug-treinadores'
     | '/desafios'
@@ -496,7 +518,9 @@ export interface FileRouteTypes {
     | '/conquistas'
     | '/debug-clubes'
     | '/debug-continentais'
+    | '/debug-continentes'
     | '/debug-jogadores'
+    | '/debug-paises'
     | '/debug-pontos'
     | '/debug-treinadores'
     | '/desafios'
@@ -541,7 +565,9 @@ export interface RootRouteChildren {
   ConquistasRoute: typeof ConquistasRoute
   DebugClubesRoute: typeof DebugClubesRoute
   DebugContinentaisRoute: typeof DebugContinentaisRoute
+  DebugContinentesRoute: typeof DebugContinentesRoute
   DebugJogadoresRoute: typeof DebugJogadoresRoute
+  DebugPaisesRoute: typeof DebugPaisesRoute
   DebugPontosRoute: typeof DebugPontosRoute
   DebugTreinadoresRoute: typeof DebugTreinadoresRoute
   DesafiosRoute: typeof DesafiosRoute
@@ -658,11 +684,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DebugPontosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/debug-paises': {
+      id: '/debug-paises'
+      path: '/debug-paises'
+      fullPath: '/debug-paises'
+      preLoaderRoute: typeof DebugPaisesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/debug-jogadores': {
       id: '/debug-jogadores'
       path: '/debug-jogadores'
       fullPath: '/debug-jogadores'
       preLoaderRoute: typeof DebugJogadoresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/debug-continentes': {
+      id: '/debug-continentes'
+      path: '/debug-continentes'
+      fullPath: '/debug-continentes'
+      preLoaderRoute: typeof DebugContinentesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/debug-continentais': {
@@ -919,7 +959,9 @@ const rootRouteChildren: RootRouteChildren = {
   ConquistasRoute: ConquistasRoute,
   DebugClubesRoute: DebugClubesRoute,
   DebugContinentaisRoute: DebugContinentaisRoute,
+  DebugContinentesRoute: DebugContinentesRoute,
   DebugJogadoresRoute: DebugJogadoresRoute,
+  DebugPaisesRoute: DebugPaisesRoute,
   DebugPontosRoute: DebugPontosRoute,
   DebugTreinadoresRoute: DebugTreinadoresRoute,
   DesafiosRoute: DesafiosRoute,
