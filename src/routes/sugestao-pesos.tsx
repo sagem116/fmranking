@@ -254,11 +254,16 @@ function SugestaoPesosPage() {
   }, [rows, search, compTypeFilter, sortKey, sortDir]);
 
   const setMetric = (k: MetricKey, patch: Partial<{ enabled: boolean; weight: number }>) => {
-    setFormula((f) => ({
-      ...f,
-      enabled: patch.enabled !== undefined ? { ...f.enabled, [k]: patch.enabled } : f.enabled,
-      weights: patch.weight !== undefined ? { ...f.weights, [k]: patch.weight } : f.weights,
-    }));
+    setFormula((f) => {
+      const nextEnabled = patch.enabled !== undefined ? { ...f.enabled, [k]: patch.enabled } : f.enabled;
+      let nextWeights = patch.weight !== undefined ? { ...f.weights, [k]: patch.weight } : f.weights;
+      // Auto-assign a sensible weight when activating a metric that is at 0,
+      // so the user can use a single variable without getting a flat 0 result.
+      if (patch.enabled === true && (!f.weights[k] || f.weights[k] === 0)) {
+        nextWeights = { ...nextWeights, [k]: 1 };
+      }
+      return { ...f, enabled: nextEnabled, weights: nextWeights };
+    });
   };
 
   const handleSort = (k: typeof sortKey) => {
