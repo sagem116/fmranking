@@ -1,12 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Loader2, Crown, Shield, Users, Globe2, Trophy, Goal, Handshake } from "lucide-react";
+import { Loader2, Crown, Shield, Users, Globe2, Trophy, Goal, Handshake, Star } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRankings } from "@/lib/useRankings";
 import { rankBy, type RankingEntry, type BreakdownItem } from "@/lib/fm-rankings";
 import { computeGoals, computeAssists, listPlayerYears, type PlayerStatRow } from "@/lib/fm-players";
 import { SeasonFilter } from "@/components/SeasonFilter";
-import { fmtPts } from "@/lib/fmt";
+import { fmtPts, fmtNum, fmtMoney } from "@/lib/fmt";
+import { usePlayerStatsData } from "@/lib/usePlayerStatsData";
 
 function yearRanking(
   evo: Record<string, Record<number, number>>,
