@@ -67,7 +67,7 @@ function ClubProfilePage() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Stat label="Pontos" value={fmtPts(profile.totalWeighted)} />
+        <Stat label="Pontos brutos" value={fmtPts(profile.totalRaw)} />
         <Stat label="Títulos" value={profile.titles} />
         <Stat label="Épocas" value={profile.seasonsCount} />
         <Stat label="Melhor Posição" value={profile.bestPosition ?? "—"} />
@@ -86,8 +86,8 @@ function ClubProfilePage() {
       </div>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Evolução histórica</CardTitle></CardHeader>
-        <CardContent><EvolutionChart data={profile.chart} /></CardContent>
+        <CardHeader><CardTitle className="text-base">Evolução histórica bruta</CardTitle></CardHeader>
+        <CardContent><EvolutionChart data={profile.chart} showModeToggle={false} mode="raw" /></CardContent>
       </Card>
 
       <Card>
@@ -116,12 +116,21 @@ function ClubProfilePage() {
               {profile.seasons.map((s, i) => (
                 <tr key={i} className="border-b border-border/50 hover:bg-muted/50">
                   <td className="p-3">{s.year}</td>
-                  <td className="p-3">{MODULE_LABEL[s.module]}</td>
-                  <td className="p-3">{s.module === "superleague" ? (s.division_num ? `Div. ${s.division_num}` : "—") : s.division_label || "—"}</td>
+                  <td className="p-3">
+                    <Link to="/competicoes/$name" params={{ name: MODULE_LABEL[s.module] }} className="hover:text-primary hover:underline">
+                      {MODULE_LABEL[s.module]}
+                    </Link>
+                  </td>
+                  <td className="p-3">
+                    {(() => {
+                      const label = s.module === "superleague" ? (s.division_num ? `Div. ${s.division_num}` : null) : s.division_label || null;
+                      return label ? <Link to="/competicoes/$name" params={{ name: label }} className="hover:text-primary hover:underline">{label}</Link> : "—";
+                    })()}
+                  </td>
                   <td className="p-3 text-right tabular-nums">
                     {s.position ?? "—"} {s.is_champion && <Crown className="size-3 inline text-gold" />}
                   </td>
-                  <td className="p-3 text-right tabular-nums">{fmtPts(s.weighted)}</td>
+                  <td className="p-3 text-right tabular-nums">{fmtPts(s.raw)}</td>
                 </tr>
               ))}
             </tbody>
@@ -146,8 +155,14 @@ function ClubProfilePage() {
                 {profile.continental.map((c, i) => (
                   <tr key={i} className="border-b border-border/50 hover:bg-muted/50">
                     <td className="p-3">{c.year}</td>
-                    <td className="p-3">{c.competition}</td>
-                    <td className="p-3">{c.opponent ?? "—"}</td>
+                    <td className="p-3">
+                      <Link to="/competicoes/$name" params={{ name: c.competition }} className="hover:text-primary hover:underline">
+                        {c.competition}
+                      </Link>
+                    </td>
+                    <td className="p-3">
+                      {c.opponent ? <Link to="/clubes/$name" params={{ name: c.opponent }} className="hover:text-primary hover:underline">{c.opponent}</Link> : "—"}
+                    </td>
                     <td className="p-3 text-right">
                       {c.won ? <Badge className="bg-gold text-background">Vencedor</Badge> : <Badge variant="outline">Finalista</Badge>}
                     </td>
@@ -183,7 +198,11 @@ function ClubProfilePage() {
                 {profile.knockouts.map((k, i) => (
                   <tr key={i} className="border-b border-border/50 hover:bg-muted/50">
                     <td className="p-3 tabular-nums">{k.year}</td>
-                    <td className="p-3">{k.competition}</td>
+                    <td className="p-3">
+                      <Link to="/competicoes/$name" params={{ name: k.competition }} className="hover:text-primary hover:underline">
+                        {k.competition}
+                      </Link>
+                    </td>
                     <td className="p-3 text-right">
                       <Badge variant="outline">{k.stage === "SF" ? "Meia-Final" : "Quartos"}</Badge>
                     </td>

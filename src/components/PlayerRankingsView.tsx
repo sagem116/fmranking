@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,11 @@ import { rankPlayers, filterPlayerRows, emptyFilters, rankCompetitions, emptyCom
 import type { CompType, PlayerStatRow } from "@/lib/fm-player-stats-db";
 import { continentOf, CONTINENTS } from "@/lib/fm-continents";
 import { fmtNum } from "@/lib/fmt";
+
+function uniqueSorted(values: Array<string | null | undefined>) {
+  return [...new Set(values.filter((v): v is string => Boolean(v?.trim())))]
+    .sort((a, b) => a.localeCompare(b, "pt-PT"));
+}
 
 const COMP_FILTERS: { value: CompType | "all" | "unified"; label: string }[] = [
   { value: "unified", label: "Unificado" },
@@ -44,6 +50,9 @@ export function PlayerRankingsView({ mode, withDecay }: { mode: "weighted" | "ra
 
   const years = useMemo(() => [...new Set(players.map((p) => p.season_year))].sort((a, b) => b - a), [players]);
   const latestYear = years[0] ?? new Date().getFullYear();
+  const nationalities = useMemo(() => uniqueSorted(players.map((p) => p.nationality)), [players]);
+  const clubs = useMemo(() => uniqueSorted(players.map((p) => p.club)), [players]);
+  const competitions = useMemo(() => uniqueSorted(players.map((p) => p.competition)), [players]);
 
   const filtered = useMemo(() => {
     const f: PlayerFilters = { ...filters, comp_type: compFilter === "unified" ? "all" : compFilter };
@@ -133,17 +142,39 @@ export function PlayerRankingsView({ mode, withDecay }: { mode: "weighted" | "ra
           </div>
           <div>
             <Label className="text-xs">País (NAC)</Label>
-            <Input value={filters.country} onChange={(e) => { setFilters({ ...filters, country: e.target.value }); setPage(0); }} placeholder="nacionalidade exata" />
+            <Select value={filters.country || "all"} onValueChange={(v) => { setFilters({ ...filters, country: v === "all" ? "" : v }); setPage(0); }}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                {nationalities.map((n) => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label className="text-xs">Clube</Label>
-            <Input value={filters.club} onChange={(e) => { setFilters({ ...filters, club: e.target.value }); setPage(0); }} placeholder="exato" />
+            <Select value={filters.club || "all"} onValueChange={(v) => { setFilters({ ...filters, club: v === "all" ? "" : v }); setPage(0); }}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                {clubs.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs">Competição</Label>
+            <Select value={filters.competition || "all"} onValueChange={(v) => { setFilters({ ...filters, competition: v === "all" ? "" : v }); setPage(0); }}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas</SelectItem>
+                {competitions.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label className="text-xs">Idade min/max</Label>
             <div className="flex gap-1">
-              <Input type="number" value={filters.ageMin ?? ""} onChange={(e) => setFilters({ ...filters, ageMin: e.target.value ? Number(e.target.value) : null })} placeholder="min" />
-              <Input type="number" value={filters.ageMax ?? ""} onChange={(e) => setFilters({ ...filters, ageMax: e.target.value ? Number(e.target.value) : null })} placeholder="max" />
+              <Input type="number" value={filters.ageMin ?? ""} onChange={(e) => { setFilters({ ...filters, ageMin: e.target.value ? Number(e.target.value) : null }); setPage(0); }} placeholder="min" />
+              <Input type="number" value={filters.ageMax ?? ""} onChange={(e) => { setFilters({ ...filters, ageMax: e.target.value ? Number(e.target.value) : null }); setPage(0); }} placeholder="max" />
             </div>
           </div>
           <div className="flex items-end">
@@ -177,10 +208,21 @@ export function PlayerRankingsView({ mode, withDecay }: { mode: "weighted" | "ra
                     {pageRows.map((r, i) => (
                       <tr key={r.key} className="border-t border-border/50 hover:bg-muted/30">
                         <td className="px-3 py-2 text-muted-foreground tabular-nums">{page * PAGE_SIZE + i + 1}</td>
-                        <td className="px-3 py-2 font-medium">{r.player_name} {r.idu && <Badge variant="outline" className="ml-1 text-[10px]">{r.idu}</Badge>}</td>
+                        <td className="px-3 py-2 font-medium">
+                          <Link to="/jogadores/$name" params={{ name: r.player_name }} className="hover:text-primary hover:underline">
+                            {r.player_name}
+                          </Link>
+                          {r.idu && <Badge variant="outline" className="ml-1 text-[10px]">{r.idu}</Badge>}
+                        </td>
                         <td className="px-3 py-2 text-muted-foreground">{r.nationality ?? "—"}</td>
-                        <td className="px-3 py-2">{r.club ?? "—"}</td>
-                        <td className="px-3 py-2">{r.competition}</td>
+                        <td className="px-3 py-2">
+                          {r.club ? <Link to="/clubes/$name" params={{ name: r.club }} className="hover:text-primary hover:underline">{r.club}</Link> : "—"}
+                        </td>
+                        <td className="px-3 py-2">
+                          <Link to="/competicoes/$name" params={{ name: r.competition }} className="hover:text-primary hover:underline">
+                            {r.competition}
+                          </Link>
+                        </td>
                         <td className="px-3 py-2 tabular-nums">{compFilter === "unified" ? "—" : r.season_year}</td>
                         <td className="px-3 py-2 text-right tabular-nums font-semibold">{fmtNum(r.raw, 2)}</td>
                         <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{mode === "weighted" ? fmtNum(r.value, 2) : ""}</td>
@@ -220,6 +262,7 @@ export function CompetitionRankingsView({ mode, withDecay }: { mode: "weighted" 
   const comps = data.data?.competitions ?? [];
   const years = useMemo(() => [...new Set(comps.map((c) => c.season_year))].sort((a, b) => b - a), [comps]);
   const latestYear = years[0] ?? new Date().getFullYear();
+  const countries = useMemo(() => uniqueSorted(comps.map((c) => c.country)), [comps]);
 
   const ranked = useMemo(() => {
     if (!cfg.data) return [];
@@ -300,6 +343,13 @@ export function CompetitionRankingsView({ mode, withDecay }: { mode: "weighted" 
               <SelectContent><SelectItem value="all">Todos</SelectItem>{CONTINENTS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
             </Select>
           </div>
+          <div>
+            <Label className="text-xs">País</Label>
+            <Select value={filters.country || "all"} onValueChange={(v) => { setFilters({ ...filters, country: v === "all" ? "" : v }); setPage(0); }}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="all">Todos</SelectItem>{countries.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
         </div>
       </Card>
 
@@ -327,7 +377,11 @@ export function CompetitionRankingsView({ mode, withDecay }: { mode: "weighted" 
               {pageRows.map((r, i) => (
                 <tr key={r.key} className="border-t border-border/50 hover:bg-muted/30">
                   <td className="px-3 py-2 text-muted-foreground tabular-nums">{page * PAGE_SIZE + i + 1}</td>
-                  <td className="px-3 py-2 font-medium">{r.competition}</td>
+                  <td className="px-3 py-2 font-medium">
+                    <Link to="/competicoes/$name" params={{ name: r.competition }} className="hover:text-primary hover:underline">
+                      {r.competition}
+                    </Link>
+                  </td>
                   {showCountry && <td className="px-3 py-2">{r.country ?? "—"}</td>}
                   {showContinent && <td className="px-3 py-2">{r.continent ?? "—"}</td>}
                   <td className="px-3 py-2 text-right tabular-nums">{r.n_players}</td>
