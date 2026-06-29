@@ -432,7 +432,7 @@ export function CompetitionRankingsView({ mode, withDecay }: { mode: "weighted" 
                   <td className="px-3 py-2 text-right tabular-nums font-semibold">{r.reputation == null ? "—" : fmtNum(r.reputation, 2)}</td>
                 </tr>
               ))}
-              {pageRows.length === 0 && (<tr><td colSpan={14} className="px-3 py-8 text-center text-muted-foreground">Sem resultados.</td></tr>)}
+              {pageRows.length === 0 && (<tr><td colSpan={15} className="px-3 py-8 text-center text-muted-foreground">Sem resultados.</td></tr>)}
             </tbody>
           </table>
         </div>
