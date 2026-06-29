@@ -20,6 +20,7 @@ import { saveConfig, createProfile, activateProfile, deleteProfile, type WeightP
 import { wipeAllData } from "@/lib/fm-wipe";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertTriangle } from "lucide-react";
+import { downloadBackup, importBackupFromFile } from "@/lib/fm-global-backup";
 
 const norm = (s: string) =>
   s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
@@ -513,6 +514,38 @@ function ConfigPage() {
                   const f = e.target.files?.[0];
                   if (f) handleImport(f);
                   e.target.value = "";
+                }}
+              />
+            </label>
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              downloadBackup();
+              toast.success("Backup global exportado");
+            }}
+            title="Exporta tudo o que é editável: pesos, fórmulas, desafios, debugs, sidebar, tema."
+          >
+            <Download className="size-4" /> Backup global
+          </Button>
+          <Button variant="outline" asChild title="Importa um backup global previamente exportado.">
+            <label className="cursor-pointer">
+              <Upload className="size-4" /> Restaurar backup
+              <input
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                onChange={async (e) => {
+                  const f = e.target.files?.[0];
+                  e.target.value = "";
+                  if (!f) return;
+                  try {
+                    const res = await importBackupFromFile(f);
+                    toast.success(`Backup restaurado (${res.applied.length} secções).`);
+                    setTimeout(() => window.location.reload(), 600);
+                  } catch (err) {
+                    toast.error("Backup inválido: " + (err as Error).message);
+                  }
                 }}
               />
             </label>
