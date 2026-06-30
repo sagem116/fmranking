@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TreinadoresRouteImport } from './routes/treinadores'
 import { Route as SugestaoPesosRouteImport } from './routes/sugestao-pesos'
+import { Route as RankingsPersonalizadosRouteImport } from './routes/rankings-personalizados'
 import { Route as RankingsRouteImport } from './routes/rankings'
 import { Route as RankingHistoricoRouteImport } from './routes/ranking-historico'
 import { Route as PaisesRouteImport } from './routes/paises'
@@ -65,6 +66,11 @@ const TreinadoresRoute = TreinadoresRouteImport.update({
 const SugestaoPesosRoute = SugestaoPesosRouteImport.update({
   id: '/sugestao-pesos',
   path: '/sugestao-pesos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RankingsPersonalizadosRoute = RankingsPersonalizadosRouteImport.update({
+  id: '/rankings-personalizados',
+  path: '/rankings-personalizados',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RankingsRoute = RankingsRouteImport.update({
@@ -325,6 +331,7 @@ export interface FileRoutesByFullPath {
   '/paises': typeof PaisesRouteWithChildren
   '/ranking-historico': typeof RankingHistoricoRoute
   '/rankings': typeof RankingsRoute
+  '/rankings-personalizados': typeof RankingsPersonalizadosRoute
   '/sugestao-pesos': typeof SugestaoPesosRoute
   '/treinadores': typeof TreinadoresRouteWithChildren
   '/clubes/$name': typeof ClubesNameRoute
@@ -372,6 +379,7 @@ export interface FileRoutesByTo {
   '/importar': typeof ImportarRoute
   '/ranking-historico': typeof RankingHistoricoRoute
   '/rankings': typeof RankingsRoute
+  '/rankings-personalizados': typeof RankingsPersonalizadosRoute
   '/sugestao-pesos': typeof SugestaoPesosRoute
   '/clubes/$name': typeof ClubesNameRoute
   '/competicoes/$name': typeof CompeticoesNameRoute
@@ -421,6 +429,7 @@ export interface FileRoutesById {
   '/paises': typeof PaisesRouteWithChildren
   '/ranking-historico': typeof RankingHistoricoRoute
   '/rankings': typeof RankingsRoute
+  '/rankings-personalizados': typeof RankingsPersonalizadosRoute
   '/sugestao-pesos': typeof SugestaoPesosRoute
   '/treinadores': typeof TreinadoresRouteWithChildren
   '/clubes/$name': typeof ClubesNameRoute
@@ -472,6 +481,7 @@ export interface FileRouteTypes {
     | '/paises'
     | '/ranking-historico'
     | '/rankings'
+    | '/rankings-personalizados'
     | '/sugestao-pesos'
     | '/treinadores'
     | '/clubes/$name'
@@ -519,6 +529,7 @@ export interface FileRouteTypes {
     | '/importar'
     | '/ranking-historico'
     | '/rankings'
+    | '/rankings-personalizados'
     | '/sugestao-pesos'
     | '/clubes/$name'
     | '/competicoes/$name'
@@ -567,6 +578,7 @@ export interface FileRouteTypes {
     | '/paises'
     | '/ranking-historico'
     | '/rankings'
+    | '/rankings-personalizados'
     | '/sugestao-pesos'
     | '/treinadores'
     | '/clubes/$name'
@@ -617,6 +629,7 @@ export interface RootRouteChildren {
   PaisesRoute: typeof PaisesRouteWithChildren
   RankingHistoricoRoute: typeof RankingHistoricoRoute
   RankingsRoute: typeof RankingsRoute
+  RankingsPersonalizadosRoute: typeof RankingsPersonalizadosRoute
   SugestaoPesosRoute: typeof SugestaoPesosRoute
   TreinadoresRoute: typeof TreinadoresRouteWithChildren
   CompeticoesNameRoute: typeof CompeticoesNameRoute
@@ -651,6 +664,13 @@ declare module '@tanstack/react-router' {
       path: '/sugestao-pesos'
       fullPath: '/sugestao-pesos'
       preLoaderRoute: typeof SugestaoPesosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rankings-personalizados': {
+      id: '/rankings-personalizados'
+      path: '/rankings-personalizados'
+      fullPath: '/rankings-personalizados'
+      preLoaderRoute: typeof RankingsPersonalizadosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rankings': {
@@ -1035,6 +1055,7 @@ const rootRouteChildren: RootRouteChildren = {
   PaisesRoute: PaisesRouteWithChildren,
   RankingHistoricoRoute: RankingHistoricoRoute,
   RankingsRoute: RankingsRoute,
+  RankingsPersonalizadosRoute: RankingsPersonalizadosRoute,
   SugestaoPesosRoute: SugestaoPesosRoute,
   TreinadoresRoute: TreinadoresRouteWithChildren,
   CompeticoesNameRoute: CompeticoesNameRoute,
