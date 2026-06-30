@@ -1,115 +1,199 @@
-# Expansão dos Rankings Mundiais
+## Visão geral
 
-Plano dividido em 6 blocos, todos reutilizando os componentes existentes (`PlayerRankingsView`, `ClubStatsRankingsView`, `EvolutionChart`, filtros `Select`/`Input`, pesos via `useActiveConfig` + `compWeight`/`decayFactor`).
+Sete sistemas que estendem a aplicação sem mexer nos dados importados via Excel. Toda a personalização vive em `localStorage` (mesma estratégia já usada para pesos, reputações, etc.) e é reaproveitada pelos rankings, perfis, exportações e nova página de Insights.
 
----
-
-## 1. Correção da coluna "País" (Clubes & Competições)
-
-Hoje, em `ClubStatsRankingsView`, o país do clube é derivado dos sheets nacional/superleague (país do clube). Vou mudar para **país da competição** sempre.
-
-- Em `src/components/ClubStatsRankingsView.tsx`: usar `p.country` directamente como país-da-competição (mais frequente por clube+competição). Remover priorização por tipo de folha.
-- Mesma regra usada onde aparece "País" no Ranking de Competições.
-- Filtros País/Continente passam a filtrar pelo país da competição.
-
-> Trade-off: clubes que joguem fora do seu país (raro) aparecem associados ao país da competição — é o pedido.
+Princípios transversais:
+- Reutilizar `useRankings`, `usePlayerStatsData`, `useClubReputation`, `useCompetitionReputation` — não duplicar lógica de cálculo.
+- Tudo é reversível: editar, duplicar, eliminar em qualquer item criado pelo utilizador.
+- Versionado por `schemaVersion` em cada chave de `localStorage` para o backup JSON aceitar versões antigas.
 
 ---
 
-## 2. Ranking de Competições — tab "Todas"
+## 1. Rankings Personalizados
 
-Em `PlayerRankingsView` (tab Competições, sub-tab "Todas"):
+Nova rota `/rankings-personalizados` (item lateral) com lista de rankings criados + botão "Novo Ranking".
 
-- **Continuam médias ponderadas**: C.A., C.P., R.A., R.M., R.C., Idade.
-- **Passam a somas brutas**: V.P. e Salário → soma de `vp`/`salary` de todos os clubes (não jogadores duplicados) da competição.
-- Restantes sub-tabs (Super Leagues / Ligas Nacionais / Continentais / Internacional): comportamento atual mantido.
+Editor em modal/diálogo com:
+- Entidade: Jogadores / Clubes / Competições / Países.
+- Nome + descrição opcional.
+- Filtros: reaproveita os mesmos controlos já existentes (idade, país, continente, competição, clube, intervalos numéricos para VP/Salário/CA/CP/RA/RM/RC/Idade, nacionalidade, etc.) num componente partilhado `EntityFilterPanel`.
+- Ordenação: dropdown com todas as métricas disponíveis para a entidade (incluindo fórmulas personalizadas — ver §2) + crescente/decrescente.
+- Pré-visualização ao vivo da tabela enquanto edita.
 
-Implementação: alterar agregação interna para guardar `sumVP_clubs`, `sumSalary_clubs` (dedup por clube dentro da competição) e usá-los só na vista "Todas".
-
----
-
-## 3. Sugestão de Pesos — novas variáveis
-
-Em `src/routes/sugestao-pesos.tsx` adicionar 2 métricas:
-
-1. **Reputação Média dos Clubes da Competição** — automática, calculada a partir de `loadReputations()` + alias dos clubes da competição.
-2. **Reputação Manual da Competição** — guardada na BD.
-
-### BD (migration nova)
-```sql
-CREATE TABLE public.competition_reputation (
-  competition text PRIMARY KEY,
-  reputation numeric NOT NULL,
-  updated_at timestamptz DEFAULT now()
-);
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.competition_reputation TO authenticated;
-GRANT SELECT ON public.competition_reputation TO anon;
-GRANT ALL  ON public.competition_reputation TO service_role;
-ALTER TABLE public.competition_reputation ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "public read"  ON public.competition_reputation FOR SELECT TO anon, authenticated USING (true);
-CREATE POLICY "public write" ON public.competition_reputation FOR ALL  TO anon, authenticated USING (true) WITH CHECK (true);
+Persistência em `localStorage` chave `fm:custom-rankings`. Cada item:
+```
+{ id, name, description?, entity, filters, sortBy, sortDir, createdAt, updatedAt }
 ```
 
-UI: editor inline na página Sugestão de Pesos (lista de competições + input numérico). Ambas as métricas exportadas pelo backup global.
+Ações por linha: aplicar / editar / duplicar / eliminar.
 
 ---
 
-## 4. Nova página `/estatisticas` (menu Rankings)
+## 2. Fórmulas Personalizadas
 
-Ficheiro: `src/routes/estatisticas.tsx` + componentes em `src/components/estatisticas/`.
+Nova rota `/formulas-personalizadas`. Editor:
+- Nome, entidade alvo, casas decimais, fórmula como expressão de texto.
+- Validação: parser próprio (sem `eval`) usando `expr-eval` ou implementação manual com tokens + AST simples. Variáveis disponíveis dependem da entidade (ex: jogador → CA, CP, GLS, AST, IDADE, VP, SALARIO, REPUTACAO, etc.). Em caso de variável desconhecida ou sintaxe inválida → mostra erro vermelho e não permite gravar.
+- Pré-visualização: calcula em 5 entidades de exemplo enquanto edita.
 
-Mesmo header de tabs de categoria que `ClubStatsRankingsView` (Unificado / Super Leagues / Ligas Nacionais / Continentais / Internacional), partilhando filtros (época, pesquisa, país, continente, competição) e respeitando ponderado/bruto + decaimento (via `useActiveConfig`).
+Persistência em `fm:custom-formulas`. Item: `{ id, name, entity, expr, decimals, ast, createdAt }`.
 
-### Layout
+Disponibilização automática:
+- Helper `evaluateFormula(formula, entityData)` exposto para Rankings Personalizados (§1) como métrica de ordenação.
+- Coluna extra opcional nas tabelas dos rankings padrão (botão "Colunas" no header → escolhe quais fórmulas mostrar).
+- Coluna nos perfis quando há fórmulas para essa entidade.
+- Incluído em export Excel/PDF e na exportação de qualquer ranking personalizado.
+
+---
+
+## 3. Insights Automáticos
+
+Nova rota `/insights`. Após cada importação, snapshot dos agregados é guardado em `fm:insights-snapshots` (mantém últimos 10):
+```
+{ importedAt, label, aggregates: { competitions, countries, clubs, players, world } }
+```
+
+Geração de insights compara último snapshot vs anterior:
+- Liga A ultrapassou Liga B em VP total / reputação / salário médio.
+- Variação % por competição (subiu/desceu).
+- Mudanças de líder em métricas-chave (golos, assistências, CA, VP).
+- Entradas/saídas do Top 100 mundial de clubes.
+- Variação da média de idade global, total de jogadores, nacionalidade dominante.
+
+Cada insight: `{ title, valuePrev, valueCurr, deltaAbs, deltaPct, severity }`. Ordenados por severidade calculada (variação % * peso da métrica).
+
+UI com cards agrupados por categoria (Competições, Clubes, Jogadores, Mundo) + filtro por severidade.
+
+---
+
+## 4. Drill-Down Universal
+
+Componente partilhado `DrillCell` que torna clicável qualquer célula agregada e abre o `DrillDialog` (já existe em `EstatisticasPage`) com lista filtrada.
+
+Aplicação:
+- Tabelas de Estatísticas (já têm drill, generalizar).
+- Tabela de Países / Clubes em rankings (clicar no nº de jogadores ou nº de clubes).
+- Coluna "Jogadores" / "Clubes" / "Pontos" / "VP Total" em qualquer agregação.
+- Card de país → "1.623 jogadores" clicável.
+- Card de continente → lista de clubes.
+
+Cada `DrillCell` recebe `{ predicate, columns, title }` e usa os dados já em memória — zero round-trip ao backend.
+
+---
+
+## 5. Filtros Guardados
+
+Persistência `fm:saved-filters`. Cada item: `{ id, name, description?, entity, filters }`.
+
+UI: pequeno botão "Filtros guardados" ao lado do painel de filtros em qualquer página com filtros (Rankings padrão, Rankings Personalizados, Estatísticas). Permite:
+- Aplicar (carrega os valores nos filtros atuais).
+- Guardar atual (snapshot do estado dos filtros).
+- Editar, duplicar, eliminar.
+
+Modelo é o mesmo independentemente da página — só muda a entidade.
+
+---
+
+## 6. Evolução do Ranking
+
+Novo componente `RankingEvolutionSection` em todos os perfis (clube, jogador, competição, país).
+
+Calcula posição da entidade em cada época usando `applySeasonView` com `seasonScope="only"` e selecionando o ranking apropriado consoante a entidade. Resultado:
+- Tabela com Época / Posição / Variação vs ano anterior (↑↓ + número).
+- Melhor / pior posição histórica.
+- Nº épocas analisadas.
+- Gráfico de linhas com Y invertido (1.º no topo).
+
+Controlos por cima do gráfico:
+- Categoria: Unificado / SuperLeague / Nacional / Continental / Internacional.
+- Modo: Ponderado / Bruto.
+- Decaimento: Com / Sem.
+
+Estado controlado e persistido por entidade em `fm:evolution-prefs`.
+
+Para jogadores (sem ranking direto), usa posição em "Jogadores" da página Rankings com a mesma métrica de pontos ponderada já existente.
+
+---
+
+## 7. Exportação / Importação Global JSON (atualização)
+
+Reescrever `fm-global-backup.ts` para listar TODAS as chaves `fm:*` em `localStorage` que sejam de configuração — e ignorar chaves que armazenem dados importados.
+
+Estrutura do JSON:
+```
+{
+  schemaVersion: 2,
+  exportedAt: "...",
+  app: "FM World Rankings",
+  buckets: {
+    "ranking-weights": { ... },
+    "weight-suggestions": { ... },
+    "competition-reputation-manual": { ... },
+    "custom-rankings": [...],
+    "custom-formulas": [...],
+    "saved-filters": [...],
+    "evolution-prefs": {...},
+    "ui-prefs": { theme, rankings-ui-version, ... },
+    "club-reputation-aliases": {...},
+    "country-aliases": {...},
+    "continent-overrides": {...}
+  }
+}
+```
+
+Exclui explicitamente qualquer chave em allowlist negativa (dados importados, snapshots de insights, cache).
+
+Importação: faz merge bucket-a-bucket; se `schemaVersion` for inferior, aplica migrações declaradas em `BACKUP_MIGRATIONS`. Mostra resumo (X rankings, Y fórmulas, Z filtros restaurados) antes de gravar.
+
+Botões já existentes em `/configuracao` passam a usar a nova versão.
+
+---
+
+## Detalhes técnicos
+
+**Localização de ficheiros novos**
 ```text
-┌─ Tabs Categoria ───────────────────────────────────┐
-├─ Dashboard KPIs (9 cards reactivos aos filtros)    │
-├─ Sub-tabs (uma view de cada vez):                  │
-│  • Competições   • Nacionalidades p/ Competição    │
-│  • Jogadores p/ Nacionalidade • Jogadores p/ Idade │
-│  • Clubes p/ País  • Clubes p/ Competição          │
-│  • Jogadores p/ Competição                         │
-│  • Clubes/Jogadores p/ Continente                  │
-│  • Continentes                                     │
-│  • Distribuição Reputação / C.A. / V.M. / Salário  │
-│  • Evolução por Época (dropdown de métrica)        │
-└────────────────────────────────────────────────────┘
+src/lib/
+  fm-custom-rankings.ts       store + tipos
+  fm-custom-formulas.ts       parser/AST + store
+  fm-formula-evaluator.ts     runtime de avaliação
+  fm-insights.ts              snapshots + cálculo de insights
+  fm-saved-filters.ts         store
+  fm-ranking-evolution.ts     cálculo da posição por época
+  fm-global-backup.ts         (reescrito)
+
+src/components/
+  EntityFilterPanel.tsx       filtros partilhados
+  DrillCell.tsx               célula clicável -> DrillDialog
+  CustomRankingEditor.tsx     diálogo de criação/edição
+  FormulaEditor.tsx           editor com validação ao vivo
+  FormulaColumnPicker.tsx     selector de colunas extra
+  SavedFiltersMenu.tsx        popover guardar/aplicar
+  RankingEvolutionSection.tsx perfis
+
+src/routes/
+  rankings-personalizados.tsx
+  rankings-personalizados.$id.tsx (executor)
+  formulas-personalizadas.tsx
+  insights.tsx
 ```
 
-Cada tabela: ordenação por coluna, paginação e **drill-down** — ao clicar na linha abre um `Dialog` (`PlayerStatTable`) com os registos filtrados (jogadores/clubes/competições conforme contexto).
+**Parser de fórmulas**: tokens (números, identificadores, operadores `+ - * / ( ) ,`), parser Pratt para precedência. Sem `Function`/`eval`. Funções permitidas: `min, max, abs, round, floor, ceil`. Variáveis resolvidas via dicionário fornecido pelo runtime (chaves em UPPERCASE sem acentos).
 
-Distribuições renderizadas com Recharts (`BarChart`); Evolução com `EvolutionChart` existente.
+**Sem alterações ao backend**: nada é persistido em Supabase. Tudo em `localStorage` versionado.
 
----
-
-## 5. Perfis com gráfico dinâmico
-
-Substituir os gráficos fixos em `src/components/NewStatsSections.tsx` (e onde aplicável nos perfis de Jogadores/Clubes/Países/Competições) por um único componente novo `<DynamicMetricChart />`:
-
-- Dropdown com métricas relevantes ao tipo de perfil (Golos, Assistências, Jogos, HdJ, C.A., C.P., V.P., Salário, R.A./M/C, Idade, Ranking, Peso).
-- Eixo X = épocas; eixo Y = valor.
-- Reutiliza `EvolutionChart` / Recharts já no projeto.
-- Remove os gráficos antigos hardcoded mas mantém tabelas de records/seasons.
+**Compatibilidade do backup**: `schemaVersion` no topo, leitor aceita v1 (chaves achatadas atuais) e v2 (estrutura por buckets) — converte v1→v2 em memória.
 
 ---
 
-## 6. Reutilização
+## Ordem de entrega sugerida
 
-- Filtros, paginação, ordenação e drill-down extraídos para hooks/componentes já existentes (`SortableTh`, `Select`, `Input`, `Dialog`, `EntityCombobox`).
-- Cálculos de peso: `compWeight` + `decayFactor` via `useActiveConfig` — sem duplicar lógica.
-- Backup global (`fm-global-backup.ts`): incluir reputação manual de competições.
+1. Parser de fórmulas + store (§2) — base para §1 e colunas extras.
+2. EntityFilterPanel partilhado + Rankings Personalizados (§1).
+3. Filtros Guardados (§5) — usa o mesmo painel.
+4. Drill-Down Universal (§4) — wrap de componentes existentes.
+5. Evolução do Ranking (§6).
+6. Insights (§3) — depende de hook de pós-importação.
+7. Backup JSON v2 (§7) — incorpora tudo o que ficou acima.
 
----
-
-## Detalhes técnicos resumidos
-
-- **Migrations**: 1 nova (tabela `competition_reputation`).
-- **Novos ficheiros**:
-  - `src/routes/estatisticas.tsx`
-  - `src/components/estatisticas/*.tsx` (Dashboard, sub-tabs, DrillDownDialog)
-  - `src/components/DynamicMetricChart.tsx`
-  - `src/lib/fm-competition-reputation.ts` (load/save + cache localStorage de backup)
-- **Edições**: `ClubStatsRankingsView`, `PlayerRankingsView`, `sugestao-pesos`, `NewStatsSections`, perfis (`clubes.$name`, `jogadores.$name`, `paises.$name`, `competicoes.$name`), `AppShell` (menu Rankings → Estatísticas), `fm-global-backup`.
-- **Sem alterações** nos rankings de Clubes / Treinadores / Países existentes.
-
-Confirma e avanço com a implementação (pode demorar várias rondas dado o âmbito).
+Cada bloco fica funcional isoladamente e adiciona-se ao menu lateral à medida que entra.
