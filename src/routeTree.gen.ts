@@ -16,6 +16,7 @@ import { Route as RankingHistoricoRouteImport } from './routes/ranking-historico
 import { Route as PaisesRouteImport } from './routes/paises'
 import { Route as ImportarRouteImport } from './routes/importar'
 import { Route as HallOfFameRouteImport } from './routes/hall-of-fame'
+import { Route as FormulasPersonalizadasRouteImport } from './routes/formulas-personalizadas'
 import { Route as EstatisticasRouteImport } from './routes/estatisticas'
 import { Route as DominioRouteImport } from './routes/dominio'
 import { Route as DesafiosDashboardRouteImport } from './routes/desafios-dashboard'
@@ -89,6 +90,11 @@ const ImportarRoute = ImportarRouteImport.update({
 const HallOfFameRoute = HallOfFameRouteImport.update({
   id: '/hall-of-fame',
   path: '/hall-of-fame',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FormulasPersonalizadasRoute = FormulasPersonalizadasRouteImport.update({
+  id: '/formulas-personalizadas',
+  path: '/formulas-personalizadas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EstatisticasRoute = EstatisticasRouteImport.update({
@@ -313,6 +319,7 @@ export interface FileRoutesByFullPath {
   '/desafios-dashboard': typeof DesafiosDashboardRoute
   '/dominio': typeof DominioRoute
   '/estatisticas': typeof EstatisticasRoute
+  '/formulas-personalizadas': typeof FormulasPersonalizadasRoute
   '/hall-of-fame': typeof HallOfFameRoute
   '/importar': typeof ImportarRoute
   '/paises': typeof PaisesRouteWithChildren
@@ -360,6 +367,7 @@ export interface FileRoutesByTo {
   '/desafios-dashboard': typeof DesafiosDashboardRoute
   '/dominio': typeof DominioRoute
   '/estatisticas': typeof EstatisticasRoute
+  '/formulas-personalizadas': typeof FormulasPersonalizadasRoute
   '/hall-of-fame': typeof HallOfFameRoute
   '/importar': typeof ImportarRoute
   '/ranking-historico': typeof RankingHistoricoRoute
@@ -407,6 +415,7 @@ export interface FileRoutesById {
   '/desafios-dashboard': typeof DesafiosDashboardRoute
   '/dominio': typeof DominioRoute
   '/estatisticas': typeof EstatisticasRoute
+  '/formulas-personalizadas': typeof FormulasPersonalizadasRoute
   '/hall-of-fame': typeof HallOfFameRoute
   '/importar': typeof ImportarRoute
   '/paises': typeof PaisesRouteWithChildren
@@ -457,6 +466,7 @@ export interface FileRouteTypes {
     | '/desafios-dashboard'
     | '/dominio'
     | '/estatisticas'
+    | '/formulas-personalizadas'
     | '/hall-of-fame'
     | '/importar'
     | '/paises'
@@ -504,6 +514,7 @@ export interface FileRouteTypes {
     | '/desafios-dashboard'
     | '/dominio'
     | '/estatisticas'
+    | '/formulas-personalizadas'
     | '/hall-of-fame'
     | '/importar'
     | '/ranking-historico'
@@ -550,6 +561,7 @@ export interface FileRouteTypes {
     | '/desafios-dashboard'
     | '/dominio'
     | '/estatisticas'
+    | '/formulas-personalizadas'
     | '/hall-of-fame'
     | '/importar'
     | '/paises'
@@ -599,6 +611,7 @@ export interface RootRouteChildren {
   DesafiosDashboardRoute: typeof DesafiosDashboardRoute
   DominioRoute: typeof DominioRoute
   EstatisticasRoute: typeof EstatisticasRoute
+  FormulasPersonalizadasRoute: typeof FormulasPersonalizadasRoute
   HallOfFameRoute: typeof HallOfFameRoute
   ImportarRoute: typeof ImportarRoute
   PaisesRoute: typeof PaisesRouteWithChildren
@@ -673,6 +686,13 @@ declare module '@tanstack/react-router' {
       path: '/hall-of-fame'
       fullPath: '/hall-of-fame'
       preLoaderRoute: typeof HallOfFameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/formulas-personalizadas': {
+      id: '/formulas-personalizadas'
+      path: '/formulas-personalizadas'
+      fullPath: '/formulas-personalizadas'
+      preLoaderRoute: typeof FormulasPersonalizadasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/estatisticas': {
@@ -1009,6 +1029,7 @@ const rootRouteChildren: RootRouteChildren = {
   DesafiosDashboardRoute: DesafiosDashboardRoute,
   DominioRoute: DominioRoute,
   EstatisticasRoute: EstatisticasRoute,
+  FormulasPersonalizadasRoute: FormulasPersonalizadasRoute,
   HallOfFameRoute: HallOfFameRoute,
   ImportarRoute: ImportarRoute,
   PaisesRoute: PaisesRouteWithChildren,
