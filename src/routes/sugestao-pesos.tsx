@@ -565,6 +565,57 @@ function SugestaoPesosPage() {
         </div>
       </Card>
 
+      {/* Manual competition reputation editor */}
+      <Card className="p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold">Reputação Manual da Competição</h3>
+            <p className="text-xs text-muted-foreground">Valores guardados na base de dados e disponíveis como métrica nas fórmulas.</p>
+          </div>
+        </div>
+        <div className="max-h-72 overflow-auto border border-border rounded">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Competição</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead className="text-right">Reputação manual</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {aggregates
+                .filter((a) => !search.trim() || a.competition.toLowerCase().includes(search.toLowerCase()))
+                .filter((a) => compTypeFilter === "all" || a.comp_type === compTypeFilter)
+                .sort((a, b) => a.competition.localeCompare(b.competition, "pt-PT"))
+                .map((a) => (
+                  <TableRow key={`${a.comp_type}|${a.competition}`}>
+                    <TableCell className="font-medium">{a.competition}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{a.comp_type}</TableCell>
+                    <TableCell className="text-right">
+                      <Input
+                        type="number"
+                        className="h-8 w-32 ml-auto text-right"
+                        defaultValue={compReps[a.competition] ?? ""}
+                        onBlur={async (e) => {
+                          const v = Number(e.currentTarget.value);
+                          if (!Number.isFinite(v)) return;
+                          try {
+                            await setCompetitionReputation(a.competition, v);
+                            setCompReps((p) => ({ ...p, [a.competition]: v }));
+                            toast.success(`${a.competition}: ${v}`);
+                          } catch (err) {
+                            toast.error(String(err));
+                          }
+                        }}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+        </div>
+      </Card>
+
       {/* Table */}
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
