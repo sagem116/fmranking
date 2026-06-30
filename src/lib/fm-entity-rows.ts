@@ -3,7 +3,7 @@
 import type { PlayerStatRow } from "./fm-player-stats-db";
 import { continentOf } from "./fm-continents";
 import { loadReputations, loadClubAliases, reputationFor } from "./fm-club-reputation";
-import { loadCompetitionReputationsSync, repForCompetitionSync } from "./fm-competition-reputation";
+import { loadCompetitionReputationsSync, type CompReputationMap } from "./fm-competition-reputation";
 import type { EntityKind } from "./fm-entity-vars";
 
 export interface EntityRow {
@@ -74,6 +74,14 @@ export function buildClubRows(rows: PlayerStatRow[]): EntityRow[] {
   }));
 }
 
+const repForCompetition = (name: string, m: CompReputationMap) => {
+  const k = String(name ?? "").trim().toLowerCase();
+  for (const [key, v] of Object.entries(m)) {
+    if (String(key).trim().toLowerCase() === k) return v;
+  }
+  return 0;
+};
+
 export function buildCompetitionRows(rows: PlayerStatRow[]): EntityRow[] {
   const compReps = loadCompetitionReputationsSync();
   const aliases = loadClubAliases();
@@ -109,7 +117,7 @@ export function buildCompetitionRows(rows: PlayerStatRow[]): EntityRow[] {
         RC_MEDIO: e.n ? e.rc / e.n : 0,
         IDADE_MEDIA: e.n ? e.age / e.n : 0,
         REPUTACAO_MEDIA: avgRep,
-        REPUTACAO_MANUAL: repForCompetitionSync(e.name, compReps),
+        REPUTACAO_MANUAL: repForCompetition(e.name, compReps),
       },
     };
   });
