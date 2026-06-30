@@ -15,6 +15,7 @@ import { Route as RankingsPersonalizadosRouteImport } from './routes/rankings-pe
 import { Route as RankingsRouteImport } from './routes/rankings'
 import { Route as RankingHistoricoRouteImport } from './routes/ranking-historico'
 import { Route as PaisesRouteImport } from './routes/paises'
+import { Route as InsightsRouteImport } from './routes/insights'
 import { Route as ImportarRouteImport } from './routes/importar'
 import { Route as HallOfFameRouteImport } from './routes/hall-of-fame'
 import { Route as FormulasPersonalizadasRouteImport } from './routes/formulas-personalizadas'
@@ -87,6 +88,11 @@ const RankingHistoricoRoute = RankingHistoricoRouteImport.update({
 const PaisesRoute = PaisesRouteImport.update({
   id: '/paises',
   path: '/paises',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InsightsRoute = InsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ImportarRoute = ImportarRouteImport.update({
@@ -335,6 +341,7 @@ export interface FileRoutesByFullPath {
   '/formulas-personalizadas': typeof FormulasPersonalizadasRoute
   '/hall-of-fame': typeof HallOfFameRoute
   '/importar': typeof ImportarRoute
+  '/insights': typeof InsightsRoute
   '/paises': typeof PaisesRouteWithChildren
   '/ranking-historico': typeof RankingHistoricoRoute
   '/rankings': typeof RankingsRoute
@@ -385,6 +392,7 @@ export interface FileRoutesByTo {
   '/formulas-personalizadas': typeof FormulasPersonalizadasRoute
   '/hall-of-fame': typeof HallOfFameRoute
   '/importar': typeof ImportarRoute
+  '/insights': typeof InsightsRoute
   '/ranking-historico': typeof RankingHistoricoRoute
   '/rankings': typeof RankingsRoute
   '/rankings-personalizados': typeof RankingsPersonalizadosRoute
@@ -435,6 +443,7 @@ export interface FileRoutesById {
   '/formulas-personalizadas': typeof FormulasPersonalizadasRoute
   '/hall-of-fame': typeof HallOfFameRoute
   '/importar': typeof ImportarRoute
+  '/insights': typeof InsightsRoute
   '/paises': typeof PaisesRouteWithChildren
   '/ranking-historico': typeof RankingHistoricoRoute
   '/rankings': typeof RankingsRoute
@@ -488,6 +497,7 @@ export interface FileRouteTypes {
     | '/formulas-personalizadas'
     | '/hall-of-fame'
     | '/importar'
+    | '/insights'
     | '/paises'
     | '/ranking-historico'
     | '/rankings'
@@ -538,6 +548,7 @@ export interface FileRouteTypes {
     | '/formulas-personalizadas'
     | '/hall-of-fame'
     | '/importar'
+    | '/insights'
     | '/ranking-historico'
     | '/rankings'
     | '/rankings-personalizados'
@@ -587,6 +598,7 @@ export interface FileRouteTypes {
     | '/formulas-personalizadas'
     | '/hall-of-fame'
     | '/importar'
+    | '/insights'
     | '/paises'
     | '/ranking-historico'
     | '/rankings'
@@ -639,6 +651,7 @@ export interface RootRouteChildren {
   FormulasPersonalizadasRoute: typeof FormulasPersonalizadasRoute
   HallOfFameRoute: typeof HallOfFameRoute
   ImportarRoute: typeof ImportarRoute
+  InsightsRoute: typeof InsightsRoute
   PaisesRoute: typeof PaisesRouteWithChildren
   RankingHistoricoRoute: typeof RankingHistoricoRoute
   RankingsRoute: typeof RankingsRoute
@@ -705,6 +718,13 @@ declare module '@tanstack/react-router' {
       path: '/paises'
       fullPath: '/paises'
       preLoaderRoute: typeof PaisesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/insights': {
+      id: '/insights'
+      path: '/insights'
+      fullPath: '/insights'
+      preLoaderRoute: typeof InsightsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/importar': {
@@ -1073,6 +1093,7 @@ const rootRouteChildren: RootRouteChildren = {
   FormulasPersonalizadasRoute: FormulasPersonalizadasRoute,
   HallOfFameRoute: HallOfFameRoute,
   ImportarRoute: ImportarRoute,
+  InsightsRoute: InsightsRoute,
   PaisesRoute: PaisesRouteWithChildren,
   RankingHistoricoRoute: RankingHistoricoRoute,
   RankingsRoute: RankingsRoute,
