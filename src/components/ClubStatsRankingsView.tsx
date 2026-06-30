@@ -18,6 +18,8 @@ type ColKey = "gls" | "ast" | "ca" | "cp" | "ra" | "rm" | "rc" | "vp" | "salary"
 interface Row {
   club: string;
   country: string | null;
+  continent: string | null;
+  competitions: string[];
   n_players: number;
   gls: number;
   ast: number;
@@ -85,17 +87,23 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
     [players, compFilter],
   );
 
-  // Derive club -> most common country (from competition country in player_stats)
+  // Derive club -> country prioritising sheets where the "País" column is the
+  // actual club country (national > superleague). Continental/international
+  // sheets carry the federation slot country (e.g. "Ilhas Caimão"), so they
+  // are used only as last resort.
   const clubCountry = useMemo(() => {
-    const counts: Record<string, Record<string, number>> = {};
+    const PRIO: Record<CompType, number> = { national: 0, superleague: 1, continental: 2, international: 3 };
+    const counts: Record<string, Record<string, { n: number; prio: number }>> = {};
     for (const p of players) {
       if (!p.club || !p.country) continue;
       const c = counts[p.club] ??= {};
-      c[p.country] = (c[p.country] ?? 0) + 1;
+      const slot = c[p.country] ??= { n: 0, prio: 99 };
+      slot.n++;
+      slot.prio = Math.min(slot.prio, PRIO[p.comp_type] ?? 99);
     }
     const out: Record<string, string> = {};
     for (const [club, m] of Object.entries(counts)) {
-      const [best] = Object.entries(m).sort((a, b) => b[1] - a[1]);
+      const [best] = Object.entries(m).sort((a, b) => a[1].prio - b[1].prio || b[1].n - a[1].n);
       if (best) out[club] = best[0];
     }
     return out;
@@ -112,7 +120,7 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
     const reps = loadReputations();
 
     type Agg = {
-      club: string; country: string | null; n_players: number; gls: number; ast: number;
+      club: string; country: string | null; competitions: Set<string>; n_players: number; gls: number; ast: number;
       sumCA: number; sumCP: number; sumRA: number; sumRM: number; sumRC: number;
       sumVP: number; sumSalary: number; sumAge: number; wSum: number;
       sumVPRaw: number; sumSalaryRaw: number;
@@ -134,12 +142,13 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
       const w = mode === "weighted" ? compWeight(cfg.data.config, p) * decayFactor(cfg.data.config, p.season_year, latestYear, withDecay) : 1;
       let a = map.get(club);
       if (!a) {
-        a = { club, country: clubCountry[club] ?? null, n_players: 0, gls: 0, ast: 0,
+        a = { club, country: clubCountry[club] ?? null, competitions: new Set<string>(), n_players: 0, gls: 0, ast: 0,
           sumCA: 0, sumCP: 0, sumRA: 0, sumRM: 0, sumRC: 0, sumVP: 0, sumSalary: 0, sumAge: 0, wSum: 0,
           sumVPRaw: 0, sumSalaryRaw: 0 };
         map.set(club, a);
       }
       a.n_players++;
+      if (p.competition) a.competitions.add(p.competition);
       a.gls += (p.gls || 0) * (mode === "weighted" ? w : 1);
       a.ast += (p.ast || 0) * (mode === "weighted" ? w : 1);
       a.sumCA += (p.ca || 0) * w;
@@ -156,8 +165,12 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
     }
     let out: Row[] = [...map.values()].map((a) => {
       const k = a.wSum || 1;
+      const comps = [...a.competitions].sort((x, y) => x.localeCompare(y, "pt-PT"));
       return {
-        club: a.club, country: a.country, n_players: a.n_players,
+        club: a.club, country: a.country,
+        continent: continentOf(a.country),
+        competitions: comps,
+        n_players: a.n_players,
         gls: a.gls, ast: a.ast,
         ca: a.sumCA / k, cp: a.sumCP / k, ra: a.sumRA / k, rm: a.sumRM / k, rc: a.sumRC / k,
         vp: compFilter === "unified" ? a.sumVPRaw : a.sumVP / k,
@@ -268,7 +281,8 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
               <tr>
                 <th className="px-3 py-2 text-left">#</th>
                 <th className="px-3 py-2 text-left">Clube</th>
-                <th className="px-3 py-2 text-left">País</th>
+                <th className="px-3 py-2 text-left">{compFilter === "continental" || compFilter === "international" ? "Continente" : "País"}</th>
+                <th className="px-3 py-2 text-left">Competição</th>
                 <Th k="n_players" label="Nº jog." />
                 <Th k="gls" label="Golos" />
                 <Th k="ast" label="Assist." />
@@ -290,7 +304,18 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
                   <td className="px-3 py-2 font-medium">
                     <Link to="/clubes/$name" params={{ name: r.club }} className="hover:text-primary hover:underline">{r.club}</Link>
                   </td>
-                  <td className="px-3 py-2 text-muted-foreground">{r.country ?? "—"}</td>
+                  <td className="px-3 py-2 text-muted-foreground">
+                    {(compFilter === "continental" || compFilter === "international") ? (r.continent ?? "—") : (r.country ?? "—")}
+                  </td>
+                  <td className="px-3 py-2 text-muted-foreground">
+                    {r.competitions.length === 0 ? (
+                      "—"
+                    ) : r.competitions.length === 1 ? (
+                      <Link to="/competicoes/$name" params={{ name: r.competitions[0] }} className="hover:text-primary hover:underline">{r.competitions[0]}</Link>
+                    ) : (
+                      <span title={r.competitions.join(", ")}>{r.competitions.length} competições</span>
+                    )}
+                  </td>
                   <td className="px-3 py-2 text-right tabular-nums">{r.n_players}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.gls, 2)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.ast, 2)}</td>
@@ -305,7 +330,7 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
                   <td className="px-3 py-2 text-right tabular-nums font-semibold">{r.reputation == null ? "—" : fmtNum(r.reputation, 2)}</td>
                 </tr>
               ))}
-              {pageRows.length === 0 && (<tr><td colSpan={15} className="px-3 py-8 text-center text-muted-foreground">Sem resultados.</td></tr>)}
+              {pageRows.length === 0 && (<tr><td colSpan={16} className="px-3 py-8 text-center text-muted-foreground">Sem resultados.</td></tr>)}
             </tbody>
           </table>
         </div>
