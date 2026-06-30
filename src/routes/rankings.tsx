@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Trophy, FileSpreadsheet, FileText, Info, ChevronDown, Globe2, Filter, X } from "lucide-react";
+import { Loader2, Trophy, FileSpreadsheet, FileText, Info, ChevronDown, Globe2, Filter, X, LayoutDashboard, Sparkles } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -19,6 +19,9 @@ import { buildDesafioExtraCol } from "@/lib/fm-desafios-col";
 import { SeasonFilter } from "@/components/SeasonFilter";
 import { PlayerRankingsView, CompetitionRankingsView } from "@/components/PlayerRankingsView";
 import { ClubStatsRankingsView } from "@/components/ClubStatsRankingsView";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { useRankingsUIVersion } from "@/lib/fm-rankings-ui-prefs";
+import { RankingsContextBar, type ContextChip } from "@/components/RankingsContextBar";
 
 type SeasonView = "total" | number;
 
@@ -140,6 +143,7 @@ function RankingLegend() {
 function RankingsPage() {
   const [decayMode, setDecayMode] = useState<"with" | "without">("with");
   const [view, setView] = useState<"standard" | "players" | "competitions" | "clubs_stats">("standard");
+  const [uiVersion, setUiVersion] = useRankingsUIVersion();
   const withDecay = useRankings();
   const noDecay = useRankingsNoDecay();
   const data = decayMode === "with" ? withDecay.data : noDecay.data;
