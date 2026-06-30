@@ -24,6 +24,9 @@ import {
   SlidersHorizontal,
   BarChart3,
   Target,
+  FunctionSquare,
+  Filter as FilterIcon,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
@@ -59,7 +62,9 @@ const NAV_GROUPS: NavGroup[] = [
     title: "Rankings",
     items: [
       { to: "/rankings", label: "Rankings Mundiais", icon: Trophy },
+      { to: "/rankings-personalizados", label: "Rankings Personalizados", icon: Trophy },
       { to: "/estatisticas", label: "Estatísticas", icon: BarChart3 },
+      { to: "/insights", label: "Insights", icon: Sparkles },
       { to: "/ranking-historico", label: "Histórico de Rankings", icon: HistoryIcon },
       { to: "/hall-of-fame", label: "Hall of Fame", icon: Crown },
       { to: "/dominio", label: "Domínio", icon: Crown },
@@ -67,6 +72,8 @@ const NAV_GROUPS: NavGroup[] = [
       { to: "/super-league/estatisticas-divisoes", label: "Estatísticas Divisões", icon: BarChart3 },
       { to: "/super-league/treinadores-paises", label: "Treinadores por País", icon: Globe2 },
       { to: "/sugestao-pesos", label: "Sugestão de Pesos", icon: SlidersHorizontal },
+      { to: "/formulas-personalizadas", label: "Fórmulas Personalizadas", icon: FunctionSquare },
+      { to: "/filtros-guardados", label: "Filtros Guardados", icon: FilterIcon },
     ],
   },
   {

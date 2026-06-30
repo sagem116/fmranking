@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { parsePlayerStatsWorkbook, type PlayerStatsParseResult } from "@/lib/fm-player-stats-parser";
 import { importPlayerStats, logPlayerStatsImport } from "@/lib/fm-player-stats-db";
+import { appendSnapshot, buildSnapshotFromRows } from "@/lib/fm-insights-snapshots";
 
 interface FileEntry {
   file: File;
@@ -56,6 +57,9 @@ export function PlayerStatsImporter() {
         const parse = parsePlayerStatsWorkbook(buf, year);
         const result = await importPlayerStats(parse.rows, year);
         await logPlayerStatsImport(year, e.file.name, parse.skippedSheets);
+        try {
+          appendSnapshot(buildSnapshotFromRows(parse.rows, year, `import:${e.file.name}`));
+        } catch { /* snapshot is best-effort */ }
         toast.success(
           `${e.file.name}: ${result.inserted} registos importados (${result.types.map((t) => COMP_LABEL[t]).join(", ")})`,
         );

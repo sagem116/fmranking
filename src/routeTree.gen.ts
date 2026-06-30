@@ -11,11 +11,15 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TreinadoresRouteImport } from './routes/treinadores'
 import { Route as SugestaoPesosRouteImport } from './routes/sugestao-pesos'
+import { Route as RankingsPersonalizadosRouteImport } from './routes/rankings-personalizados'
 import { Route as RankingsRouteImport } from './routes/rankings'
 import { Route as RankingHistoricoRouteImport } from './routes/ranking-historico'
 import { Route as PaisesRouteImport } from './routes/paises'
+import { Route as InsightsRouteImport } from './routes/insights'
 import { Route as ImportarRouteImport } from './routes/importar'
 import { Route as HallOfFameRouteImport } from './routes/hall-of-fame'
+import { Route as FormulasPersonalizadasRouteImport } from './routes/formulas-personalizadas'
+import { Route as FiltrosGuardadosRouteImport } from './routes/filtros-guardados'
 import { Route as EstatisticasRouteImport } from './routes/estatisticas'
 import { Route as DominioRouteImport } from './routes/dominio'
 import { Route as DesafiosDashboardRouteImport } from './routes/desafios-dashboard'
@@ -66,6 +70,11 @@ const SugestaoPesosRoute = SugestaoPesosRouteImport.update({
   path: '/sugestao-pesos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RankingsPersonalizadosRoute = RankingsPersonalizadosRouteImport.update({
+  id: '/rankings-personalizados',
+  path: '/rankings-personalizados',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RankingsRoute = RankingsRouteImport.update({
   id: '/rankings',
   path: '/rankings',
@@ -81,6 +90,11 @@ const PaisesRoute = PaisesRouteImport.update({
   path: '/paises',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InsightsRoute = InsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ImportarRoute = ImportarRouteImport.update({
   id: '/importar',
   path: '/importar',
@@ -89,6 +103,16 @@ const ImportarRoute = ImportarRouteImport.update({
 const HallOfFameRoute = HallOfFameRouteImport.update({
   id: '/hall-of-fame',
   path: '/hall-of-fame',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FormulasPersonalizadasRoute = FormulasPersonalizadasRouteImport.update({
+  id: '/formulas-personalizadas',
+  path: '/formulas-personalizadas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FiltrosGuardadosRoute = FiltrosGuardadosRouteImport.update({
+  id: '/filtros-guardados',
+  path: '/filtros-guardados',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EstatisticasRoute = EstatisticasRouteImport.update({
@@ -313,11 +337,15 @@ export interface FileRoutesByFullPath {
   '/desafios-dashboard': typeof DesafiosDashboardRoute
   '/dominio': typeof DominioRoute
   '/estatisticas': typeof EstatisticasRoute
+  '/filtros-guardados': typeof FiltrosGuardadosRoute
+  '/formulas-personalizadas': typeof FormulasPersonalizadasRoute
   '/hall-of-fame': typeof HallOfFameRoute
   '/importar': typeof ImportarRoute
+  '/insights': typeof InsightsRoute
   '/paises': typeof PaisesRouteWithChildren
   '/ranking-historico': typeof RankingHistoricoRoute
   '/rankings': typeof RankingsRoute
+  '/rankings-personalizados': typeof RankingsPersonalizadosRoute
   '/sugestao-pesos': typeof SugestaoPesosRoute
   '/treinadores': typeof TreinadoresRouteWithChildren
   '/clubes/$name': typeof ClubesNameRoute
@@ -360,10 +388,14 @@ export interface FileRoutesByTo {
   '/desafios-dashboard': typeof DesafiosDashboardRoute
   '/dominio': typeof DominioRoute
   '/estatisticas': typeof EstatisticasRoute
+  '/filtros-guardados': typeof FiltrosGuardadosRoute
+  '/formulas-personalizadas': typeof FormulasPersonalizadasRoute
   '/hall-of-fame': typeof HallOfFameRoute
   '/importar': typeof ImportarRoute
+  '/insights': typeof InsightsRoute
   '/ranking-historico': typeof RankingHistoricoRoute
   '/rankings': typeof RankingsRoute
+  '/rankings-personalizados': typeof RankingsPersonalizadosRoute
   '/sugestao-pesos': typeof SugestaoPesosRoute
   '/clubes/$name': typeof ClubesNameRoute
   '/competicoes/$name': typeof CompeticoesNameRoute
@@ -407,11 +439,15 @@ export interface FileRoutesById {
   '/desafios-dashboard': typeof DesafiosDashboardRoute
   '/dominio': typeof DominioRoute
   '/estatisticas': typeof EstatisticasRoute
+  '/filtros-guardados': typeof FiltrosGuardadosRoute
+  '/formulas-personalizadas': typeof FormulasPersonalizadasRoute
   '/hall-of-fame': typeof HallOfFameRoute
   '/importar': typeof ImportarRoute
+  '/insights': typeof InsightsRoute
   '/paises': typeof PaisesRouteWithChildren
   '/ranking-historico': typeof RankingHistoricoRoute
   '/rankings': typeof RankingsRoute
+  '/rankings-personalizados': typeof RankingsPersonalizadosRoute
   '/sugestao-pesos': typeof SugestaoPesosRoute
   '/treinadores': typeof TreinadoresRouteWithChildren
   '/clubes/$name': typeof ClubesNameRoute
@@ -457,11 +493,15 @@ export interface FileRouteTypes {
     | '/desafios-dashboard'
     | '/dominio'
     | '/estatisticas'
+    | '/filtros-guardados'
+    | '/formulas-personalizadas'
     | '/hall-of-fame'
     | '/importar'
+    | '/insights'
     | '/paises'
     | '/ranking-historico'
     | '/rankings'
+    | '/rankings-personalizados'
     | '/sugestao-pesos'
     | '/treinadores'
     | '/clubes/$name'
@@ -504,10 +544,14 @@ export interface FileRouteTypes {
     | '/desafios-dashboard'
     | '/dominio'
     | '/estatisticas'
+    | '/filtros-guardados'
+    | '/formulas-personalizadas'
     | '/hall-of-fame'
     | '/importar'
+    | '/insights'
     | '/ranking-historico'
     | '/rankings'
+    | '/rankings-personalizados'
     | '/sugestao-pesos'
     | '/clubes/$name'
     | '/competicoes/$name'
@@ -550,11 +594,15 @@ export interface FileRouteTypes {
     | '/desafios-dashboard'
     | '/dominio'
     | '/estatisticas'
+    | '/filtros-guardados'
+    | '/formulas-personalizadas'
     | '/hall-of-fame'
     | '/importar'
+    | '/insights'
     | '/paises'
     | '/ranking-historico'
     | '/rankings'
+    | '/rankings-personalizados'
     | '/sugestao-pesos'
     | '/treinadores'
     | '/clubes/$name'
@@ -599,11 +647,15 @@ export interface RootRouteChildren {
   DesafiosDashboardRoute: typeof DesafiosDashboardRoute
   DominioRoute: typeof DominioRoute
   EstatisticasRoute: typeof EstatisticasRoute
+  FiltrosGuardadosRoute: typeof FiltrosGuardadosRoute
+  FormulasPersonalizadasRoute: typeof FormulasPersonalizadasRoute
   HallOfFameRoute: typeof HallOfFameRoute
   ImportarRoute: typeof ImportarRoute
+  InsightsRoute: typeof InsightsRoute
   PaisesRoute: typeof PaisesRouteWithChildren
   RankingHistoricoRoute: typeof RankingHistoricoRoute
   RankingsRoute: typeof RankingsRoute
+  RankingsPersonalizadosRoute: typeof RankingsPersonalizadosRoute
   SugestaoPesosRoute: typeof SugestaoPesosRoute
   TreinadoresRoute: typeof TreinadoresRouteWithChildren
   CompeticoesNameRoute: typeof CompeticoesNameRoute
@@ -640,6 +692,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SugestaoPesosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/rankings-personalizados': {
+      id: '/rankings-personalizados'
+      path: '/rankings-personalizados'
+      fullPath: '/rankings-personalizados'
+      preLoaderRoute: typeof RankingsPersonalizadosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/rankings': {
       id: '/rankings'
       path: '/rankings'
@@ -661,6 +720,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PaisesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/insights': {
+      id: '/insights'
+      path: '/insights'
+      fullPath: '/insights'
+      preLoaderRoute: typeof InsightsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/importar': {
       id: '/importar'
       path: '/importar'
@@ -673,6 +739,20 @@ declare module '@tanstack/react-router' {
       path: '/hall-of-fame'
       fullPath: '/hall-of-fame'
       preLoaderRoute: typeof HallOfFameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/formulas-personalizadas': {
+      id: '/formulas-personalizadas'
+      path: '/formulas-personalizadas'
+      fullPath: '/formulas-personalizadas'
+      preLoaderRoute: typeof FormulasPersonalizadasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/filtros-guardados': {
+      id: '/filtros-guardados'
+      path: '/filtros-guardados'
+      fullPath: '/filtros-guardados'
+      preLoaderRoute: typeof FiltrosGuardadosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/estatisticas': {
@@ -1009,11 +1089,15 @@ const rootRouteChildren: RootRouteChildren = {
   DesafiosDashboardRoute: DesafiosDashboardRoute,
   DominioRoute: DominioRoute,
   EstatisticasRoute: EstatisticasRoute,
+  FiltrosGuardadosRoute: FiltrosGuardadosRoute,
+  FormulasPersonalizadasRoute: FormulasPersonalizadasRoute,
   HallOfFameRoute: HallOfFameRoute,
   ImportarRoute: ImportarRoute,
+  InsightsRoute: InsightsRoute,
   PaisesRoute: PaisesRouteWithChildren,
   RankingHistoricoRoute: RankingHistoricoRoute,
   RankingsRoute: RankingsRoute,
+  RankingsPersonalizadosRoute: RankingsPersonalizadosRoute,
   SugestaoPesosRoute: SugestaoPesosRoute,
   TreinadoresRoute: TreinadoresRouteWithChildren,
   CompeticoesNameRoute: CompeticoesNameRoute,

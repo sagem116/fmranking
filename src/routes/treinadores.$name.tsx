@@ -7,6 +7,7 @@ import { useRankings } from "@/lib/useRankings";
 import { buildCoachProfile } from "@/lib/fm-profiles";
 import { EvolutionChart, MODULE_LABEL } from "@/components/EvolutionChart";
 import { DesafiosProfileCard } from "@/components/DesafiosProfileCard";
+import { RankingEvolutionSection } from "@/components/RankingEvolutionSection";
 import { fmtPts } from "@/lib/fmt";
 
 export const Route = createFileRoute("/treinadores/$name")({
@@ -70,6 +71,8 @@ function CoachProfilePage() {
       </Card>
 
       <DesafiosProfileCard results={data?.desafioResults} subject="coaches" entity={profile.name} />
+
+      <RankingEvolutionSection kind="coach" name={profile.name} />
 
       <Card>
         <CardHeader>

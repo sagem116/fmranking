@@ -11,6 +11,7 @@ import { DesafiosProfileCard } from "@/components/DesafiosProfileCard";
 import { fmtPts } from "@/lib/fmt";
 import { ClubNewStatsSection } from "@/components/NewStatsSections";
 import { ClubRecordsSection } from "@/components/RecordsSection";
+import { RankingEvolutionSection } from "@/components/RankingEvolutionSection";
 
 export const Route = createFileRoute("/clubes/$name")({
   component: ClubProfilePage,
@@ -87,6 +88,8 @@ function ClubProfilePage() {
       </div>
 
       <DynamicMetricChart kind="club" name={profile.name} title="Evolução por época" />
+
+      <RankingEvolutionSection kind="club" name={profile.name} />
 
       <DesafiosProfileCard results={data?.desafioResults} subject="clubs" entity={profile.name} />
 
