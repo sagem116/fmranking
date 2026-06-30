@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useRankings } from "@/lib/useRankings";
 import { CompetitionNewStatsSection } from "@/components/NewStatsSections";
+import { DynamicMetricChart } from "@/components/DynamicMetricChart";
 import { CompetitionRecordsSection } from "@/components/RecordsSection";
 
 export const Route = createFileRoute("/competicoes/$name")({
@@ -125,11 +126,13 @@ function CompetitionPage() {
       {!rows.length ? (
         <>
           <p className="text-muted-foreground">Sem campeões registados para esta competição.</p>
+          <DynamicMetricChart kind="competition" name={decoded} title="Evolução por época" />
           <CompetitionNewStatsSection competition={decoded} />
           <CompetitionRecordsSection competition={decoded} />
         </>
       ) : (
         <>
+          <DynamicMetricChart kind="competition" name={decoded} title="Evolução por época" />
           <CompetitionNewStatsSection competition={decoded} />
           <CompetitionRecordsSection competition={decoded} />
           <div className="flex items-center gap-3 flex-wrap">
