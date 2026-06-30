@@ -115,7 +115,7 @@ export function RankingEvolutionSection({ kind, name, className }: Props) {
                 <XAxis dataKey="year" tick={{ fontSize: 11 }} />
                 <YAxis reversed allowDecimals={false} tick={{ fontSize: 11 }} domain={[1, "dataMax"]} />
                 <RTooltip
-                  formatter={(v: number | null) => (v == null ? "—" : `#${v}`)}
+                  formatter={(v) => (v == null ? "—" : `#${v as number}`)}
                   labelFormatter={(l) => `Época ${l}`}
                 />
                 <ReferenceLine y={1} stroke="oklch(0.82 0.17 88)" strokeDasharray="2 2" />
