@@ -87,27 +87,25 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
     [players, compFilter],
   );
 
-  // Derive club -> country prioritising sheets where the "País" column is the
-  // actual club country (national > superleague). Continental/international
-  // sheets carry the federation slot country (e.g. "Ilhas Caimão"), so they
-  // are used only as last resort.
+  // "País" is the country of the COMPETITION (per user spec): even if a
+  // foreign club plays in a competition, the country shown is the
+  // competition's. We pick the most-common p.country per club within the
+  // current category filter so the column reflects what the user sees.
   const clubCountry = useMemo(() => {
-    const PRIO: Record<CompType, number> = { national: 0, superleague: 1, continental: 2, international: 3 };
-    const counts: Record<string, Record<string, { n: number; prio: number }>> = {};
+    const counts: Record<string, Record<string, number>> = {};
     for (const p of players) {
       if (!p.club || !p.country) continue;
+      if (compFilter !== "unified" && p.comp_type !== compFilter) continue;
       const c = counts[p.club] ??= {};
-      const slot = c[p.country] ??= { n: 0, prio: 99 };
-      slot.n++;
-      slot.prio = Math.min(slot.prio, PRIO[p.comp_type] ?? 99);
+      c[p.country] = (c[p.country] ?? 0) + 1;
     }
     const out: Record<string, string> = {};
     for (const [club, m] of Object.entries(counts)) {
-      const [best] = Object.entries(m).sort((a, b) => a[1].prio - b[1].prio || b[1].n - a[1].n);
+      const [best] = Object.entries(m).sort((a, b) => b[1] - a[1]);
       if (best) out[club] = best[0];
     }
     return out;
-  }, [players]);
+  }, [players, compFilter]);
 
   const countries = useMemo(() => uniqueSorted(Object.values(clubCountry)), [clubCountry]);
 
