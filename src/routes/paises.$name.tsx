@@ -8,6 +8,7 @@ import { DynamicMetricChart } from "@/components/DynamicMetricChart";
 import { DesafiosProfileCard } from "@/components/DesafiosProfileCard";
 import { fmtPts } from "@/lib/fmt";
 import { CountryRecordsSection } from "@/components/RecordsSection";
+import { RankingEvolutionSection } from "@/components/RankingEvolutionSection";
 
 export const Route = createFileRoute("/paises/$name")({
   component: CountryProfilePage,
@@ -89,6 +90,8 @@ function CountryProfilePage() {
       )}
 
       <DynamicMetricChart kind="country" name={profile.name} title="Evolução por época" />
+
+      <RankingEvolutionSection kind="country" name={profile.name} />
 
       <DesafiosProfileCard results={data?.desafioResults} subject="countries" entity={profile.name} />
 
