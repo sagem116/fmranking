@@ -730,6 +730,7 @@ function RankingsPage() {
   return (
 
     <div className="space-y-6">
+      {uiVersion === "v1" ? (
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
@@ -771,17 +772,69 @@ function RankingsPage() {
               Sem decaimento
             </Button>
           </div>
-
+          <Button size="sm" variant="outline" onClick={() => setUiVersion("v2")} title="Mudar para a UI Moderna">
+            <Sparkles className="size-3.5" /> UI Moderna
+          </Button>
         </div>
-
       </div>
+      ) : (
+        <RankingsV2Header
+          seasonView={seasonView}
+          setSeasonView={setSeasonView}
+          availableYears={availableYears}
+          seasonScope={seasonScope}
+          setSeasonScope={setSeasonScope}
+          mode={mode}
+          setMode={setMode}
+          decayMode={decayMode}
+          setDecayMode={setDecayMode}
+          view={view}
+          setView={setView}
+          moduleFilter={moduleFilter}
+          setModuleFilter={setModuleFilter}
+          onSwitchToV1={() => setUiVersion("v1")}
+          contextChips={buildContextChips({
+            mode,
+            decayMode,
+            seasonView,
+            seasonScope,
+            moduleFilter,
+            view,
+            countryFilter,
+            continentFilter,
+            nameSearch,
+            yearFrom,
+            yearTo,
+            contComp,
+            natComp,
+            slDiv,
+            intlComp,
+            intlTeam,
+            intlCoach,
+            setCountryFilter,
+            setContinentFilter,
+            setNameSearch,
+            setYearFrom,
+            setYearTo,
+            setContComp,
+            setNatComp,
+            setSlDiv,
+            setIntlComp,
+            setIntlTeam,
+            setIntlCoach,
+          })}
+          onClearAll={clearAllFilters}
+        />
+      )}
 
+      {uiVersion === "v1" && (
       <div className="flex flex-wrap gap-2">
         <Button size="sm" variant={view === "standard" ? "default" : "outline"} onClick={() => setView("standard")}>Clubes · Treinadores · Países</Button>
         <Button size="sm" variant={view === "players" ? "default" : "outline"} onClick={() => setView("players")}>Jogadores</Button>
         <Button size="sm" variant={view === "competitions" ? "default" : "outline"} onClick={() => setView("competitions")}>Competições</Button>
         <Button size="sm" variant={view === "clubs_stats" ? "default" : "outline"} onClick={() => setView("clubs_stats")}>Clubes (estatísticas)</Button>
       </div>
+      )}
 
       {view === "players" && (
         <PlayerRankingsView mode={mode} withDecay={decayMode === "with"} />
