@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Trophy, FileSpreadsheet, FileText, Info, ChevronDown, Globe2, Filter, X } from "lucide-react";
+import { Loader2, Trophy, FileSpreadsheet, FileText, Info, ChevronDown, Globe2, Filter, X, LayoutDashboard, Sparkles } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -19,6 +19,9 @@ import { buildDesafioExtraCol } from "@/lib/fm-desafios-col";
 import { SeasonFilter } from "@/components/SeasonFilter";
 import { PlayerRankingsView, CompetitionRankingsView } from "@/components/PlayerRankingsView";
 import { ClubStatsRankingsView } from "@/components/ClubStatsRankingsView";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { useRankingsUIVersion } from "@/lib/fm-rankings-ui-prefs";
+import { RankingsContextBar, type ContextChip } from "@/components/RankingsContextBar";
 
 type SeasonView = "total" | number;
 
@@ -140,6 +143,7 @@ function RankingLegend() {
 function RankingsPage() {
   const [decayMode, setDecayMode] = useState<"with" | "without">("with");
   const [view, setView] = useState<"standard" | "players" | "competitions" | "clubs_stats">("standard");
+  const [uiVersion, setUiVersion] = useRankingsUIVersion();
   const withDecay = useRankings();
   const noDecay = useRankingsNoDecay();
   const data = decayMode === "with" ? withDecay.data : noDecay.data;
@@ -726,6 +730,7 @@ function RankingsPage() {
   return (
 
     <div className="space-y-6">
+      {uiVersion === "v1" ? (
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
@@ -767,17 +772,69 @@ function RankingsPage() {
               Sem decaimento
             </Button>
           </div>
-
+          <Button size="sm" variant="outline" onClick={() => setUiVersion("v2")} title="Mudar para a UI Moderna">
+            <Sparkles className="size-3.5" /> UI Moderna
+          </Button>
         </div>
-
       </div>
+      ) : (
+        <RankingsV2Header
+          seasonView={seasonView}
+          setSeasonView={setSeasonView}
+          availableYears={availableYears}
+          seasonScope={seasonScope}
+          setSeasonScope={setSeasonScope}
+          mode={mode}
+          setMode={setMode}
+          decayMode={decayMode}
+          setDecayMode={setDecayMode}
+          view={view}
+          setView={setView}
+          moduleFilter={moduleFilter}
+          setModuleFilter={setModuleFilter}
+          onSwitchToV1={() => setUiVersion("v1")}
+          contextChips={buildContextChips({
+            mode,
+            decayMode,
+            seasonView,
+            seasonScope,
+            moduleFilter,
+            view,
+            countryFilter,
+            continentFilter,
+            nameSearch,
+            yearFrom,
+            yearTo,
+            contComp,
+            natComp,
+            slDiv,
+            intlComp,
+            intlTeam,
+            intlCoach,
+            setCountryFilter,
+            setContinentFilter,
+            setNameSearch,
+            setYearFrom,
+            setYearTo,
+            setContComp,
+            setNatComp,
+            setSlDiv,
+            setIntlComp,
+            setIntlTeam,
+            setIntlCoach,
+          })}
+          onClearAll={clearAllFilters}
+        />
+      )}
 
+      {uiVersion === "v1" && (
       <div className="flex flex-wrap gap-2">
         <Button size="sm" variant={view === "standard" ? "default" : "outline"} onClick={() => setView("standard")}>Clubes · Treinadores · Países</Button>
         <Button size="sm" variant={view === "players" ? "default" : "outline"} onClick={() => setView("players")}>Jogadores</Button>
         <Button size="sm" variant={view === "competitions" ? "default" : "outline"} onClick={() => setView("competitions")}>Competições</Button>
         <Button size="sm" variant={view === "clubs_stats" ? "default" : "outline"} onClick={() => setView("clubs_stats")}>Clubes (estatísticas)</Button>
       </div>
+      )}
 
       {view === "players" && (
         <PlayerRankingsView mode={mode} withDecay={decayMode === "with"} />
@@ -790,7 +847,7 @@ function RankingsPage() {
       )}
       {view === "standard" && <>
       <div className="flex flex-wrap gap-2">
-        {MODULE_FILTERS.map((f) => (
+        {uiVersion === "v1" && MODULE_FILTERS.map((f) => (
           <Button
             key={f.value}
             size="sm"
@@ -1066,6 +1123,200 @@ function RankingsPage() {
         )
       )}
       </>}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// V2 Modern UI — cleaner header with sticky pills, filters popover, context bar
+// ---------------------------------------------------------------------------
+
+type ChipArgs = {
+  mode: "weighted" | "raw";
+  decayMode: "with" | "without";
+  seasonView: SeasonView;
+  seasonScope: "cumulative" | "only";
+  moduleFilter: ModuleFilter;
+  view: "standard" | "players" | "competitions" | "clubs_stats";
+  countryFilter: string;
+  continentFilter: string;
+  nameSearch: string;
+  yearFrom: string;
+  yearTo: string;
+  contComp: string;
+  natComp: string;
+  slDiv: string;
+  intlComp: string;
+  intlTeam: string;
+  intlCoach: string;
+  setCountryFilter: (v: string) => void;
+  setContinentFilter: (v: string) => void;
+  setNameSearch: (v: string) => void;
+  setYearFrom: (v: string) => void;
+  setYearTo: (v: string) => void;
+  setContComp: (v: string) => void;
+  setNatComp: (v: string) => void;
+  setSlDiv: (v: string) => void;
+  setIntlComp: (v: string) => void;
+  setIntlTeam: (v: string) => void;
+  setIntlCoach: (v: string) => void;
+};
+
+function buildContextChips(a: ChipArgs): ContextChip[] {
+  const chips: ContextChip[] = [];
+  // Always show the "scope" (entity) and "module" badges as informative anchors
+  const viewLabel: Record<ChipArgs["view"], string> = {
+    standard: "Clubes · Treinadores · Países",
+    players: "Jogadores",
+    competitions: "Competições",
+    clubs_stats: "Clubes (estatísticas)",
+  };
+  chips.push({ key: "view", label: viewLabel[a.view], tone: "primary" });
+  if (a.view === "standard") {
+    const mod = MODULE_FILTERS.find((m) => m.value === a.moduleFilter)?.label ?? a.moduleFilter;
+    chips.push({ key: "mod", label: mod, tone: "muted" });
+  }
+  chips.push({ key: "mode", label: a.mode === "weighted" ? "Ponderado" : "Bruto", tone: "muted" });
+  chips.push({
+    key: "decay",
+    label: a.decayMode === "with" ? "Com decaimento" : "Sem decaimento",
+    tone: "muted",
+  });
+  if (a.seasonView !== "total") {
+    chips.push({
+      key: "season",
+      label: `${a.seasonView} (${a.seasonScope === "cumulative" ? "acum." : "só"})`,
+      tone: "muted",
+    });
+  }
+  if (a.continentFilter) chips.push({ key: "cont", label: `Continente: ${a.continentFilter}`, onClear: () => a.setContinentFilter("") });
+  if (a.countryFilter) chips.push({ key: "country", label: `País: ${a.countryFilter}`, onClear: () => a.setCountryFilter("") });
+  if (a.nameSearch) chips.push({ key: "name", label: `Nome: ${a.nameSearch}`, onClear: () => a.setNameSearch("") });
+  if (a.yearFrom !== "all") chips.push({ key: "yf", label: `Desde ${a.yearFrom}`, onClear: () => a.setYearFrom("all") });
+  if (a.yearTo !== "all") chips.push({ key: "yt", label: `Até ${a.yearTo}`, onClear: () => a.setYearTo("all") });
+  if (a.slDiv !== "all") chips.push({ key: "sl", label: `Divisão ${a.slDiv}`, onClear: () => a.setSlDiv("all") });
+  if (a.natComp !== "all") chips.push({ key: "nc", label: a.natComp, onClear: () => a.setNatComp("all") });
+  if (a.contComp !== "all") chips.push({ key: "cc", label: a.contComp, onClear: () => a.setContComp("all") });
+  if (a.intlComp !== "all") chips.push({ key: "ic", label: a.intlComp, onClear: () => a.setIntlComp("all") });
+  if (a.intlTeam) chips.push({ key: "it", label: `Seleção: ${a.intlTeam}`, onClear: () => a.setIntlTeam("") });
+  if (a.intlCoach) chips.push({ key: "ico", label: `Treinador: ${a.intlCoach}`, onClear: () => a.setIntlCoach("") });
+  return chips;
+}
+
+function RankingsV2Header(props: {
+  seasonView: SeasonView;
+  setSeasonView: (v: SeasonView) => void;
+  availableYears: number[];
+  seasonScope: "cumulative" | "only";
+  setSeasonScope: (v: "cumulative" | "only") => void;
+  mode: "weighted" | "raw";
+  setMode: (v: "weighted" | "raw") => void;
+  decayMode: "with" | "without";
+  setDecayMode: (v: "with" | "without") => void;
+  view: "standard" | "players" | "competitions" | "clubs_stats";
+  setView: (v: "standard" | "players" | "competitions" | "clubs_stats") => void;
+  moduleFilter: ModuleFilter;
+  setModuleFilter: (v: ModuleFilter) => void;
+  onSwitchToV1: () => void;
+  contextChips: ContextChip[];
+  onClearAll: () => void;
+}) {
+  const entityTabs: { value: typeof props.view; label: string }[] = [
+    { value: "standard", label: "Clubes · Treinadores · Países" },
+    { value: "players", label: "Jogadores" },
+    { value: "competitions", label: "Competições" },
+    { value: "clubs_stats", label: "Clubes (estatísticas)" },
+  ];
+  return (
+    <div className="sticky top-0 z-20 -mx-4 px-4 pt-2 pb-3 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b border-border/60 space-y-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+            <Trophy className="size-6 text-primary" /> Rankings Mundiais
+          </h1>
+          <p className="text-muted-foreground text-xs mt-1">UI Moderna · Filtros, contexto e âmbito num só lugar</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button size="sm" variant="outline" className="gap-1.5">
+                <Filter className="size-3.5" /> Opções
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-[300px] space-y-3">
+              <div>
+                <Label className="text-xs">Modo de pontos</Label>
+                <div className="flex rounded-lg border border-border p-1 mt-1">
+                  <Button size="sm" variant={props.mode === "weighted" ? "default" : "ghost"} className="flex-1" onClick={() => props.setMode("weighted")}>Ponderado</Button>
+                  <Button size="sm" variant={props.mode === "raw" ? "default" : "ghost"} className="flex-1" onClick={() => props.setMode("raw")}>Bruto</Button>
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs">Decaimento temporal</Label>
+                <div className="flex rounded-lg border border-border p-1 mt-1">
+                  <Button size="sm" variant={props.decayMode === "with" ? "default" : "ghost"} className="flex-1" onClick={() => props.setDecayMode("with")}>Com</Button>
+                  <Button size="sm" variant={props.decayMode === "without" ? "default" : "ghost"} className="flex-1" onClick={() => props.setDecayMode("without")}>Sem</Button>
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs">Época</Label>
+                <SeasonFilter
+                  value={props.seasonView}
+                  onChange={props.setSeasonView}
+                  years={props.availableYears}
+                  totalLabel="Todas as épocas"
+                  className="w-full mt-1"
+                />
+                {props.seasonView !== "total" && (
+                  <div className="flex rounded-lg border border-border p-1 mt-2">
+                    <Button size="sm" variant={props.seasonScope === "cumulative" ? "default" : "ghost"} className="flex-1" onClick={() => props.setSeasonScope("cumulative")}>Acumulado</Button>
+                    <Button size="sm" variant={props.seasonScope === "only" ? "default" : "ghost"} className="flex-1" onClick={() => props.setSeasonScope("only")}>Só essa</Button>
+                  </div>
+                )}
+              </div>
+              <div className="border-t border-border pt-2">
+                <Button size="sm" variant="ghost" className="w-full" onClick={props.onSwitchToV1}>
+                  <LayoutDashboard className="size-3.5" /> UI Clássica
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+
+      {/* Primary entity tabs */}
+      <div className="flex flex-wrap gap-1.5">
+        {entityTabs.map((t) => (
+          <Button
+            key={t.value}
+            size="sm"
+            variant={props.view === t.value ? "default" : "ghost"}
+            className="rounded-full"
+            onClick={() => props.setView(t.value)}
+          >
+            {t.label}
+          </Button>
+        ))}
+      </div>
+
+      {/* Scope (module) — only for standard view */}
+      {props.view === "standard" && (
+        <div className="flex flex-wrap gap-1.5">
+          {MODULE_FILTERS.map((m) => (
+            <Button
+              key={m.value}
+              size="sm"
+              variant={props.moduleFilter === m.value ? "secondary" : "outline"}
+              className="rounded-full"
+              onClick={() => props.setModuleFilter(m.value)}
+            >
+              {m.label}
+            </Button>
+          ))}
+        </div>
+      )}
+
+      <RankingsContextBar chips={props.contextChips} onClearAll={props.onClearAll} />
     </div>
   );
 }

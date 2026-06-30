@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import { Link } from "@tanstack/react-router";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import { ChevronDown, Trophy } from "lucide-react";
 import { fmtNum, fmtMoney } from "@/lib/fmt";
 import { usePlayerStatsData } from "@/lib/usePlayerStatsData";
 import type { CompType } from "@/lib/fm-player-stats-db";
@@ -89,12 +91,41 @@ function RecordsTable({
 }) {
   const filled = rows.filter((r) => r.best);
   if (!filled.length) return null;
+  // Surface the top headline record (Goals → Assists → Games → first available)
+  const headline =
+    filled.find((r) => r.stat === "gls") ??
+    filled.find((r) => r.stat === "ast") ??
+    filled.find((r) => r.stat === "games") ??
+    filled[0];
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="p-0 overflow-x-auto">
+    <Collapsible defaultOpen={false}>
+      <Card>
+        <CollapsibleTrigger asChild>
+          <button
+            type="button"
+            className="w-full text-left group flex items-start gap-3 p-4 hover:bg-muted/40 transition-colors"
+          >
+            <Trophy className="size-4 text-primary mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-base">{title}</CardTitle>
+              {headline?.best && (
+                <p className="text-xs text-muted-foreground mt-1 truncate">
+                  Destaque · <span className="text-foreground font-medium">{headline.label}</span>{" "}
+                  <span className="tabular-nums">{headline.fmt(headline.best.value)}</span>
+                  {" — "}
+                  <span>{headline.best.name}</span>
+                  {headline.best.club ? <span> ({headline.best.club})</span> : null}
+                </p>
+              )}
+              <p className="text-[11px] text-muted-foreground/70 mt-0.5">
+                {filled.length} estatística(s) · clica para expandir
+              </p>
+            </div>
+            <ChevronDown className="size-4 opacity-60 transition-transform group-data-[state=open]:rotate-180 mt-1" />
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <CardContent className="p-0 overflow-x-auto border-t border-border">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-muted-foreground text-xs uppercase">
@@ -137,8 +168,10 @@ function RecordsTable({
             ))}
           </tbody>
         </table>
-      </CardContent>
-    </Card>
+          </CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
   );
 }
 
