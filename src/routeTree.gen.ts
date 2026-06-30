@@ -18,6 +18,7 @@ import { Route as PaisesRouteImport } from './routes/paises'
 import { Route as ImportarRouteImport } from './routes/importar'
 import { Route as HallOfFameRouteImport } from './routes/hall-of-fame'
 import { Route as FormulasPersonalizadasRouteImport } from './routes/formulas-personalizadas'
+import { Route as FiltrosGuardadosRouteImport } from './routes/filtros-guardados'
 import { Route as EstatisticasRouteImport } from './routes/estatisticas'
 import { Route as DominioRouteImport } from './routes/dominio'
 import { Route as DesafiosDashboardRouteImport } from './routes/desafios-dashboard'
@@ -101,6 +102,11 @@ const HallOfFameRoute = HallOfFameRouteImport.update({
 const FormulasPersonalizadasRoute = FormulasPersonalizadasRouteImport.update({
   id: '/formulas-personalizadas',
   path: '/formulas-personalizadas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FiltrosGuardadosRoute = FiltrosGuardadosRouteImport.update({
+  id: '/filtros-guardados',
+  path: '/filtros-guardados',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EstatisticasRoute = EstatisticasRouteImport.update({
@@ -325,6 +331,7 @@ export interface FileRoutesByFullPath {
   '/desafios-dashboard': typeof DesafiosDashboardRoute
   '/dominio': typeof DominioRoute
   '/estatisticas': typeof EstatisticasRoute
+  '/filtros-guardados': typeof FiltrosGuardadosRoute
   '/formulas-personalizadas': typeof FormulasPersonalizadasRoute
   '/hall-of-fame': typeof HallOfFameRoute
   '/importar': typeof ImportarRoute
@@ -374,6 +381,7 @@ export interface FileRoutesByTo {
   '/desafios-dashboard': typeof DesafiosDashboardRoute
   '/dominio': typeof DominioRoute
   '/estatisticas': typeof EstatisticasRoute
+  '/filtros-guardados': typeof FiltrosGuardadosRoute
   '/formulas-personalizadas': typeof FormulasPersonalizadasRoute
   '/hall-of-fame': typeof HallOfFameRoute
   '/importar': typeof ImportarRoute
@@ -423,6 +431,7 @@ export interface FileRoutesById {
   '/desafios-dashboard': typeof DesafiosDashboardRoute
   '/dominio': typeof DominioRoute
   '/estatisticas': typeof EstatisticasRoute
+  '/filtros-guardados': typeof FiltrosGuardadosRoute
   '/formulas-personalizadas': typeof FormulasPersonalizadasRoute
   '/hall-of-fame': typeof HallOfFameRoute
   '/importar': typeof ImportarRoute
@@ -475,6 +484,7 @@ export interface FileRouteTypes {
     | '/desafios-dashboard'
     | '/dominio'
     | '/estatisticas'
+    | '/filtros-guardados'
     | '/formulas-personalizadas'
     | '/hall-of-fame'
     | '/importar'
@@ -524,6 +534,7 @@ export interface FileRouteTypes {
     | '/desafios-dashboard'
     | '/dominio'
     | '/estatisticas'
+    | '/filtros-guardados'
     | '/formulas-personalizadas'
     | '/hall-of-fame'
     | '/importar'
@@ -572,6 +583,7 @@ export interface FileRouteTypes {
     | '/desafios-dashboard'
     | '/dominio'
     | '/estatisticas'
+    | '/filtros-guardados'
     | '/formulas-personalizadas'
     | '/hall-of-fame'
     | '/importar'
@@ -623,6 +635,7 @@ export interface RootRouteChildren {
   DesafiosDashboardRoute: typeof DesafiosDashboardRoute
   DominioRoute: typeof DominioRoute
   EstatisticasRoute: typeof EstatisticasRoute
+  FiltrosGuardadosRoute: typeof FiltrosGuardadosRoute
   FormulasPersonalizadasRoute: typeof FormulasPersonalizadasRoute
   HallOfFameRoute: typeof HallOfFameRoute
   ImportarRoute: typeof ImportarRoute
@@ -713,6 +726,13 @@ declare module '@tanstack/react-router' {
       path: '/formulas-personalizadas'
       fullPath: '/formulas-personalizadas'
       preLoaderRoute: typeof FormulasPersonalizadasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/filtros-guardados': {
+      id: '/filtros-guardados'
+      path: '/filtros-guardados'
+      fullPath: '/filtros-guardados'
+      preLoaderRoute: typeof FiltrosGuardadosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/estatisticas': {
@@ -1049,6 +1069,7 @@ const rootRouteChildren: RootRouteChildren = {
   DesafiosDashboardRoute: DesafiosDashboardRoute,
   DominioRoute: DominioRoute,
   EstatisticasRoute: EstatisticasRoute,
+  FiltrosGuardadosRoute: FiltrosGuardadosRoute,
   FormulasPersonalizadasRoute: FormulasPersonalizadasRoute,
   HallOfFameRoute: HallOfFameRoute,
   ImportarRoute: ImportarRoute,
