@@ -16,6 +16,7 @@ import { Route as RankingHistoricoRouteImport } from './routes/ranking-historico
 import { Route as PaisesRouteImport } from './routes/paises'
 import { Route as ImportarRouteImport } from './routes/importar'
 import { Route as HallOfFameRouteImport } from './routes/hall-of-fame'
+import { Route as EstatisticasRouteImport } from './routes/estatisticas'
 import { Route as DominioRouteImport } from './routes/dominio'
 import { Route as DesafiosDashboardRouteImport } from './routes/desafios-dashboard'
 import { Route as DesafiosRouteImport } from './routes/desafios'
@@ -88,6 +89,11 @@ const ImportarRoute = ImportarRouteImport.update({
 const HallOfFameRoute = HallOfFameRouteImport.update({
   id: '/hall-of-fame',
   path: '/hall-of-fame',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EstatisticasRoute = EstatisticasRouteImport.update({
+  id: '/estatisticas',
+  path: '/estatisticas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DominioRoute = DominioRouteImport.update({
@@ -306,6 +312,7 @@ export interface FileRoutesByFullPath {
   '/desafios': typeof DesafiosRoute
   '/desafios-dashboard': typeof DesafiosDashboardRoute
   '/dominio': typeof DominioRoute
+  '/estatisticas': typeof EstatisticasRoute
   '/hall-of-fame': typeof HallOfFameRoute
   '/importar': typeof ImportarRoute
   '/paises': typeof PaisesRouteWithChildren
@@ -352,6 +359,7 @@ export interface FileRoutesByTo {
   '/desafios': typeof DesafiosRoute
   '/desafios-dashboard': typeof DesafiosDashboardRoute
   '/dominio': typeof DominioRoute
+  '/estatisticas': typeof EstatisticasRoute
   '/hall-of-fame': typeof HallOfFameRoute
   '/importar': typeof ImportarRoute
   '/ranking-historico': typeof RankingHistoricoRoute
@@ -398,6 +406,7 @@ export interface FileRoutesById {
   '/desafios': typeof DesafiosRoute
   '/desafios-dashboard': typeof DesafiosDashboardRoute
   '/dominio': typeof DominioRoute
+  '/estatisticas': typeof EstatisticasRoute
   '/hall-of-fame': typeof HallOfFameRoute
   '/importar': typeof ImportarRoute
   '/paises': typeof PaisesRouteWithChildren
@@ -447,6 +456,7 @@ export interface FileRouteTypes {
     | '/desafios'
     | '/desafios-dashboard'
     | '/dominio'
+    | '/estatisticas'
     | '/hall-of-fame'
     | '/importar'
     | '/paises'
@@ -493,6 +503,7 @@ export interface FileRouteTypes {
     | '/desafios'
     | '/desafios-dashboard'
     | '/dominio'
+    | '/estatisticas'
     | '/hall-of-fame'
     | '/importar'
     | '/ranking-historico'
@@ -538,6 +549,7 @@ export interface FileRouteTypes {
     | '/desafios'
     | '/desafios-dashboard'
     | '/dominio'
+    | '/estatisticas'
     | '/hall-of-fame'
     | '/importar'
     | '/paises'
@@ -586,6 +598,7 @@ export interface RootRouteChildren {
   DesafiosRoute: typeof DesafiosRoute
   DesafiosDashboardRoute: typeof DesafiosDashboardRoute
   DominioRoute: typeof DominioRoute
+  EstatisticasRoute: typeof EstatisticasRoute
   HallOfFameRoute: typeof HallOfFameRoute
   ImportarRoute: typeof ImportarRoute
   PaisesRoute: typeof PaisesRouteWithChildren
@@ -660,6 +673,13 @@ declare module '@tanstack/react-router' {
       path: '/hall-of-fame'
       fullPath: '/hall-of-fame'
       preLoaderRoute: typeof HallOfFameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/estatisticas': {
+      id: '/estatisticas'
+      path: '/estatisticas'
+      fullPath: '/estatisticas'
+      preLoaderRoute: typeof EstatisticasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dominio': {
@@ -988,6 +1008,7 @@ const rootRouteChildren: RootRouteChildren = {
   DesafiosRoute: DesafiosRoute,
   DesafiosDashboardRoute: DesafiosDashboardRoute,
   DominioRoute: DominioRoute,
+  EstatisticasRoute: EstatisticasRoute,
   HallOfFameRoute: HallOfFameRoute,
   ImportarRoute: ImportarRoute,
   PaisesRoute: PaisesRouteWithChildren,

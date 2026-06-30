@@ -202,6 +202,24 @@ export type Database = {
         }
         Relationships: []
       }
+      competition_reputation: {
+        Row: {
+          competition: string
+          reputation: number
+          updated_at: string
+        }
+        Insert: {
+          competition: string
+          reputation: number
+          updated_at?: string
+        }
+        Update: {
+          competition?: string
+          reputation?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       competition_stats: {
         Row: {
           age_avg: number | null

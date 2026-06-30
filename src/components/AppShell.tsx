@@ -59,6 +59,7 @@ const NAV_GROUPS: NavGroup[] = [
     title: "Rankings",
     items: [
       { to: "/rankings", label: "Rankings Mundiais", icon: Trophy },
+      { to: "/estatisticas", label: "Estatísticas", icon: BarChart3 },
       { to: "/ranking-historico", label: "Histórico de Rankings", icon: HistoryIcon },
       { to: "/hall-of-fame", label: "Hall of Fame", icon: Crown },
       { to: "/dominio", label: "Domínio", icon: Crown },

@@ -296,6 +296,21 @@ export function CompetitionRankingsView({ mode, withDecay }: { mode: "weighted" 
     return out;
   }, [playersAll]);
 
+  // For the "Todas" tab the user wants V.P. and Salário as TOTALS (sum across
+  // every player in the competition), not weighted averages. Per other tabs
+  // we keep the existing averaged behaviour.
+  const totalsByCompetition = useMemo(() => {
+    const map = new Map<string, { vp: number; salary: number }>();
+    for (const p of playersAll) {
+      const ck = `${p.comp_type}|${p.competition}`;
+      const cur = map.get(ck) ?? { vp: 0, salary: 0 };
+      cur.vp += p.vp || 0;
+      cur.salary += p.salary || 0;
+      map.set(ck, cur);
+    }
+    return map;
+  }, [playersAll]);
+
   const ranked = useMemo(() => {
     if (!cfg.data) return [];
     const f: CompFilters = { ...filters, comp_type: compFilter };
@@ -304,7 +319,15 @@ export function CompetitionRankingsView({ mode, withDecay }: { mode: "weighted" 
       withDecay,
       latestYear,
     });
-    const enriched = rows.map((r) => ({ ...r, reputation: repByCompetition[`${r.comp_type}|${r.competition}`] ?? null }));
+    const enriched = rows.map((r) => {
+      const ck = `${r.comp_type}|${r.competition}`;
+      const out = { ...r, reputation: repByCompetition[ck] ?? null };
+      if (compFilter === "all") {
+        const tot = totalsByCompetition.get(ck);
+        if (tot) { out.vp = tot.vp; out.salary = tot.salary; }
+      }
+      return out;
+    });
     const dir = sortDir === "asc" ? 1 : -1;
     return [...enriched].sort((a, b) => {
       const av = (a as Record<string, unknown>)[sortKey as string]; const bv = (b as Record<string, unknown>)[sortKey as string];
@@ -313,7 +336,7 @@ export function CompetitionRankingsView({ mode, withDecay }: { mode: "weighted" 
       if (typeof an === "number" && typeof bn === "number") return (an - bn) * dir;
       return String(an ?? "").localeCompare(String(bn ?? "")) * dir;
     });
-  }, [comps, filters, compFilter, mode, withDecay, cfg.data, latestYear, sortKey, sortDir, repByCompetition]);
+  }, [comps, filters, compFilter, mode, withDecay, cfg.data, latestYear, sortKey, sortDir, repByCompetition, totalsByCompetition]);
 
   const totalPages = Math.max(1, Math.ceil(ranked.length / PAGE_SIZE));
   const pageRows = ranked.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);

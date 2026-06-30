@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useRankings } from "@/lib/useRankings";
 import { buildClubProfile } from "@/lib/fm-profiles";
-import { EvolutionChart, MODULE_LABEL } from "@/components/EvolutionChart";
-import { PlayerAttrsChart } from "@/components/PlayerAttrsChart";
+import { MODULE_LABEL } from "@/components/EvolutionChart";
+import { DynamicMetricChart } from "@/components/DynamicMetricChart";
 import { DesafiosProfileCard } from "@/components/DesafiosProfileCard";
 import { fmtPts } from "@/lib/fmt";
 import { ClubNewStatsSection } from "@/components/NewStatsSections";
@@ -86,15 +86,7 @@ function ClubProfilePage() {
         )}
       </div>
 
-      <Card>
-        <CardHeader><CardTitle className="text-base">Evolução histórica bruta</CardTitle></CardHeader>
-        <CardContent><EvolutionChart data={profile.chart} showModeToggle={false} mode="raw" /></CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader><CardTitle className="text-base">Evolução do plantel</CardTitle></CardHeader>
-        <CardContent><PlayerAttrsChart players={data!.data.players} filter={{ club: profile.name }} /></CardContent>
-      </Card>
+      <DynamicMetricChart kind="club" name={profile.name} title="Evolução por época" />
 
       <DesafiosProfileCard results={data?.desafioResults} subject="clubs" entity={profile.name} />
 

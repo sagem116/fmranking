@@ -4,7 +4,7 @@ import { Loader2, Globe2, ArrowLeft } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRankings } from "@/lib/useRankings";
 import { buildCountryProfile } from "@/lib/fm-profiles";
-import { EvolutionChart } from "@/components/EvolutionChart";
+import { DynamicMetricChart } from "@/components/DynamicMetricChart";
 import { DesafiosProfileCard } from "@/components/DesafiosProfileCard";
 import { fmtPts } from "@/lib/fmt";
 import { CountryRecordsSection } from "@/components/RecordsSection";
@@ -88,10 +88,7 @@ function CountryProfilePage() {
         </div>
       )}
 
-      <Card>
-        <CardHeader><CardTitle className="text-base">Evolução histórica bruta</CardTitle></CardHeader>
-        <CardContent><EvolutionChart data={profile.chart} showModeToggle={false} mode="raw" /></CardContent>
-      </Card>
+      <DynamicMetricChart kind="country" name={profile.name} title="Evolução por época" />
 
       <DesafiosProfileCard results={data?.desafioResults} subject="countries" entity={profile.name} />
 

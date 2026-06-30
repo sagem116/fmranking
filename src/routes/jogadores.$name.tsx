@@ -6,6 +6,7 @@ import { Sparkline } from "@/components/Sparkline";
 import { useRankings } from "@/lib/useRankings";
 import { buildPlayerProfile } from "@/lib/fm-players";
 import { PlayerNewStatsSection } from "@/components/NewStatsSections";
+import { DynamicMetricChart } from "@/components/DynamicMetricChart";
 
 export const Route = createFileRoute("/jogadores/$name")({
   component: PlayerProfilePage,
@@ -81,6 +82,7 @@ function PlayerProfilePage() {
       <Aggregates profile={profile} />
 
       <PlayerNewStatsSection playerName={profile.name} />
+      <DynamicMetricChart kind="player" name={profile.name} title="Evolução por época" />
 
 
       <Card>
