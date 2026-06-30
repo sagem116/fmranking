@@ -25,6 +25,12 @@ import { usePlayerStatsData } from "@/lib/usePlayerStatsData";
 import { useRankings } from "@/lib/useRankings";
 import { fmtNum } from "@/lib/fmt";
 import type { CompType } from "@/lib/fm-player-stats-db";
+import { loadClubAliases, loadReputations, reputationFor } from "@/lib/fm-club-reputation";
+import {
+  loadCompetitionReputations,
+  setCompetitionReputation,
+  type CompReputationMap,
+} from "@/lib/fm-competition-reputation";
 
 export const Route = createFileRoute("/sugestao-pesos")({
   head: () => ({
@@ -36,7 +42,11 @@ export const Route = createFileRoute("/sugestao-pesos")({
   component: SugestaoPesosPage,
 });
 
-type MetricKey = "gls" | "ast" | "games" | "hdj" | "ca" | "cp" | "vp" | "salary" | "ra" | "rm" | "rc" | "age";
+type MetricKey =
+  | "gls" | "ast" | "games" | "hdj"
+  | "ca" | "cp" | "vp" | "salary"
+  | "ra" | "rm" | "rc" | "age"
+  | "rep_clubs_avg" | "rep_manual";
 
 const METRICS: { key: MetricKey; label: string }[] = [
   { key: "gls", label: "Gls" },
@@ -51,6 +61,8 @@ const METRICS: { key: MetricKey; label: string }[] = [
   { key: "rm", label: "R.M." },
   { key: "rc", label: "R.C." },
   { key: "age", label: "Idade" },
+  { key: "rep_clubs_avg", label: "Rep. méd. clubes" },
+  { key: "rep_manual", label: "Rep. manual" },
 ];
 
 type Scale = 1 | 2 | 5 | 10 | 20 | 50 | 100;
@@ -72,11 +84,13 @@ const DEFAULT_FORMULA: Formula = {
     gls: false, ast: false, games: false, hdj: false,
     ca: true, cp: true, vp: false, salary: false,
     ra: true, rm: true, rc: false, age: false,
+    rep_clubs_avg: false, rep_manual: false,
   },
   weights: {
     gls: 0, ast: 0, games: 0, hdj: 0,
     ca: 0.5, cp: 0.2, vp: 0, salary: 0,
     ra: 0.2, rm: 0.1, rc: 0, age: 0,
+    rep_clubs_avg: 0, rep_manual: 0,
   },
   normalize: true,
   scale: 10,
@@ -117,6 +131,11 @@ function SugestaoPesosPage() {
   const [sortKey, setSortKey] = useState<"competition" | "index" | "weight" | "current" | "diff">("weight");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [savedMap, setSavedMap] = useState<Record<string, Formula>>({});
+  const [compReps, setCompReps] = useState<CompReputationMap>({});
+
+  useEffect(() => {
+    loadCompetitionReputations().then(setCompReps).catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     setSavedMap(loadSaved());
@@ -132,6 +151,23 @@ function SugestaoPesosPage() {
   // Aggregate per-competition averages across all loaded seasons.
   const aggregates = useMemo<CompAgg[]>(() => {
     const players = ps.data?.players ?? [];
+    const aliases = loadClubAliases();
+    const reps = loadReputations();
+    // average reputation of clubs per (comp_type, competition)
+    const seenClubs = new Set<string>();
+    const repByComp = new Map<string, { sum: number; n: number }>();
+    for (const r of players) {
+      if (!r.club) continue;
+      const ck = `${r.comp_type}|${r.competition}|${r.club}`;
+      if (seenClubs.has(ck)) continue;
+      seenClubs.add(ck);
+      const rep = reputationFor(r.club, aliases, reps);
+      if (rep == null) continue;
+      const key = `${r.comp_type}|${r.competition}`;
+      const cur = repByComp.get(key) ?? { sum: 0, n: 0 };
+      cur.sum += rep; cur.n += 1;
+      repByComp.set(key, cur);
+    }
     const map = new Map<string, { row: CompAgg; sums: Record<MetricKey, number> }>();
     for (const r of players) {
       const key = `${r.comp_type}|${r.competition}`;
@@ -142,10 +178,10 @@ function SugestaoPesosPage() {
             competition: r.competition,
             comp_type: r.comp_type,
             country: r.country,
-            metrics: { gls:0,ast:0,games:0,hdj:0,ca:0,cp:0,vp:0,salary:0,ra:0,rm:0,rc:0,age:0 },
+            metrics: { gls:0,ast:0,games:0,hdj:0,ca:0,cp:0,vp:0,salary:0,ra:0,rm:0,rc:0,age:0,rep_clubs_avg:0,rep_manual:0 },
             n: 0,
           },
-          sums: { gls:0,ast:0,games:0,hdj:0,ca:0,cp:0,vp:0,salary:0,ra:0,rm:0,rc:0,age:0 },
+          sums: { gls:0,ast:0,games:0,hdj:0,ca:0,cp:0,vp:0,salary:0,ra:0,rm:0,rc:0,age:0,rep_clubs_avg:0,rep_manual:0 },
         };
         map.set(key, entry);
       }
@@ -167,11 +203,21 @@ function SugestaoPesosPage() {
     for (const { row, sums } of map.values()) {
       const n = row.n || 1;
       const metrics = {} as Record<MetricKey, number>;
-      for (const m of METRICS) metrics[m.key] = sums[m.key] / n;
+      for (const m of METRICS) {
+        if (m.key === "rep_clubs_avg") {
+          const k = `${row.comp_type}|${row.competition}`;
+          const v = repByComp.get(k);
+          metrics[m.key] = v && v.n ? v.sum / v.n : 0;
+        } else if (m.key === "rep_manual") {
+          metrics[m.key] = compReps[row.competition] ?? 0;
+        } else {
+          metrics[m.key] = (sums[m.key] || 0) / n;
+        }
+      }
       out.push({ ...row, metrics });
     }
     return out;
-  }, [ps.data]);
+  }, [ps.data, compReps]);
 
   // Min/Max per metric for normalization
   const minMax = useMemo(() => {
