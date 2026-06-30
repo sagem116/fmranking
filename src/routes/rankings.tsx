@@ -847,7 +847,7 @@ function RankingsPage() {
       )}
       {view === "standard" && <>
       <div className="flex flex-wrap gap-2">
-        {MODULE_FILTERS.map((f) => (
+        {uiVersion === "v1" && MODULE_FILTERS.map((f) => (
           <Button
             key={f.value}
             size="sm"
