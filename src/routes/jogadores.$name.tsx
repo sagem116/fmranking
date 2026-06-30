@@ -82,6 +82,7 @@ function PlayerProfilePage() {
       <Aggregates profile={profile} />
 
       <PlayerNewStatsSection playerName={profile.name} />
+      <DynamicMetricChart kind="player" name={profile.name} title="Evolução por época" />
 
 
       <Card>
