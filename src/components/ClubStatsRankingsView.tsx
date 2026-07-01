@@ -11,6 +11,7 @@ import { useActiveConfig } from "@/lib/useRankings";
 import type { CompType, PlayerStatRow } from "@/lib/fm-player-stats-db";
 import { compWeight, decayFactor } from "@/lib/fm-player-rankings";
 import { continentOf, CONTINENTS } from "@/lib/fm-continents";
+import { resolveClub } from "@/lib/fm-club-map";
 import { fmtNum, fmtMoney } from "@/lib/fmt";
 import { loadReputations, loadClubAliases, reputationFor, onReputationChanged } from "@/lib/fm-club-reputation";
 
@@ -77,6 +78,7 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
   const PAGE_SIZE = 25;
 
   const players = data.data?.players ?? [];
+  const clubMap = data.data?.clubMap;
 
   const years = useMemo(() => [...new Set(players.map((p) => p.season_year))].sort((a, b) => b - a), [players]);
   const latestYear = years[0] ?? new Date().getFullYear();
@@ -92,20 +94,15 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
   // competition's. We pick the most-common p.country per club within the
   // current category filter so the column reflects what the user sees.
   const clubCountry = useMemo(() => {
-    const counts: Record<string, Record<string, number>> = {};
-    for (const p of players) {
-      if (!p.club || !p.country) continue;
-      if (compFilter !== "unified" && p.comp_type !== compFilter) continue;
-      const c = counts[p.club] ??= {};
-      c[p.country] = (c[p.country] ?? 0) + 1;
-    }
+    // SSOT: country comes from the club's mapping in Importar Época. We use
+    // the most recent season's mapping per club for the display column.
     const out: Record<string, string> = {};
-    for (const [club, m] of Object.entries(counts)) {
-      const [best] = Object.entries(m).sort((a, b) => b[1] - a[1]);
-      if (best) out[club] = best[0];
+    if (!clubMap) return out;
+    for (const [club, m] of clubMap.latest) {
+      if (m.country) out[club] = m.country;
     }
     return out;
-  }, [players, compFilter]);
+  }, [clubMap]);
 
   const countries = useMemo(() => uniqueSorted(Object.values(clubCountry)), [clubCountry]);
 
@@ -127,6 +124,8 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
     const filtered: PlayerStatRow[] = [];
     for (const p of players) {
       if (!p.club) continue;
+      // SSOT: drop rows for clubs without a mapping for their season.
+      if (clubMap && !resolveClub(p.club, p.season_year, clubMap, { strict: true })) continue;
       if (p.season_year < yMin || p.season_year > yMax) continue;
       if (compFilter !== "unified" && p.comp_type !== compFilter) continue;
       const cc = clubCountry[p.club] ?? null;
@@ -179,7 +178,7 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
     });
     if (q) out = out.filter((r) => normText(`${r.club} ${r.country ?? ""}`).includes(q));
     return out;
-  }, [players, cfg.data, mode, withDecay, latestYear, compFilter, yearFrom, yearTo, country, continent, competition, search, clubCountry]);
+  }, [players, cfg.data, mode, withDecay, latestYear, compFilter, yearFrom, yearTo, country, continent, competition, search, clubCountry, clubMap]);
 
   const sorted = useMemo(() => {
     const dir = sortDir === "asc" ? 1 : -1;

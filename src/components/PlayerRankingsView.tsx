@@ -64,8 +64,8 @@ export function PlayerRankingsView({ mode, withDecay }: { mode: "weighted" | "ra
 
   const filtered = useMemo(() => {
     const f: PlayerFilters = { ...filters, comp_type: compFilter === "unified" ? "all" : compFilter };
-    return filterPlayerRows(players, f, continentOf);
-  }, [players, filters, compFilter]);
+    return filterPlayerRows(players, f, continentOf, data.data?.clubMap);
+  }, [players, filters, compFilter, data.data?.clubMap]);
 
   const ranked = useMemo(() => {
     if (!cfg.data) return [];

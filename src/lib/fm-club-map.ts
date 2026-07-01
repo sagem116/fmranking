@@ -1,9 +1,10 @@
 // Per-season canonical club → competition/division/country mapping.
-// The mapping is derived exclusively from Super Leagues (superleague) and
-// Ligas Nacionais (national) sheets — never inferred from continental /
-// international / player rows. This preserves loan players and prevents a
-// club from being reclassified because a player of that club appeared on
-// another competition's sheet.
+// SINGLE SOURCE OF TRUTH: the mapping is built EXCLUSIVELY from
+// `Importar Época` (standings of Super Leagues + Ligas Nacionais) that
+// live in the `standings` Supabase table. It is NEVER inferred from
+// player rows (Importar Jogadores & Competições). This preserves loan
+// players and prevents a club from being reclassified because one of
+// its players appeared on another competition's player sheet.
 //
 // Includes a lightweight ClubID system so alternate names can later be
 // merged onto the same canonical identity.
@@ -24,6 +25,21 @@ export interface ClubMapping {
   players: number;
 }
 
+/**
+ * A single row from `Importar Época` used to feed the map.
+ * Produced by `fm-club-map-db.ts` from the `standings` table.
+ */
+export interface ClubMapSourceRow {
+  season_year: number;
+  club: string;
+  /** Competition display name (e.g. "Super League D1" or "Premier League"). */
+  competition: string;
+  /** Numeric/label division for superleague; null for national. */
+  division: string | null;
+  country: string | null;
+  comp_type: "superleague" | "national";
+}
+
 export interface ClubMap {
   /** season_year → (clubName → ClubMapping) */
   bySeason: Map<number, Map<string, ClubMapping>>;
@@ -31,11 +47,11 @@ export interface ClubMap {
   latest: Map<string, ClubMapping>;
   /** All conflicts encountered (same club, same season, >1 mapping) */
   conflicts: Array<{ season: number; club: string; candidates: ClubMapping[] }>;
-  /** Clubs seen in player rows without any mapping */
+  /** Clubs referenced by player rows without any (season, club) mapping */
   unmapped: Set<string>;
-  /** Player-count per club (across all seasons) */
+  /** Player-count per club (across all seasons) — from player rows */
   playersByClub: Map<string, number>;
-  /** Last season each club appears in player rows */
+  /** Last season each club appears in player rows — from player rows */
   lastSeenByClub: Map<string, number>;
   /** Distinct club → clubId (canonical) */
   clubIds: Map<string, string>;
@@ -101,11 +117,19 @@ function makeClubId(name: string): string {
 }
 
 /**
- * Build the per-season club map from raw player rows.
- * Only superleague + national rows are used as the source of truth. National
- * takes precedence over superleague when both exist for the same season/club.
+ * Build the per-season club map from `Importar Época` standings sources.
+ * `playerRows` is optional and used ONLY to report which player clubs are
+ * missing from the map (never to create or alter mappings).
+ *
+ * Precedence:
+ *   1. Manual overrides (highest)
+ *   2. National-league standings
+ *   3. Super League standings
  */
-export function buildClubMap(rows: PlayerStatRow[]): ClubMap {
+export function buildClubMap(
+  sources: ClubMapSourceRow[],
+  playerRows: PlayerStatRow[] = [],
+): ClubMap {
   const aliases = getClubAliasMap();
   const manual = getManualClubMappings();
 
@@ -121,8 +145,8 @@ export function buildClubMap(rows: PlayerStatRow[]): ClubMap {
     return id;
   }
 
-  // Count players + last-seen from every row (including continental/international)
-  for (const r of rows) {
+  // Count players + last-seen strictly from the PLAYER rows (for the debug page).
+  for (const r of playerRows) {
     if (!r.club) continue;
     const club = canonicalClub(r.club, aliases);
     playersByClub.set(club, (playersByClub.get(club) ?? 0) + 1);
@@ -131,16 +155,15 @@ export function buildClubMap(rows: PlayerStatRow[]): ClubMap {
     idFor(club);
   }
 
-  // Gather mapping candidates strictly from superleague/national rows
-  for (const r of rows) {
+  // Gather mapping candidates strictly from `Importar Época` sources.
+  for (const r of sources) {
     if (!r.club) continue;
-    if (r.comp_type !== "superleague" && r.comp_type !== "national") continue;
     const club = canonicalClub(r.club, aliases);
     const mapping: ClubMapping = {
       clubId: idFor(club),
       club,
       competition: r.competition,
-      division: r.comp_type === "superleague" ? r.competition : null,
+      division: r.division ?? (r.comp_type === "superleague" ? r.competition : null),
       country: r.country,
       comp_type: r.comp_type,
       source: r.comp_type,
@@ -183,11 +206,11 @@ export function buildClubMap(rows: PlayerStatRow[]): ClubMap {
     clubIds.set(club, m.clubId || idFor(club));
   }
 
-  // Fill player counts per (season, club)
+  // Fill player counts per (season, club) — from player rows only.
   for (const [season, sm] of bySeason) {
     for (const [club, m] of sm) {
       let n = 0;
-      for (const r of rows) {
+      for (const r of playerRows) {
         if (!r.club) continue;
         if (r.season_year !== season) continue;
         if (canonicalClub(r.club, aliases) !== club) continue;
@@ -206,10 +229,14 @@ export function buildClubMap(rows: PlayerStatRow[]): ClubMap {
     }
   }
 
-  // Unmapped: clubs seen in any player row that have zero mapping in any season
+  // Unmapped: clubs seen in a player row that have zero mapping for the SAME
+  // season (per-season strict). We also collect the seasons in which they miss.
   const unmapped = new Set<string>();
-  for (const club of playersByClub.keys()) {
-    if (!latest.has(club)) unmapped.add(club);
+  for (const r of playerRows) {
+    if (!r.club) continue;
+    const club = canonicalClub(r.club, aliases);
+    const sm = bySeason.get(r.season_year);
+    if (!sm?.has(club)) unmapped.add(club);
   }
 
   const conflicts = [...conflictsMap.entries()].map(([k, list]) => {
@@ -220,12 +247,16 @@ export function buildClubMap(rows: PlayerStatRow[]): ClubMap {
   return { bySeason, latest, conflicts, unmapped, playersByClub, lastSeenByClub, clubIds };
 }
 
-/** Resolve a (season, club) pair against the map; falls back to `latest` and finally to the passed row. */
+/**
+ * Resolve a (season, club) pair against the map.
+ * STRICT MODE: returns null if the club is not mapped for the requested season.
+ * The `latest` fallback is used ONLY for UI display when strict=false.
+ */
 export function resolveClub(
   club: string | null | undefined,
   season: number | null | undefined,
   map: ClubMap,
-  fallback?: Partial<ClubMapping>,
+  opts: { strict?: boolean; fallback?: Partial<ClubMapping> } = {},
 ): ClubMapping | null {
   if (!club) return null;
   const aliases = getClubAliasMap();
@@ -235,8 +266,10 @@ export function resolveClub(
     const m = sm?.get(canon);
     if (m) return m;
   }
+  if (opts.strict) return null;
   const latest = map.latest.get(canon);
   if (latest) return latest;
+  const fallback = opts.fallback;
   if (fallback && (fallback.competition || fallback.country)) {
     return {
       clubId: map.clubIds.get(canon) ?? makeClubId(canon),
@@ -251,4 +284,17 @@ export function resolveClub(
     };
   }
   return null;
+}
+
+/** True if a season has any club mapping. Used to validate player-stats imports. */
+export function hasSeasonMapping(map: ClubMap, season: number): boolean {
+  const sm = map.bySeason.get(season);
+  return !!sm && sm.size > 0;
+}
+
+/** True if a specific (season, club) pair is present. Strict per-season check. */
+export function isClubMapped(map: ClubMap, club: string, season: number): boolean {
+  const aliases = getClubAliasMap();
+  const canon = canonicalClub(club, aliases);
+  return !!map.bySeason.get(season)?.has(canon);
 }

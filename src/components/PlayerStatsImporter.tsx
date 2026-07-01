@@ -12,7 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { parsePlayerStatsWorkbook, type PlayerStatsParseResult } from "@/lib/fm-player-stats-parser";
 import { importPlayerStats, logPlayerStatsImport, fetchAllPlayerStats } from "@/lib/fm-player-stats-db";
 import { appendSnapshot, buildSnapshotFromRows } from "@/lib/fm-insights-snapshots";
-import { buildClubMap } from "@/lib/fm-club-map";
+import { buildClubMap, hasSeasonMapping } from "@/lib/fm-club-map";
+import { fetchClubMapSources } from "@/lib/fm-club-map-db";
 import { normalizeCountry, continentOf } from "@/lib/fm-continents";
 
 interface FileEntry {
@@ -68,6 +69,22 @@ export function PlayerStatsImporter() {
     const filesDone: string[] = [];
     const allWarnings: string[] = [];
     try {
+      // ⚠ SSOT guard: refuse to import player rows for a season that has no
+      // clubMap yet (no Importar Época performed for that season).
+      const preSources = await fetchClubMapSources();
+      const preMap = buildClubMap(preSources);
+      const seasonsNeeded = new Set<number>();
+      for (const e of entries) for (const r of e.parse.rows) seasonsNeeded.add(r.season_year);
+      const missing = [...seasonsNeeded].filter((y) => !hasSeasonMapping(preMap, y));
+      if (missing.length > 0) {
+        toast.error(
+          `Ainda não existe mapeamento de clubes para ${missing.length === 1 ? "a época" : "as épocas"} ${missing.join(", ")}. ` +
+            `Importe primeiro através de 'Importar Época' antes de importar os jogadores.`,
+          { duration: 8000 },
+        );
+        setImporting(false);
+        return;
+      }
       for (const e of entries) {
         // Re-parse with current year (in case the user changed it)
         const buf = await e.file.arrayBuffer();
@@ -88,8 +105,11 @@ export function PlayerStatsImporter() {
 
       // Post-import summary — recompute against the full DB state.
       try {
-        const all = await fetchAllPlayerStats();
-        const map = buildClubMap(all);
+        const [all, sources] = await Promise.all([
+          fetchAllPlayerStats(),
+          fetchClubMapSources(),
+        ]);
+        const map = buildClubMap(sources, all);
         const clubs = new Set<string>();
         const comps = new Set<string>();
         const compsSemDivisao = new Set<string>();
