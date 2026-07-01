@@ -2,7 +2,7 @@ import type { FmConfig } from "./fm-config";
 import { cfgDecay, cfgDivisionWeight, cfgNationalLeagueWeight } from "./fm-config";
 import type { PlayerStatRow, CompetitionStatRow, CompType } from "./fm-player-stats-db";
 
-export type StatField = "gls" | "ast" | "games" | "hdj" | "ca" | "cp";
+export type StatField = "gls" | "ast" | "games" | "hdj" | "ca" | "cp" | "vp" | "salary";
 
 export interface PlayerRankRow {
   key: string;

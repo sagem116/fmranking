@@ -52,7 +52,7 @@ function sheetType(name: string): CompType | null {
 }
 
 const HEADER_ALIASES: Record<string, string[]> = {
-  divisao: ["divisao", "divisão", "liga", "competicao", "competição", "comp"],
+  divisao: ["divisao", "divisão", "liga", "competicao", "competição", "comp", "div", "division", "nivel", "nível", "tier"],
   pais: ["pais", "país", "country"],
   nome: ["nome", "name", "jogador", "player"],
   idu: ["idu", "uid", "id"],
@@ -60,7 +60,7 @@ const HEADER_ALIASES: Record<string, string[]> = {
   clube: ["clube", "club", "equipa", "team"],
   gls: ["gls", "golos", "goals", "g"],
   ast: ["ast", "assistencias", "assistências", "assists", "a"],
-  jogos: ["jogos", "games", "j", "matches", "apps"],
+  jogos: ["jogos", "games", "j", "matches", "apps", "j(s)", "jogos(sub)"],
   hdj: ["hdj", "homemdojogo", "mvp", "manofthematch", "motm"],
   ca: ["ca", "currentability"],
   cp: ["cp", "potentialability", "potencial"],
@@ -161,6 +161,7 @@ export function parsePlayerStatsWorkbook(buffer: ArrayBuffer, seasonYear: number
   const rows: PlayerStatRow[] = [];
   const bySheet: Record<string, { sheet: string; comp_type: CompType; count: number }> = {};
   const skippedSheets: string[] = [];
+  const warnings: string[] = [];
 
   for (const sheetName of wb.SheetNames) {
     const comp_type = sheetType(sheetName);
@@ -178,13 +179,24 @@ export function parsePlayerStatsWorkbook(buffer: ArrayBuffer, seasonYear: number
       continue;
     }
     let count = 0;
+    let lastDivision = ""; // fill-down para células merged/vazias
     for (let r = 1; r < matrix.length; r++) {
       const row = matrix[r] as unknown[];
       if (!row || row.every((c) => c == null || c === "")) continue;
       const name = str(row[idx.nome]);
       if (!name) continue;
-      const divRaw = idx.divisao != null ? row[idx.divisao] : "";
-      const competition: string = str(divRaw) ?? "—";
+      let competition = idx.divisao != null ? (str(row[idx.divisao]) ?? "") : "";
+      if (competition) {
+        lastDivision = competition;
+      } else if (lastDivision) {
+        // Herdar da linha anterior (padrão de células merged)
+        competition = lastDivision;
+      }
+      if (!competition) {
+        // Nunca gravar "—": pular linha e reportar
+        warnings.push(`${sheetName} · linha ${r + 1} · "${name}" sem Divisão`);
+        continue;
+      }
       const country = idx.pais != null ? str(row[idx.pais]) : null;
       const continent = comp_type === "continental" ? continentFromCompetition(competition) : null;
       rows.push({
@@ -226,5 +238,6 @@ export function parsePlayerStatsWorkbook(buffer: ArrayBuffer, seasonYear: number
     seen.set(key, i);
     out.unshift(r);
   }
+  if (warnings.length) skippedSheets.push(...warnings);
   return { rows: out, bySheet, skippedSheets };
 }

@@ -15,6 +15,8 @@ import type { CompType, PlayerStatRow } from "@/lib/fm-player-stats-db";
 import { continentOf, CONTINENTS } from "@/lib/fm-continents";
 import { fmtNum, fmtMoney } from "@/lib/fmt";
 import { loadReputations, loadClubAliases, reputationFor, onReputationChanged } from "@/lib/fm-club-reputation";
+import { CountryLink } from "@/components/CountryLink";
+import { resolveClub } from "@/lib/fm-club-map";
 
 function uniqueSorted(values: Array<string | null | undefined>) {
   return [...new Set(values.filter((v): v is string => Boolean(v?.trim())))]
@@ -36,10 +38,15 @@ const STAT_TABS: { key: StatField; label: string }[] = [
   { key: "hdj", label: "Homem do Jogo" },
   { key: "ca", label: "C.A." },
   { key: "cp", label: "C.P." },
+  { key: "vp", label: "Valor de Mercado" },
+  { key: "salary", label: "Salário" },
 ];
+
+const MONEY_STATS: StatField[] = ["vp", "salary"];
 
 export function PlayerRankingsView({ mode, withDecay }: { mode: "weighted" | "raw"; withDecay: boolean }) {
   const data = usePlayerStatsData();
+  const clubMap = data.data?.clubMap;
   const cfg = useActiveConfig();
   const [compFilter, setCompFilter] = useState<CompType | "all" | "unified">("unified");
   const [stat, setStat] = useState<StatField>("gls");
@@ -215,18 +222,28 @@ export function PlayerRankingsView({ mode, withDecay }: { mode: "weighted" | "ra
                           </Link>
                           {r.idu && <Badge variant="outline" className="ml-1 text-[10px]">{r.idu}</Badge>}
                         </td>
-                        <td className="px-3 py-2 text-muted-foreground">{r.nationality ?? "—"}</td>
+                        <td className="px-3 py-2 text-muted-foreground"><CountryLink name={r.nationality} /></td>
                         <td className="px-3 py-2">
                           {r.club ? <Link to="/clubes/$name" params={{ name: r.club }} className="hover:text-primary hover:underline">{r.club}</Link> : "—"}
                         </td>
                         <td className="px-3 py-2">
-                          <Link to="/competicoes/$name" params={{ name: r.competition }} className="hover:text-primary hover:underline">
-                            {r.competition}
-                          </Link>
+                          {(() => {
+                            const off = clubMap ? resolveClub(r.club, r.season_year, clubMap) : null;
+                            const comp = off?.competition ?? r.competition;
+                            return (
+                              <Link to="/competicoes/$name" params={{ name: comp }} className="hover:text-primary hover:underline">
+                                {comp}
+                              </Link>
+                            );
+                          })()}
                         </td>
                         <td className="px-3 py-2 tabular-nums">{compFilter === "unified" ? "—" : r.season_year}</td>
-                        <td className="px-3 py-2 text-right tabular-nums font-semibold">{fmtNum(r.raw, 2)}</td>
-                        <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{mode === "weighted" ? fmtNum(r.value, 2) : ""}</td>
+                        <td className="px-3 py-2 text-right tabular-nums font-semibold">
+                          {MONEY_STATS.includes(stat) ? fmtMoney(r.raw) : fmtNum(r.raw, 2)}
+                        </td>
+                        <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
+                          {mode === "weighted" ? (MONEY_STATS.includes(stat) ? fmtMoney(r.value) : fmtNum(r.value, 2)) : ""}
+                        </td>
                       </tr>
                     ))}
                     {pageRows.length === 0 && (

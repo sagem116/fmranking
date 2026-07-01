@@ -28,6 +28,7 @@ import { Route as DebugTreinadoresRouteImport } from './routes/debug-treinadores
 import { Route as DebugReputacaoClubesRouteImport } from './routes/debug-reputacao-clubes'
 import { Route as DebugPontosRouteImport } from './routes/debug-pontos'
 import { Route as DebugPaisesRouteImport } from './routes/debug-paises'
+import { Route as DebugMapeamentoClubesRouteImport } from './routes/debug-mapeamento-clubes'
 import { Route as DebugJogadoresRouteImport } from './routes/debug-jogadores'
 import { Route as DebugContinentesRouteImport } from './routes/debug-continentes'
 import { Route as DebugContinentaisRouteImport } from './routes/debug-continentais'
@@ -153,6 +154,11 @@ const DebugPontosRoute = DebugPontosRouteImport.update({
 const DebugPaisesRoute = DebugPaisesRouteImport.update({
   id: '/debug-paises',
   path: '/debug-paises',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DebugMapeamentoClubesRoute = DebugMapeamentoClubesRouteImport.update({
+  id: '/debug-mapeamento-clubes',
+  path: '/debug-mapeamento-clubes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DebugJogadoresRoute = DebugJogadoresRouteImport.update({
@@ -329,6 +335,7 @@ export interface FileRoutesByFullPath {
   '/debug-continentais': typeof DebugContinentaisRoute
   '/debug-continentes': typeof DebugContinentesRoute
   '/debug-jogadores': typeof DebugJogadoresRoute
+  '/debug-mapeamento-clubes': typeof DebugMapeamentoClubesRoute
   '/debug-paises': typeof DebugPaisesRoute
   '/debug-pontos': typeof DebugPontosRoute
   '/debug-reputacao-clubes': typeof DebugReputacaoClubesRoute
@@ -380,6 +387,7 @@ export interface FileRoutesByTo {
   '/debug-continentais': typeof DebugContinentaisRoute
   '/debug-continentes': typeof DebugContinentesRoute
   '/debug-jogadores': typeof DebugJogadoresRoute
+  '/debug-mapeamento-clubes': typeof DebugMapeamentoClubesRoute
   '/debug-paises': typeof DebugPaisesRoute
   '/debug-pontos': typeof DebugPontosRoute
   '/debug-reputacao-clubes': typeof DebugReputacaoClubesRoute
@@ -431,6 +439,7 @@ export interface FileRoutesById {
   '/debug-continentais': typeof DebugContinentaisRoute
   '/debug-continentes': typeof DebugContinentesRoute
   '/debug-jogadores': typeof DebugJogadoresRoute
+  '/debug-mapeamento-clubes': typeof DebugMapeamentoClubesRoute
   '/debug-paises': typeof DebugPaisesRoute
   '/debug-pontos': typeof DebugPontosRoute
   '/debug-reputacao-clubes': typeof DebugReputacaoClubesRoute
@@ -485,6 +494,7 @@ export interface FileRouteTypes {
     | '/debug-continentais'
     | '/debug-continentes'
     | '/debug-jogadores'
+    | '/debug-mapeamento-clubes'
     | '/debug-paises'
     | '/debug-pontos'
     | '/debug-reputacao-clubes'
@@ -536,6 +546,7 @@ export interface FileRouteTypes {
     | '/debug-continentais'
     | '/debug-continentes'
     | '/debug-jogadores'
+    | '/debug-mapeamento-clubes'
     | '/debug-paises'
     | '/debug-pontos'
     | '/debug-reputacao-clubes'
@@ -586,6 +597,7 @@ export interface FileRouteTypes {
     | '/debug-continentais'
     | '/debug-continentes'
     | '/debug-jogadores'
+    | '/debug-mapeamento-clubes'
     | '/debug-paises'
     | '/debug-pontos'
     | '/debug-reputacao-clubes'
@@ -639,6 +651,7 @@ export interface RootRouteChildren {
   DebugContinentaisRoute: typeof DebugContinentaisRoute
   DebugContinentesRoute: typeof DebugContinentesRoute
   DebugJogadoresRoute: typeof DebugJogadoresRoute
+  DebugMapeamentoClubesRoute: typeof DebugMapeamentoClubesRoute
   DebugPaisesRoute: typeof DebugPaisesRoute
   DebugPontosRoute: typeof DebugPontosRoute
   DebugReputacaoClubesRoute: typeof DebugReputacaoClubesRoute
@@ -809,6 +822,13 @@ declare module '@tanstack/react-router' {
       path: '/debug-paises'
       fullPath: '/debug-paises'
       preLoaderRoute: typeof DebugPaisesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/debug-mapeamento-clubes': {
+      id: '/debug-mapeamento-clubes'
+      path: '/debug-mapeamento-clubes'
+      fullPath: '/debug-mapeamento-clubes'
+      preLoaderRoute: typeof DebugMapeamentoClubesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/debug-jogadores': {
@@ -1081,6 +1101,7 @@ const rootRouteChildren: RootRouteChildren = {
   DebugContinentaisRoute: DebugContinentaisRoute,
   DebugContinentesRoute: DebugContinentesRoute,
   DebugJogadoresRoute: DebugJogadoresRoute,
+  DebugMapeamentoClubesRoute: DebugMapeamentoClubesRoute,
   DebugPaisesRoute: DebugPaisesRoute,
   DebugPontosRoute: DebugPontosRoute,
   DebugReputacaoClubesRoute: DebugReputacaoClubesRoute,
@@ -1120,13 +1141,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
