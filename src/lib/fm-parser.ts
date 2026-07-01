@@ -164,6 +164,18 @@ function sheetRows(wb: XLSX.WorkBook, name: string): Record<string, unknown>[] |
   return XLSX.utils.sheet_to_json(wb.Sheets[target], { defval: null });
 }
 
+/**
+ * Same as {@link sheetRows} but accepts a list of accepted sheet-name aliases.
+ * Match is case/accent/whitespace-insensitive; the first alias found in the
+ * workbook (in the caller's declared order) wins.
+ */
+function sheetRowsAny(wb: XLSX.WorkBook, names: string[]): Record<string, unknown>[] | null {
+  const nset = names.map(norm);
+  const target = wb.SheetNames.find((s) => nset.includes(norm(s)));
+  if (!target) return null;
+  return XLSX.utils.sheet_to_json(wb.Sheets[target], { defval: null });
+}
+
 function parseScore(result: string | null, t1: string | null, t2: string | null): string | null {
   if (!result) return null;
   const m = String(result).match(/(\d+)\s*[-:xX]\s*(\d+)/);
@@ -180,7 +192,11 @@ export function detectKind(wb: XLSX.WorkBook): "superleague" | "national" {
   if (names.some((n) => n.includes("equipas_pais") || n.includes("pesos_fixos"))) return "superleague";
   if (names.some((n) => n.includes("ligas nacionais") || n.includes("continenta"))) return "national";
   // fall back: ranking sheet => superleague
-  if (names.some((n) => n === "ranking")) return "superleague";
+  if (names.some((n) =>
+    n === "ranking" || n === "divisao" || n === "division" ||
+    n === "superleague" || n === "superleague1" ||
+    n.startsWith("divisao") || n.startsWith("superleague")
+  )) return "superleague";
   return "national";
 }
 
@@ -240,9 +256,18 @@ export function parseWorkbook(buffer: ArrayBuffer, filename = ""): ParseResult {
 
   // --- Ranking (superleague standings) ---
   if (kind === "superleague") {
-    const rk = sheetRows(wb, "Ranking");
+    // Accept a flexible set of sheet names so `dados_superleague.xlsx` still
+    // imports even when the standings sheet is named "Divisão", "Divisao 1",
+    // "Division", "Super League", "SuperLeague", etc.
+    const rk = sheetRowsAny(wb, [
+      "Ranking",
+      "Divisão", "Divisao",
+      "Divisão 1", "Divisao 1",
+      "Division", "Division 1",
+      "Super League", "SuperLeague", "Super League 1", "SuperLeague 1",
+    ]);
     if (!rk || !rk.length) {
-      messages.push({ level: "red", text: "✖ Folha obrigatória 'Ranking' inexistente ou vazia" });
+      messages.push({ level: "red", text: "✖ Folha de classificação da Super League não encontrada (aceita: Ranking, Divisão, Division, Super League, SuperLeague, ...)" });
     } else {
       parseStandings(rk, "superleague", data, messages);
     }
@@ -250,7 +275,11 @@ export function parseWorkbook(buffer: ArrayBuffer, filename = ""): ParseResult {
 
   // --- Ligas Nacionais (national standings) ---
   if (kind === "national") {
-    const ln = sheetRows(wb, "Ligas Nacionais");
+    const ln = sheetRowsAny(wb, [
+      "Ligas Nacionais", "Ligas_Nacionais", "LigasNacionais",
+      "National Leagues", "NationalLeagues",
+      "Ligas", "Nacional", "Nacionais",
+    ]);
     if (!ln || !ln.length) {
       messages.push({ level: "red", text: "✖ Folha obrigatória 'Ligas Nacionais' inexistente ou vazia" });
     } else {
