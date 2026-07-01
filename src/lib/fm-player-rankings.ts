@@ -1,6 +1,8 @@
 import type { FmConfig } from "./fm-config";
 import { cfgDecay, cfgDivisionWeight, cfgNationalLeagueWeight } from "./fm-config";
 import type { PlayerStatRow, CompetitionStatRow, CompType } from "./fm-player-stats-db";
+import type { ClubMap } from "./fm-club-map";
+import { isClubMapped } from "./fm-club-map";
 
 export type StatField = "gls" | "ast" | "games" | "hdj" | "ca" | "cp" | "vp" | "salary";
 
@@ -95,9 +97,18 @@ export function emptyFilters(): PlayerFilters {
   };
 }
 
-export function filterPlayerRows(rows: PlayerStatRow[], f: PlayerFilters, continentOf: (c: string | null | undefined) => string | null): PlayerStatRow[] {
+export function filterPlayerRows(
+  rows: PlayerStatRow[],
+  f: PlayerFilters,
+  continentOf: (c: string | null | undefined) => string | null,
+  /** Optional SSOT club map — when passed, rows whose (season, club) is NOT
+   *  mapped by Importar Época are excluded from rankings/records. */
+  clubMap?: ClubMap,
+): PlayerStatRow[] {
   const q = normText(f.search);
   return rows.filter((r) => {
+    // SSOT: drop unmapped clubs from all rankings/records.
+    if (clubMap && r.club && !isClubMapped(clubMap, r.club, r.season_year)) return false;
     if (f.comp_type !== "all" && r.comp_type !== f.comp_type) return false;
     if (f.yearFrom != null && r.season_year < f.yearFrom) return false;
     if (f.yearTo != null && r.season_year > f.yearTo) return false;
