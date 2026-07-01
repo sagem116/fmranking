@@ -145,7 +145,13 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
         map.set(club, a);
       }
       a.n_players++;
-      if (p.competition) a.competitions.add(p.competition);
+      // SSOT: only continental / international competitions come from player
+      // rows. Structural competitions (Super League / National League) are
+      // added below from `clubMap` (Importar Época) so a player uploaded on a
+      // continental sheet never re-labels his club's structural competition.
+      if (p.competition && (p.comp_type === "continental" || p.comp_type === "international")) {
+        a.competitions.add(p.competition);
+      }
       a.gls += (p.gls || 0) * (mode === "weighted" ? w : 1);
       a.ast += (p.ast || 0) * (mode === "weighted" ? w : 1);
       a.sumCA += (p.ca || 0) * w;
@@ -159,6 +165,20 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
       a.wSum += w;
       a.sumVPRaw += p.vp || 0;
       a.sumSalaryRaw += p.salary || 0;
+    }
+    // Add structural competitions from the clubMap (Importar Época) for every
+    // season inside the active [yMin, yMax] range. This is the ONLY source of
+    // truth for Super League / National League associations.
+    if (clubMap) {
+      for (const [season, sm] of clubMap.bySeason) {
+        if (season < yMin || season > yMax) continue;
+        for (const [club, m] of sm) {
+          const a = map.get(club);
+          if (!a) continue;
+          if (compFilter !== "unified" && compFilter !== m.comp_type) continue;
+          if (m.competition) a.competitions.add(m.competition);
+        }
+      }
     }
     let out: Row[] = [...map.values()].map((a) => {
       const k = a.wSum || 1;
