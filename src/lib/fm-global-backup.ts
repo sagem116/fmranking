@@ -27,6 +27,10 @@ const BUCKETS: Record<string, readonly string[]> = {
     "fm-club-name-aliases-v1",
     "fm-club-reputation-imports-v1",
   ],
+  clubMap: [
+    "fm-club-name-aliases-v2",
+    "fm-club-manual-map-v1",
+  ],
   custom: [
     "fm-custom-formulas-v1",
     "fm-custom-rankings-v1",
