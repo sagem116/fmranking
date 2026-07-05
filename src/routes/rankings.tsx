@@ -1288,6 +1288,7 @@ function RankingsV2Header(props: {
                   </div>
                 )}
               </div>
+              <DensityRow />
               <div className="border-t border-border pt-2">
                 <Button size="sm" variant="ghost" className="w-full" onClick={props.onSwitchToV1}>
                   <LayoutDashboard className="size-3.5" /> UI Clássica
