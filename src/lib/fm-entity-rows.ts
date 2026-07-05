@@ -152,6 +152,9 @@ export function buildRows(kind: EntityKind, rows: PlayerStatRow[]): EntityRow[] 
     case "clube": return buildClubRows(rows);
     case "competicao": return buildCompetitionRows(rows);
     case "pais": return buildCountryRows(rows);
+    // Coach rows are not derived from player_stats — the caller for
+    // "treinador" must use buildCoachRowsFrom(coaches) directly.
+    case "treinador": return [];
   }
 }
 
