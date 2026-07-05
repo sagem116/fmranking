@@ -12,6 +12,7 @@ import { fmtPts } from "@/lib/fmt";
 import { ClubNewStatsSection } from "@/components/NewStatsSections";
 import { ClubRecordsSection } from "@/components/RecordsSection";
 import { RankingEvolutionSection } from "@/components/RankingEvolutionSection";
+import { ClubReputationSection } from "@/components/ClubReputationSection";
 
 export const Route = createFileRoute("/clubes/$name")({
   component: ClubProfilePage,
