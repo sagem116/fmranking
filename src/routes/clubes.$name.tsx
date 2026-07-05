@@ -36,7 +36,7 @@ function competitionLabelForStanding(s: {
   competition?: string | null;
   module: string;
   division_num: number | null;
-  division_label: string | null;
+  division_label?: string | null;
 }): string {
   if (s.competition && s.competition.trim()) return s.competition;
   if (s.module === "superleague") return s.division_num ? `Div. ${s.division_num}` : "Super League";
