@@ -225,10 +225,10 @@ export async function importCompetitionsFile(
 
   // ---- Competition reputation (per season) ----
   const compRepPayload = parsed.competitionReputation
-    .filter((c) => c.reputation != null || c.country || c.continent)
+    .filter((c) => c.reputation != null)
     .map((c) => ({
       competition: c.competition,
-      reputation: c.reputation ?? 0,
+      reputation: c.reputation!,
       country: c.country,
       continent: c.continent,
       season_year: year,
