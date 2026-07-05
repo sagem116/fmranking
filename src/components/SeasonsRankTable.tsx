@@ -256,6 +256,7 @@ export function SeasonsRankTable({
                 onClick={() => setSortKey(`extra:${ec.key}`)}
                 active={sortKey === `extra:${ec.key}`}
                 dir={sortDir}
+                pad={cellPad}
               >
                 {ec.label}
               </HeaderCell>
@@ -265,6 +266,7 @@ export function SeasonsRankTable({
               onClick={() => setSortKey("points")}
               active={sortKey === "points"}
               dir={sortDir}
+              pad={cellPad}
             >
               Total
             </HeaderCell>
