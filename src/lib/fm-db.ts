@@ -345,7 +345,7 @@ export async function fetchAllData(): Promise<AllData> {
   const [standings, continental, internationalRaw, coachAssign, playersRaw, clubIds, coachNat] = await Promise.all([
     fetchAllRows<Record<string, unknown>>(
       "standings",
-      "season_id,module,division_num,division_label,position,club_name,is_champion,info,points,played,wins,draws,losses,gf,ga",
+      "season_id,module,division_num,division_label,competition,position,club_name,is_champion,info,points,played,wins,draws,losses,gf,ga",
     ),
 
     fetchAllRows<Record<string, unknown>>(
@@ -358,7 +358,7 @@ export async function fetchAllData(): Promise<AllData> {
     ),
     fetchAllRows<Record<string, unknown>>(
       "coach_assignments",
-      "season_id,module,coach_name,club_name",
+      "season_id,module,coach_name,club_name,club_role,intl_role,country_name",
     ),
     fetchAllRows<Record<string, unknown>>(
       "players",
@@ -377,7 +377,7 @@ export async function fetchAllData(): Promise<AllData> {
   const standingRows: StandingRow[] = standings.map((row) => {
     const s = row as Record<string, unknown> as {
       season_id: string; module: StandingRow["module"]; division_num: number;
-      division_label?: string | null; position: number; club_name: string;
+      division_label?: string | null; competition?: string | null; position: number; club_name: string;
       is_champion: boolean; info: string | null; points?: number | null; played?: number | null;
       wins?: number | null; draws?: number | null; losses?: number | null;
       gf?: number | null; ga?: number | null;
@@ -387,6 +387,7 @@ export async function fetchAllData(): Promise<AllData> {
       module: s.module,
       division_num: s.division_num,
       division_label: s.division_label ?? null,
+      competition: s.competition ?? null,
       position: s.position,
       club_name: s.club_name,
       is_champion: s.is_champion,
@@ -451,13 +452,16 @@ export async function fetchAllData(): Promise<AllData> {
     };
   });
   const coachRows: CoachRow[] = coachAssign.map((row) => {
-    const c = row as { season_id: string; module: CoachRow["module"]; coach_name: string; club_name: string | null };
+    const c = row as { season_id: string; module: CoachRow["module"]; coach_name: string; club_name: string | null; club_role?: string | null; intl_role?: string | null; country_name?: string | null };
     return {
       season_year: seasonMap.get(c.season_id) ?? 0,
       module: c.module,
       name: c.coach_name,
       nationality: coachNatMap.get(c.coach_name) ?? null,
       club_name: c.club_name,
+      club_role: c.club_role ?? null,
+      intl_role: c.intl_role ?? null,
+      country_name: c.country_name ?? null,
     };
   });
   const playerRows: PlayerRow[] = playersRaw.map((row) => {

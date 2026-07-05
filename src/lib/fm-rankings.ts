@@ -21,6 +21,7 @@ export interface StandingRow {
   module: "superleague" | "national" | "continental";
   division_num: number | null;
   division_label?: string | null;
+  competition?: string | null;
   position: number | null;
   club_name: string;
   is_champion: boolean;
@@ -77,6 +78,9 @@ export interface CoachRow {
   name: string;
   nationality: string | null;
   club_name: string | null;
+  club_role?: string | null;
+  intl_role?: string | null;
+  country_name?: string | null;
 }
 
 export interface RankingEntry {

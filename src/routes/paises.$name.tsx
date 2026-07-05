@@ -9,6 +9,7 @@ import { DesafiosProfileCard } from "@/components/DesafiosProfileCard";
 import { fmtPts } from "@/lib/fmt";
 import { CountryRecordsSection } from "@/components/RecordsSection";
 import { RankingEvolutionSection } from "@/components/RankingEvolutionSection";
+import { CountryInternationalPointsCard } from "@/components/CountryInternationalPointsCard";
 
 export const Route = createFileRoute("/paises/$name")({
   component: CountryProfilePage,
@@ -76,6 +77,8 @@ function CountryProfilePage() {
         <Stat label="Títulos" value={profile.titles} />
         <Stat label="Clubes" value={profile.clubs.length} />
       </div>
+
+      {data && <CountryInternationalPointsCard data={data.data} cfg={data.config} countryName={profile.name} />}
 
       {(profile.internationalTitles > 0 ||
         profile.finalsReached > 0 ||
