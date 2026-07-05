@@ -215,6 +215,7 @@ export function SidebarCustomizeDialog({
                 for (const it of debugItems) if (!ord.includes(it.to)) ordered.push(it);
                 return ordered.map((it, iIdx) => {
                   const hidden = (draft.debugItemsHidden ?? []).includes(it.to);
+                  const currentGroup = draft.itemGroups?.[it.to] ?? DEBUG_GROUP;
                   return (
                     <div key={it.to} className="flex items-center gap-2">
                       <Checkbox
@@ -226,7 +227,17 @@ export function SidebarCustomizeDialog({
                           setDraft({ ...draft, debugItemsHidden: Array.from(set) });
                         }}
                       />
-                      <span className={cn("text-sm flex-1", hidden && "opacity-50 line-through")}>{it.label}</span>
+                      <span className={cn("text-sm flex-1 min-w-0 truncate", hidden && "opacity-50 line-through")}>{it.label}</span>
+                      <Select value={currentGroup} onValueChange={(v) => moveItemTo(it.to, v)}>
+                        <SelectTrigger className="h-7 w-[140px] text-xs" title="Mover para outro grupo">
+                          <MoveRight className="size-3 mr-1" />
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {groupTargets.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                          <SelectItem value={DEBUG_GROUP}>Debug</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <Button
                         size="icon"
                         variant="ghost"
