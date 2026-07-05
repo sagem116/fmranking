@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Filter, Loader2, GitCompare, X } from "lucide-react";
+import { Filter, Loader2, GitCompare, X, Rows3, Rows2 } from "lucide-react";
+import { DrillCell } from "@/components/DrillCell";
 import { usePlayerStatsData } from "@/lib/usePlayerStatsData";
 import { useActiveConfig } from "@/lib/useRankings";
 import type { CompType, PlayerStatRow } from "@/lib/fm-player-stats-db";
@@ -18,6 +19,7 @@ import { fmtNum, fmtMoney } from "@/lib/fmt";
 import { loadReputations, loadClubAliases, reputationFor, onReputationChanged } from "@/lib/fm-club-reputation";
 
 type ColKey = "gls" | "ast" | "ca" | "cp" | "ra" | "rm" | "rc" | "vp" | "salary" | "age" | "reputation" | "n_players" | "games";
+interface PlayerDrillRow { id: string; name: string; games: number; gls: number; ast: number; }
 interface Row {
   club: string;
   country: string | null;
@@ -36,6 +38,7 @@ interface Row {
   salary: number;
   age: number;
   reputation: number | null;
+  players: PlayerDrillRow[];
 }
 
 const COMP_TABS: { value: CompType | "unified"; label: string }[] = [
@@ -79,6 +82,14 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 25;
+  const [density, setDensity] = useState<"comfy" | "compact">(() => {
+    try { return (typeof window !== "undefined" && window.localStorage.getItem("fm-club-stats-density") === "compact") ? "compact" : "comfy"; } catch { return "comfy"; }
+  });
+  const setDensityPersist = (d: "comfy" | "compact") => {
+    setDensity(d);
+    try { window.localStorage.setItem("fm-club-stats-density", d); } catch { /* ignore */ }
+  };
+  const cellPad = density === "compact" ? "px-2 py-1" : "px-3 py-2";
 
   // Comparison selection
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -130,6 +141,7 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
       sumCA: number; sumCP: number; sumRA: number; sumRM: number; sumRC: number;
       sumVP: number; sumSalary: number; sumAge: number; wSum: number;
       sumVPRaw: number; sumSalaryRaw: number;
+      playerAgg: Map<string, { name: string; games: number; gls: number; ast: number }>;
     };
     const map = new Map<string, Agg>();
     const filtered: PlayerStatRow[] = [];
@@ -153,7 +165,8 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
           playerIds: new Set<string>(), games: 0,
           gls: 0, ast: 0,
           sumCA: 0, sumCP: 0, sumRA: 0, sumRM: 0, sumRC: 0, sumVP: 0, sumSalary: 0, sumAge: 0, wSum: 0,
-          sumVPRaw: 0, sumSalaryRaw: 0 };
+          sumVPRaw: 0, sumSalaryRaw: 0,
+          playerAgg: new Map() };
         map.set(club, a);
       }
       // Distinct player key: prefer IDU, fall back to normalized name.
@@ -176,6 +189,14 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
       a.wSum += w;
       a.sumVPRaw += p.vp || 0;
       a.sumSalaryRaw += p.salary || 0;
+      const pa = a.playerAgg.get(pid);
+      if (pa) {
+        pa.games += p.games || 0;
+        pa.gls += p.gls || 0;
+        pa.ast += p.ast || 0;
+      } else {
+        a.playerAgg.set(pid, { name: p.player_name || pid, games: p.games || 0, gls: p.gls || 0, ast: p.ast || 0 });
+      }
     }
     if (clubMap) {
       for (const [season, sm] of clubMap.bySeason) {
@@ -191,6 +212,9 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
     let out: Row[] = [...map.values()].map((a) => {
       const k = a.wSum || 1;
       const comps = [...a.competitions].sort((x, y) => x.localeCompare(y, "pt-PT"));
+      const players: PlayerDrillRow[] = [...a.playerAgg.entries()]
+        .map(([id, v]) => ({ id, name: v.name, games: v.games, gls: v.gls, ast: v.ast }))
+        .sort((x, y) => y.games - x.games || y.gls - x.gls);
       return {
         club: a.club, country: a.country,
         continent: continentOf(a.country),
@@ -203,6 +227,7 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
         salary: compFilter === "unified" ? a.sumSalaryRaw : a.sumSalary / k,
         age: a.sumAge / k,
         reputation: reputationFor(a.club, aliases, reps),
+        players,
       };
     });
     if (q) out = out.filter((r) => normText(`${r.club} ${r.country ?? ""}`).includes(q));
@@ -251,15 +276,25 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
             {t.label}
           </Button>
         ))}
-        {selected.size > 0 && (
-          <div className="ml-auto flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">{selected.size} selecionado{selected.size === 1 ? "" : "s"}</span>
-            <Button size="sm" variant="ghost" onClick={clearSelected}><X className="size-3.5" /> Limpar</Button>
-            <Button size="sm" variant="default" disabled={selected.size < 2} onClick={() => setCompareOpen(true)}>
-              <GitCompare className="size-3.5" /> Comparar
+        <div className="ml-auto flex items-center gap-2">
+          {selected.size > 0 && (
+            <>
+              <span className="text-xs text-muted-foreground">{selected.size} selecionado{selected.size === 1 ? "" : "s"}</span>
+              <Button size="sm" variant="ghost" onClick={clearSelected}><X className="size-3.5" /> Limpar</Button>
+              <Button size="sm" variant="default" disabled={selected.size < 2} onClick={() => setCompareOpen(true)}>
+                <GitCompare className="size-3.5" /> Comparar
+              </Button>
+            </>
+          )}
+          <div className="flex rounded-md border border-border p-0.5" title="Densidade da tabela">
+            <Button size="sm" variant={density === "comfy" ? "secondary" : "ghost"} className="h-7 px-2" onClick={() => setDensityPersist("comfy")}>
+              <Rows3 className="size-3.5" />
+            </Button>
+            <Button size="sm" variant={density === "compact" ? "secondary" : "ghost"} className="h-7 px-2" onClick={() => setDensityPersist("compact")}>
+              <Rows2 className="size-3.5" />
             </Button>
           </div>
-        )}
+        </div>
       </div>
 
       <Card className="p-4 space-y-3">
@@ -338,17 +373,17 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
             <tbody>
               {pageRows.map((r, i) => (
                 <tr key={r.club} className={`border-t border-border/50 hover:bg-muted/30 ${selected.has(r.club) ? "bg-primary/5" : ""}`}>
-                  <td className="px-2 py-2">
+                  <td className={`${density === "compact" ? "px-2 py-1" : "px-2 py-2"}`}>
                     <Checkbox checked={selected.has(r.club)} onCheckedChange={() => toggleSelected(r.club)} aria-label={`Selecionar ${r.club}`} />
                   </td>
-                  <td className="px-3 py-2 text-muted-foreground tabular-nums">{page * PAGE_SIZE + i + 1}</td>
-                  <td className="px-3 py-2 font-medium">
+                  <td className={`${cellPad} text-muted-foreground tabular-nums`}>{page * PAGE_SIZE + i + 1}</td>
+                  <td className={`${cellPad} font-medium`}>
                     <Link to="/clubes/$name" params={{ name: r.club }} className="hover:text-primary hover:underline">{r.club}</Link>
                   </td>
-                  <td className="px-3 py-2 text-muted-foreground">
+                  <td className={`${cellPad} text-muted-foreground`}>
                     {(compFilter === "continental" || compFilter === "international") ? (r.continent ?? "—") : (r.country ?? "—")}
                   </td>
-                  <td className="px-3 py-2 text-muted-foreground">
+                  <td className={`${cellPad} text-muted-foreground`}>
                     {r.competitions.length === 0 ? (
                       "—"
                     ) : r.competitions.length === 1 ? (
@@ -357,19 +392,34 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
                       <span title={r.competitions.join(", ")}>{r.competitions.length} competições</span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-right tabular-nums">{r.n_players}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{r.games}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.gls, 2)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.ast, 2)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.ca, 2)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.cp, 2)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.ra, 2)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.rm, 2)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.rc, 2)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(r.vp)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(r.salary)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.age, 2)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums font-semibold">{r.reputation == null ? "—" : fmtNum(r.reputation, 2)}</td>
+                  <td className={`${cellPad} text-right tabular-nums`}>
+                    <DrillCell<PlayerDrillRow>
+                      label={r.n_players}
+                      title={`Jogadores de ${r.club}`}
+                      rows={r.players}
+                      emptyMessage="Sem jogadores importados."
+                      columns={[
+                        { key: "name", label: "Jogador", align: "left", render: (p) => (
+                          <Link to="/jogadores/$name" params={{ name: p.name }} className="hover:text-primary hover:underline">{p.name}</Link>
+                        ) },
+                        { key: "games", label: "Jogos", align: "right", value: (p) => p.games },
+                        { key: "gls", label: "Golos", align: "right", value: (p) => fmtNum(p.gls, 2) },
+                        { key: "ast", label: "Assist.", align: "right", value: (p) => fmtNum(p.ast, 2) },
+                      ]}
+                    />
+                  </td>
+                  <td className={`${cellPad} text-right tabular-nums`}>{r.games}</td>
+                  <td className={`${cellPad} text-right tabular-nums`}>{fmtNum(r.gls, 2)}</td>
+                  <td className={`${cellPad} text-right tabular-nums`}>{fmtNum(r.ast, 2)}</td>
+                  <td className={`${cellPad} text-right tabular-nums`}>{fmtNum(r.ca, 2)}</td>
+                  <td className={`${cellPad} text-right tabular-nums`}>{fmtNum(r.cp, 2)}</td>
+                  <td className={`${cellPad} text-right tabular-nums`}>{fmtNum(r.ra, 2)}</td>
+                  <td className={`${cellPad} text-right tabular-nums`}>{fmtNum(r.rm, 2)}</td>
+                  <td className={`${cellPad} text-right tabular-nums`}>{fmtNum(r.rc, 2)}</td>
+                  <td className={`${cellPad} text-right tabular-nums`}>{fmtMoney(r.vp)}</td>
+                  <td className={`${cellPad} text-right tabular-nums`}>{fmtMoney(r.salary)}</td>
+                  <td className={`${cellPad} text-right tabular-nums`}>{fmtNum(r.age, 2)}</td>
+                  <td className={`${cellPad} text-right tabular-nums font-semibold`}>{r.reputation == null ? "—" : fmtNum(r.reputation, 2)}</td>
                 </tr>
               ))}
               {pageRows.length === 0 && (<tr><td colSpan={18} className="px-3 py-8 text-center text-muted-foreground">Sem resultados.</td></tr>)}
