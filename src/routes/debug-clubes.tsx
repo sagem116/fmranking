@@ -233,18 +233,17 @@ function DebugClubes() {
         </CardContent>
       </Card>
 
-
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <AlertTriangle className="size-4 text-warning" /> Clubes sem país associado ({noCountryRows.length})
+            <AlertTriangle className="size-4 text-amber-500" /> (Época, Clube) sem país nos standings ({derived.noCountryRows.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {noCountryRows.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Todos os clubes têm país associado.</p>
+          {derived.noCountryRows.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Todos os (época, clube) têm país associado nos standings.</p>
           ) : (
-            <div className="overflow-x-auto max-h-[420px]">
+            <div className="overflow-x-auto max-h-[360px]">
               <table className="w-full text-sm">
                 <thead className="text-xs uppercase text-muted-foreground border-b border-border sticky top-0 bg-background">
                   <tr>
@@ -253,7 +252,7 @@ function DebugClubes() {
                   </tr>
                 </thead>
                 <tbody>
-                  {noCountryRows.map((r) => (
+                  {derived.noCountryRows.slice(0, 400).map((r) => (
                     <tr key={`${r.year}-${r.club}`} className="border-b border-border/40 hover:bg-muted/40">
                       <td className="py-1.5 pr-3 tabular-nums">{r.year}</td>
                       <td className="py-1.5 pr-3 font-medium">
@@ -271,46 +270,11 @@ function DebugClubes() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <AlertTriangle className="size-4 text-warning" /> Clubes sem treinador associado ({noCoachRows.length})
+            <AlertTriangle className="size-4 text-amber-500" /> >1 treinador na mesma época ({derived.multiCoachRows.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {noCoachRows.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Todos os (época, clube) têm pelo menos um treinador associado.</p>
-          ) : (
-            <div className="overflow-x-auto max-h-[420px]">
-              <table className="w-full text-sm">
-                <thead className="text-xs uppercase text-muted-foreground border-b border-border sticky top-0 bg-background">
-                  <tr>
-                    <th className="text-left py-2 pr-3 w-20">Época</th>
-                    <th className="text-left py-2 pr-3">Clube</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {noCoachRows.map((r) => (
-                    <tr key={`${r.year}-${r.club}`} className="border-b border-border/40 hover:bg-muted/40">
-                      <td className="py-1.5 pr-3 tabular-nums">{r.year}</td>
-                      <td className="py-1.5 pr-3 font-medium">
-                        <Link to="/clubes/$name" params={{ name: r.club }} className="hover:text-primary">{r.club}</Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <AlertTriangle className="size-4 text-warning" /> Clubes com mais que um treinador na mesma época ({multiCoachRows.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {multiCoachRows.length === 0 ? (
+          {derived.multiCoachRows.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nenhum clube tem mais que um treinador na mesma época.</p>
           ) : (
             <div className="overflow-x-auto max-h-[420px]">
@@ -323,7 +287,7 @@ function DebugClubes() {
                   </tr>
                 </thead>
                 <tbody>
-                  {multiCoachRows.map((r) => (
+                  {derived.multiCoachRows.map((r) => (
                     <tr key={`${r.year}-${r.club}`} className="border-b border-border/40 hover:bg-muted/40">
                       <td className="py-1.5 pr-3 tabular-nums">{r.year}</td>
                       <td className="py-1.5 pr-3 font-medium">
@@ -347,14 +311,14 @@ function DebugClubes() {
         </CardContent>
       </Card>
 
-      {ghostClubs.length > 0 && (
+      {derived.ghostClubs.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Clubes em standings mas ausentes na tabela clubs ({ghostClubs.length})</CardTitle>
+            <CardTitle className="text-base">Clubes em standings mas ausentes na tabela clubs ({derived.ghostClubs.length})</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
-              {ghostClubs.map((c) => <Badge key={c} variant="outline">{c}</Badge>)}
+              {derived.ghostClubs.map((c) => <Badge key={c} variant="outline">{c}</Badge>)}
             </div>
           </CardContent>
         </Card>
@@ -362,7 +326,7 @@ function DebugClubes() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Jogadores por clube (época {latestYear || "—"})</CardTitle>
+          <CardTitle className="text-base">Jogadores por clube (última época: {derived.latestYear || "—"})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto max-h-[480px]">
@@ -376,7 +340,7 @@ function DebugClubes() {
                 </tr>
               </thead>
               <tbody>
-                {playersPerClubRows.map(([c, n], i) => (
+                {derived.playersPerClubRows.map(([c, n], i) => (
                   <tr key={c} className="border-b border-border/40 hover:bg-muted/40">
                     <td className="py-1.5 pr-3 text-muted-foreground">{i + 1}</td>
                     <td className="py-1.5 pr-3 font-medium">
@@ -398,6 +362,34 @@ function DebugClubes() {
         <RankCard title="Por títulos" rows={rankedTitles.slice(0, 100).map((e) => ({ name: e.name, value: e.titles }))} />
       </div>
     </div>
+  );
+}
+
+function ClubListCard({ title, clubs }: { title: string; clubs: string[] }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <AlertTriangle className="size-4 text-amber-500" /> {title} ({clubs.length})
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {clubs.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Sem problemas nesta secção.</p>
+        ) : (
+          <div className="flex flex-wrap gap-1.5 max-h-[220px] overflow-y-auto">
+            {clubs.slice(0, 400).map((c) => (
+              <Link key={c} to="/clubes/$name" params={{ name: c }}>
+                <Badge variant="outline" className="hover:bg-muted text-xs">{c}</Badge>
+              </Link>
+            ))}
+            {clubs.length > 400 && <span className="text-xs text-muted-foreground">… e mais {clubs.length - 400}</span>}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
   );
 }
 
