@@ -1,118 +1,238 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Loader2, Bug, AlertTriangle } from "lucide-react";
+import { useMemo } from "react";
+import { Loader2, Bug, AlertTriangle, Trophy, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useRankings } from "@/lib/useRankings";
+import { usePlayerStatsData } from "@/lib/usePlayerStatsData";
 import { rankBy } from "@/lib/fm-rankings";
+import { continentOf } from "@/lib/fm-continents";
+import { loadReputations, loadClubAliases, reputationFor } from "@/lib/fm-club-reputation";
 
 export const Route = createFileRoute("/debug-clubes")({
   head: () => ({ meta: [{ title: "Debug · Clubes — FM World Rankings" }] }),
   component: DebugClubes,
 });
 
+// Normalization to detect similar names (Levenshtein-ish via cheap token set).
+function normName(s: string) {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\b(fc|cf|sc|ac|afc|cd|sd|as|ss|us|ud|ss|club|fk|bk|de|do|of|the)\b/g, "").replace(/[^a-z0-9]/g, " ").split(/\s+/).filter(Boolean).sort().join(" ");
+}
+
 function DebugClubes() {
   const { data, isLoading } = useRankings();
-  if (isLoading || !data) {
+  const { data: psData } = usePlayerStatsData();
+
+  const derived = useMemo(() => {
+    if (!data) return null;
+    const { clubCountry, rawClubCountry, players, standings, coaches } = data.data;
+    const aliases = loadClubAliases();
+    const reps = loadReputations();
+
+    const allClubs = Object.keys(clubCountry);
+
+    // Latest year of player-stats
+    const latestYear = (psData?.players?.length ? Math.max(...psData.players.map((p) => p.season_year)) : (players.length ? Math.max(...players.map((p) => p.season_year)) : 0));
+    const playersPerClubLatest = new Map<string, number>();
+    for (const p of psData?.players ?? []) {
+      if (p.season_year !== latestYear || !p.club) continue;
+      playersPerClubLatest.set(p.club, (playersPerClubLatest.get(p.club) ?? 0) + 1);
+    }
+    for (const p of players) {
+      if (p.season_year !== latestYear || !p.club_name) continue;
+      playersPerClubLatest.set(p.club_name, (playersPerClubLatest.get(p.club_name) ?? 0) + 1);
+    }
+    // Clubs with historical data (any player_stats or standings, any year)
+    const clubsWithAnyPlayers = new Set<string>();
+    for (const p of psData?.players ?? []) if (p.club) clubsWithAnyPlayers.add(p.club);
+    for (const p of players) if (p.club_name) clubsWithAnyPlayers.add(p.club_name);
+    const clubsInStandings = new Set(standings.map((s) => s.club_name).filter(Boolean) as string[]);
+
+    // Clubs in competitions (latest year mapping via psData)
+    const clubCompLatest = new Map<string, string>();
+    for (const p of psData?.players ?? []) {
+      if (p.club && p.competition) clubCompLatest.set(p.club, p.competition);
+    }
+    for (const s of standings) {
+      if (s.club_name && s.competition && !clubCompLatest.has(s.club_name)) clubCompLatest.set(s.club_name, s.competition);
+    }
+
+    // Sections
+    const clubsWithoutPlayers = allClubs.filter((c) => (playersPerClubLatest.get(c) ?? 0) === 0).sort();
+    const clubsWithoutCountry = allClubs.filter((c) => !clubCountry[c]).sort();
+    const clubsWithoutContinent = allClubs.filter((c) => !continentOf(clubCountry[c] ?? "")).sort();
+    const clubsWithoutReputation = allClubs.filter((c) => reputationFor(c, aliases, reps) == null).sort();
+    const clubsWithoutCompetition = allClubs.filter((c) => !clubCompLatest.has(c)).sort();
+    const clubsWithoutHistory = allClubs.filter((c) => !clubsWithAnyPlayers.has(c) && !clubsInStandings.has(c)).sort();
+
+    // Duplicates: same normalized name across the clubs table
+    const byNorm = new Map<string, string[]>();
+    for (const c of allClubs) {
+      const k = normName(c);
+      if (!k) continue;
+      let arr = byNorm.get(k); if (!arr) { arr = []; byNorm.set(k, arr); }
+      arr.push(c);
+    }
+    const duplicates: string[][] = [];
+    const similar: string[][] = [];
+    for (const [, arr] of byNorm) {
+      if (arr.length > 1) duplicates.push(arr.sort());
+    }
+    // Similar-but-not-equal: pairs where one normalized string contains another
+    const normArr = [...byNorm.keys()];
+    for (let i = 0; i < normArr.length; i++) {
+      for (let j = i + 1; j < normArr.length; j++) {
+        const a = normArr[i]; const b = normArr[j];
+        if (a.length < 4 || b.length < 4) continue;
+        if (a === b) continue;
+        if ((a.length > b.length ? a.includes(b) : b.includes(a))) {
+          similar.push([...(byNorm.get(a) ?? []), ...(byNorm.get(b) ?? [])]);
+        }
+      }
+    }
+
+    // No country per (year, club) — retained from previous version
+    const noCountryRows: { year: number; club: string }[] = [];
+    {
+      const seen = new Set<string>();
+      for (const s of standings) {
+        if (!s.club_name || !s.season_year) continue;
+        if (rawClubCountry[s.club_name]) continue;
+        const k = `${s.season_year}|${s.club_name}`;
+        if (seen.has(k)) continue;
+        seen.add(k);
+        noCountryRows.push({ year: s.season_year, club: s.club_name });
+      }
+      noCountryRows.sort((a, b) => b.year - a.year || a.club.localeCompare(b.club));
+    }
+
+    // Multi-coach same season (retained)
+    const seasonClubCoaches = new Map<string, Set<string>>();
+    for (const c of coaches ?? []) {
+      if (!c.club_name || !c.name) continue;
+      const k = `${c.season_year}|${c.club_name}`;
+      let s = seasonClubCoaches.get(k);
+      if (!s) { s = new Set(); seasonClubCoaches.set(k, s); }
+      s.add(c.name);
+    }
+    const multiCoachRows: { year: number; club: string; coaches: string[] }[] = [];
+    for (const [k, set] of seasonClubCoaches) {
+      if (set.size <= 1) continue;
+      const [y, club] = k.split("|");
+      multiCoachRows.push({ year: Number(y), club, coaches: [...set].sort() });
+    }
+    multiCoachRows.sort((a, b) => b.year - a.year || a.club.localeCompare(b.club));
+
+    const playersPerClubRows = [...playersPerClubLatest.entries()].sort((a, b) => b[1] - a[1]);
+    const ghostClubs = [...clubsInStandings].filter((c) => !(c in clubCountry)).sort();
+
+    return {
+      allClubs, latestYear,
+      clubsWithoutPlayers, clubsWithoutCountry, clubsWithoutContinent, clubsWithoutReputation,
+      clubsWithoutCompetition, clubsWithoutHistory,
+      duplicates, similar,
+      noCountryRows, multiCoachRows, ghostClubs, playersPerClubRows,
+    };
+  }, [data, psData]);
+
+  if (isLoading || !data || !derived) {
     return <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="size-4 animate-spin" /> A carregar…</div>;
   }
 
-  const { clubCountry, rawClubCountry, players, standings, coaches } = data.data;
-  const allClubs = Object.keys(clubCountry);
-  const clubsWithoutCountry = allClubs.filter((c) => !clubCountry[c]).sort();
-
-  // Distinct (year, club) entries from standings without country associated
-  // (uses raw mapping, before national-league country inference)
-  const noCountryRows: { year: number; club: string }[] = [];
-  {
-    const seen = new Set<string>();
-    for (const s of standings) {
-      if (!s.club_name || !s.season_year) continue;
-      if (rawClubCountry[s.club_name]) continue;
-      const k = `${s.season_year}|${s.club_name}`;
-      if (seen.has(k)) continue;
-      seen.add(k);
-      noCountryRows.push({ year: s.season_year, club: s.club_name });
-    }
-    noCountryRows.sort((a, b) => b.year - a.year || a.club.localeCompare(b.club));
-  }
-
-
-  // (year, club) entries where no coach is associated for that specific season
-  const seasonClubCoachesAll = new Map<string, Set<string>>();
-  for (const c of coaches ?? []) {
-    if (!c.club_name || !c.season_year) continue;
-    const k = `${c.season_year}|${c.club_name}`;
-    let s = seasonClubCoachesAll.get(k);
-    if (!s) { s = new Set(); seasonClubCoachesAll.set(k, s); }
-    if (c.name) s.add(c.name);
-  }
-  const noCoachRows: { year: number; club: string }[] = [];
-  {
-    const seen = new Set<string>();
-    for (const s of standings) {
-      if (!s.club_name || !s.season_year) continue;
-      const k = `${s.season_year}|${s.club_name}`;
-      if (seen.has(k)) continue;
-      seen.add(k);
-      const set = seasonClubCoachesAll.get(k);
-      if (!set || set.size === 0) noCoachRows.push({ year: s.season_year, club: s.club_name });
-    }
-    noCoachRows.sort((a, b) => b.year - a.year || a.club.localeCompare(b.club));
-  }
-
-  // Players per club (latest available season for that club)
-  const latestYear = players.length ? Math.max(...players.map((p) => p.season_year)) : 0;
-  const playersPerClub = new Map<string, number>();
-  for (const p of players) {
-    if (p.season_year !== latestYear || !p.club_name) continue;
-    playersPerClub.set(p.club_name, (playersPerClub.get(p.club_name) ?? 0) + 1);
-  }
-  const playersPerClubRows = [...playersPerClub.entries()]
-    .sort((a, b) => b[1] - a[1]);
-
-  // Clubs that appear in standings/players but missing from clubs table or stats
-  const clubsInStandings = new Set(standings.map((s) => s.club_name));
-  const ghostClubs = [...clubsInStandings].filter((c) => !(c in clubCountry)).sort();
-
-
-
-  // Clubs with more than one distinct coach in the same season
-  const seasonClubCoaches = new Map<string, Set<string>>();
-  for (const c of coaches ?? []) {
-    if (!c.club_name || !c.name) continue;
-    const k = `${c.season_year}|${c.club_name}`;
-    let s = seasonClubCoaches.get(k);
-    if (!s) { s = new Set(); seasonClubCoaches.set(k, s); }
-    s.add(c.name);
-  }
-  const multiCoachRows: { year: number; club: string; coaches: string[] }[] = [];
-  for (const [k, set] of seasonClubCoaches) {
-    if (set.size <= 1) continue;
-    const [y, club] = k.split("|");
-    multiCoachRows.push({ year: Number(y), club, coaches: [...set].sort() });
-  }
-  multiCoachRows.sort((a, b) => b.year - a.year || a.club.localeCompare(b.club));
-
+  const { clubCountry } = data.data;
   const ranked = rankBy(data.ranks.clubs, "weighted");
   const rankedRaw = rankBy(data.ranks.clubs, "raw");
   const rankedTitles = [...data.ranks.clubs].sort((a, b) => b.titles - a.titles);
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-          <Bug className="size-6 text-primary" /> Debug · Clubes
-        </h1>
-        <p className="text-muted-foreground text-sm mt-1">Diagnóstico de dados e rankings de clubes</p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+            <Bug className="size-6 text-primary" /> Debug · Clubes
+          </h1>
+          <p className="text-muted-foreground text-sm mt-1">Diagnóstico completo dos clubes: dados em falta, duplicados e histórico.</p>
+        </div>
+        <div className="flex gap-2">
+          <Button asChild size="sm" variant="outline">
+            <Link to="/debug-reputacao-clubes"><ExternalLink className="size-3.5" /> Reputação de Clubes</Link>
+          </Button>
+          <Button asChild size="sm" variant="outline">
+            <Link to="/debug-mapeamento-clubes"><ExternalLink className="size-3.5" /> Mapeamento de Clubes</Link>
+          </Button>
+        </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-5">
-        <Stat label="Clubes (totais)" value={allClubs.length} />
-        <Stat label="(Época, Clube) sem país" value={noCountryRows.length} tone={noCountryRows.length ? "warn" : "ok"} />
-        <Stat label="(Época, Clube) sem treinador" value={noCoachRows.length} tone={noCoachRows.length ? "warn" : "ok"} />
-        <Stat label=">1 treinador / época" value={multiCoachRows.length} tone={multiCoachRows.length ? "warn" : "ok"} />
-        <Stat label="Em standings, fora da tabela 'clubs'" value={ghostClubs.length} tone={ghostClubs.length ? "warn" : "ok"} />
+      <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-8">
+        <Stat label="Total" value={derived.allClubs.length} />
+        <Stat label="Sem jogadores" value={derived.clubsWithoutPlayers.length} tone={derived.clubsWithoutPlayers.length ? "warn" : "ok"} />
+        <Stat label="Sem país" value={derived.clubsWithoutCountry.length} tone={derived.clubsWithoutCountry.length ? "warn" : "ok"} />
+        <Stat label="Sem continente" value={derived.clubsWithoutContinent.length} tone={derived.clubsWithoutContinent.length ? "warn" : "ok"} />
+        <Stat label="Sem reputação" value={derived.clubsWithoutReputation.length} tone={derived.clubsWithoutReputation.length ? "warn" : "ok"} />
+        <Stat label="Sem competição" value={derived.clubsWithoutCompetition.length} tone={derived.clubsWithoutCompetition.length ? "warn" : "ok"} />
+        <Stat label="Duplicados" value={derived.duplicates.length} tone={derived.duplicates.length ? "warn" : "ok"} />
+        <Stat label="Sem histórico" value={derived.clubsWithoutHistory.length} tone={derived.clubsWithoutHistory.length ? "warn" : "ok"} />
       </div>
+
+      <ClubListCard title="Clubes sem jogadores (última época)" clubs={derived.clubsWithoutPlayers} />
+      <ClubListCard title="Clubes sem país associado" clubs={derived.clubsWithoutCountry} />
+      <ClubListCard title="Clubes sem continente" clubs={derived.clubsWithoutContinent} />
+      <ClubListCard title="Clubes sem reputação" clubs={derived.clubsWithoutReputation} />
+      <ClubListCard title="Clubes sem competição associada" clubs={derived.clubsWithoutCompetition} />
+      <ClubListCard title="Clubes sem histórico (nem em standings nem em player_stats)" clubs={derived.clubsWithoutHistory} />
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <AlertTriangle className="size-4 text-amber-500" /> Clubes duplicados (nome normalizado igual) ({derived.duplicates.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {derived.duplicates.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Sem duplicados.</p>
+          ) : (
+            <div className="space-y-2">
+              {derived.duplicates.map((group, i) => (
+                <div key={i} className="flex flex-wrap gap-2 rounded-lg border border-border/60 p-2">
+                  {group.map((c) => (
+                    <Link key={c} to="/clubes/$name" params={{ name: c }}>
+                      <Badge variant="outline" className="hover:bg-muted">{c}</Badge>
+                    </Link>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <AlertTriangle className="size-4 text-amber-500" /> Clubes com nomes semelhantes ({derived.similar.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {derived.similar.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Sem semelhanças evidentes.</p>
+          ) : (
+            <div className="space-y-2 max-h-[400px] overflow-y-auto">
+              {derived.similar.slice(0, 100).map((group, i) => (
+                <div key={i} className="flex flex-wrap gap-2 rounded-lg border border-border/60 p-2">
+                  {[...new Set(group)].map((c) => (
+                    <Link key={c} to="/clubes/$name" params={{ name: c }}>
+                      <Badge variant="outline" className="hover:bg-muted">{c}</Badge>
+                    </Link>
+                  ))}
+                </div>
+              ))}
+              {derived.similar.length > 100 && <p className="text-xs text-muted-foreground">… e mais {derived.similar.length - 100}</p>}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
 
       <Card>
         <CardHeader>
