@@ -9,11 +9,13 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ChevronUp, ChevronDown, RotateCcw } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ChevronUp, ChevronDown, RotateCcw, MoveRight } from "lucide-react";
 import {
   type SidebarPrefs,
   DEFAULT_PREFS,
   reorder,
+  DEBUG_GROUP,
 } from "@/lib/sidebar-prefs";
 import { cn } from "@/lib/utils";
 
