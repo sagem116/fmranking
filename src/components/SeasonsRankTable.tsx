@@ -279,6 +279,7 @@ export function SeasonsRankTable({
                 onClick={() => setSortKey(`year:${y}`)}
                 active={sortKey === `year:${y}`}
                 dir={sortDir}
+                pad={cellPad}
               >
                 {y}
               </HeaderCell>
