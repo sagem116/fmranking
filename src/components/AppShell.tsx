@@ -118,11 +118,12 @@ const NAV_GROUPS: NavGroup[] = [
 ];
 
 const DEBUG_ITEMS: NavItem[] = [
+  { to: "/debug-clubes", label: "Clubes", icon: Bug },
   { to: "/debug-treinadores", label: "Treinadores", icon: Bug },
+  { to: "/debug-jogadores", label: "Jogadores", icon: Bug },
+  { to: "/debug-competicoes", label: "Competições", icon: Bug },
   { to: "/debug-continentais", label: "Continentais", icon: Bug },
   { to: "/debug-pontos", label: "Pontos", icon: Bug },
-  { to: "/debug-clubes", label: "Clubes", icon: Bug },
-  { to: "/debug-jogadores", label: "Jogadores", icon: Bug },
   { to: "/debug-continentes", label: "Continentes", icon: Bug },
   { to: "/debug-paises", label: "Países", icon: Bug },
   { to: "/debug-reputacao-clubes", label: "Reputação Clubes", icon: Bug },
