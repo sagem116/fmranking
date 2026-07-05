@@ -12,8 +12,9 @@ import { ENTITY_LABEL, varsForEntity, type EntityKind } from "@/lib/fm-entity-va
 import { useCustomRankings, upsertCustomRanking, deleteCustomRanking, duplicateCustomRanking, newCustomRankingId, applyFilter, type CustomRanking, type CustomFilter, type FilterOp } from "@/lib/fm-custom-rankings";
 import { useCustomFormulas } from "@/lib/fm-custom-formulas";
 import { evalFormula } from "@/lib/fm-custom-formulas";
-import { buildRows, metaFieldsFor } from "@/lib/fm-entity-rows";
+import { buildRows, buildCoachRowsFrom, metaFieldsFor } from "@/lib/fm-entity-rows";
 import { usePlayerStatsData } from "@/lib/usePlayerStatsData";
+import { useRankings } from "@/lib/useRankings";
 import { fmtNum } from "@/lib/fmt";
 
 export const Route = createFileRoute("/rankings-personalizados")({
@@ -21,7 +22,7 @@ export const Route = createFileRoute("/rankings-personalizados")({
   component: RankingsPersonalizadosPage,
 });
 
-const ENTITIES: EntityKind[] = ["jogador", "clube", "competicao", "pais"];
+const ENTITIES: EntityKind[] = ["jogador", "clube", "competicao", "pais", "treinador"];
 const OPS: { value: FilterOp; label: string }[] = [
   { value: ">=", label: "≥" }, { value: "<=", label: "≤" },
   { value: "=", label: "=" }, { value: "!=", label: "≠" },
