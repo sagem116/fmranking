@@ -139,6 +139,10 @@ export function SeasonsRankTable({
   enableSearch = true,
   coachByKey,
 }: Props) {
+  const [density] = useRankingsDensity();
+  const compact = density === "compact";
+  const ROW_H = compact ? ROW_H_COMPACT : ROW_H_COMFY;
+  const cellPad = compact ? "px-2 py-1" : "p-3";
   const extrasMap = useMemo(() => {
     const m: Record<string, Record<string, number>> = {};
     for (const ec of extraCols ?? []) m[ec.key] = ec.values;
