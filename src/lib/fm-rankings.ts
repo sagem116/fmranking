@@ -21,6 +21,7 @@ export interface StandingRow {
   module: "superleague" | "national" | "continental";
   division_num: number | null;
   division_label?: string | null;
+  competition?: string | null;
   position: number | null;
   club_name: string;
   is_champion: boolean;
