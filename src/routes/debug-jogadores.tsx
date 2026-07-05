@@ -256,3 +256,25 @@ function RankCard({ title, rows, unit }: { title: string; rows: { name: string; 
     </Card>
   );
 }
+
+function ListCard({ title, items, total }: { title: string; items: string[]; total: number }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <AlertTriangle className="size-4 text-amber-500" /> {title} ({total})
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {items.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Sem ocorrências.</p>
+        ) : (
+          <div className="flex flex-wrap gap-1.5 max-h-[240px] overflow-y-auto">
+            {items.map((s, i) => <Badge key={i} variant="outline" className="text-xs">{s}</Badge>)}
+            {total > items.length && <span className="text-xs text-muted-foreground">… e mais {total - items.length}</span>}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
