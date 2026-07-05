@@ -349,6 +349,8 @@ export type Database = {
       competition_reputation: {
         Row: {
           competition: string
+          continent: string | null
+          country: string | null
           id: string
           reputation: number
           season_year: number | null
@@ -356,6 +358,8 @@ export type Database = {
         }
         Insert: {
           competition: string
+          continent?: string | null
+          country?: string | null
           id?: string
           reputation: number
           season_year?: number | null
@@ -363,6 +367,8 @@ export type Database = {
         }
         Update: {
           competition?: string
+          continent?: string | null
+          country?: string | null
           id?: string
           reputation?: number
           season_year?: number | null
