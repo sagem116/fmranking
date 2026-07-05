@@ -65,7 +65,8 @@ function extractClub(detail: string): string | null {
   return parts.length > 1 ? parts[parts.length - 1] : null;
 }
 
-const ROW_H = 44;
+const ROW_H_COMFY = 44;
+const ROW_H_COMPACT = 30;
 const VIEWPORT_H = 640;
 
 /** Rank table per year using the evolution map (memoised). */
