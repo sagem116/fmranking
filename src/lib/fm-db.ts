@@ -345,7 +345,7 @@ export async function fetchAllData(): Promise<AllData> {
   const [standings, continental, internationalRaw, coachAssign, playersRaw, clubIds, coachNat] = await Promise.all([
     fetchAllRows<Record<string, unknown>>(
       "standings",
-      "season_id,module,division_num,division_label,position,club_name,is_champion,info,points,played,wins,draws,losses,gf,ga",
+      "season_id,module,division_num,division_label,competition,position,club_name,is_champion,info,points,played,wins,draws,losses,gf,ga",
     ),
 
     fetchAllRows<Record<string, unknown>>(
@@ -358,7 +358,7 @@ export async function fetchAllData(): Promise<AllData> {
     ),
     fetchAllRows<Record<string, unknown>>(
       "coach_assignments",
-      "season_id,module,coach_name,club_name",
+      "season_id,module,coach_name,club_name,club_role,intl_role,country_name",
     ),
     fetchAllRows<Record<string, unknown>>(
       "players",
