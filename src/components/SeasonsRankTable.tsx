@@ -236,13 +236,13 @@ export function SeasonsRankTable({
             className="sticky top-0 z-20 bg-card/95 backdrop-blur border-b border-border text-muted-foreground text-xs uppercase grid"
             style={{ gridColumn: "1 / -1", gridTemplateColumns: cols }}
           >
-            <HeaderCell className="text-left">#</HeaderCell>
-            <HeaderCell className="text-left sticky left-0 bg-card/95 backdrop-blur z-10">{label}</HeaderCell>
-            {showNac && <HeaderCell className="text-left">Nac</HeaderCell>}
+            <HeaderCell className="text-left" pad={cellPad}>#</HeaderCell>
+            <HeaderCell className="text-left sticky left-0 bg-card/95 backdrop-blur z-10" pad={cellPad}>{label}</HeaderCell>
+            {showNac && <HeaderCell className="text-left" pad={cellPad}>Nac</HeaderCell>}
             {showTitles && (
               <HeaderCell
                 className="text-right"
-                onClick={() => setSortKey("titles")}
+                onClick={() = pad={cellPad}> setSortKey("titles")}
                 active={sortKey === "titles"}
                 dir={sortDir}
               >
@@ -253,7 +253,7 @@ export function SeasonsRankTable({
               <HeaderCell
                 key={ec.key}
                 className="text-right"
-                onClick={() => setSortKey(`extra:${ec.key}`)}
+                onClick={() = pad={cellPad}> setSortKey(`extra:${ec.key}`)}
                 active={sortKey === `extra:${ec.key}`}
                 dir={sortDir}
               >
@@ -262,18 +262,18 @@ export function SeasonsRankTable({
             ))}
             <HeaderCell
               className="text-right"
-              onClick={() => setSortKey("points")}
+              onClick={() = pad={cellPad}> setSortKey("points")}
               active={sortKey === "points"}
               dir={sortDir}
             >
               Total
             </HeaderCell>
-            <HeaderCell className="text-right" >Δ vs anterior</HeaderCell>
+            <HeaderCell className="text-right"  pad={cellPad}>Δ vs anterior</HeaderCell>
             {years.map((y) => (
               <HeaderCell
                 key={y}
                 className="text-right font-medium tabular-nums"
-                onClick={() => setSortKey(`year:${y}`)}
+                onClick={() = pad={cellPad}> setSortKey(`year:${y}`)}
                 active={sortKey === `year:${y}`}
                 dir={sortDir}
               >
