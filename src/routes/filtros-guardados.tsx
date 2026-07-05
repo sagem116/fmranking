@@ -23,7 +23,7 @@ const OPS: { value: FilterOp; label: string }[] = [
   { value: "=", label: "=" }, { value: "!=", label: "≠" },
   { value: "contains", label: "contém" }, { value: "in", label: "em (lista)" },
 ];
-const ENTITIES: EntityKind[] = ["jogador", "clube", "competicao", "pais"];
+const ENTITIES: EntityKind[] = ["jogador", "clube", "competicao", "pais", "treinador"];
 
 function emptyFilter(): SavedFilter {
   return {
