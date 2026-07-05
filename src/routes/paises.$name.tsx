@@ -9,6 +9,7 @@ import { DesafiosProfileCard } from "@/components/DesafiosProfileCard";
 import { fmtPts } from "@/lib/fmt";
 import { CountryRecordsSection } from "@/components/RecordsSection";
 import { RankingEvolutionSection } from "@/components/RankingEvolutionSection";
+import { CountryInternationalPointsCard } from "@/components/CountryInternationalPointsCard";
 
 export const Route = createFileRoute("/paises/$name")({
   component: CountryProfilePage,
