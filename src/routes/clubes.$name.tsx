@@ -88,6 +88,8 @@ function ClubProfilePage() {
         )}
       </div>
 
+      <ClubReputationSection clubName={profile.name} />
+
       <DynamicMetricChart kind="club" name={profile.name} title="Evolução por época" />
 
       <RankingEvolutionSection kind="club" name={profile.name} />
