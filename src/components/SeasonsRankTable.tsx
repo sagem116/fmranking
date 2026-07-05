@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import type { RankingEntry, BreakdownItem } from "@/lib/fm-rankings";
 import { useEntrySort } from "@/components/SortableTh";
 import { fmtPts } from "@/lib/fmt";
+import { useRankingsDensity } from "@/lib/fm-rankings-ui-prefs";
 
 type Kind = "clubes" | "treinadores" | "paises";
 
