@@ -19,7 +19,12 @@ export interface ClubReputationRow {
   avg_attendance: number | null;
   season_ticket_holders: number | null;
 }
-export interface CompetitionReputationRow { competition: string; reputation: number | null; }
+export interface CompetitionReputationRow {
+  competition: string;
+  reputation: number | null;
+  country: string | null;
+  continent: string | null;
+}
 
 export interface CoachRow {
   idu: string | null;
