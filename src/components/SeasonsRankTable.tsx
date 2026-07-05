@@ -213,7 +213,7 @@ export function SeasonsRankTable({
   return (
     <Card className="mt-4 overflow-hidden">
       {enableSearch && (
-        <div className={`'${cellPad} border-b border-border">
+        <div className="p-3 border-b border-border">
           <div className="relative max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
@@ -305,18 +305,18 @@ export function SeasonsRankTable({
                   }}
                 >
                   <div className={`${cellPad} font-bold ${i < 3 ? "text-gold" : "text-muted-foreground"}`}>{i + 1}</div>
-                  <div className={`'${cellPad} font-medium truncate sticky left-0 bg-background/95 backdrop-blur z-[1]">
+                  <div className={`${cellPad} font-medium truncate sticky left-0 bg-background/95 backdrop-blur z-[1]`}>
                     <Link to={to} params={{ name: e.name }} className="hover:text-primary hover:underline">
                       {e.name}
                     </Link>
                   </div>
                   {showNac && (
-                    <div className={`'${cellPad} text-muted-foreground text-xs truncate">
+                    <div className={`${cellPad} text-muted-foreground text-xs truncate`}>
                       {nacMap?.[e.name] ?? "—"}
                     </div>
                   )}
                   {showTitles && (
-                    <div className={`'${cellPad} text-right tabular-nums">
+                    <div className={`${cellPad} text-right tabular-nums`}>
                       {e.titles > 0 && titleItems.length > 0 ? (
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -370,7 +370,7 @@ export function SeasonsRankTable({
                       </span>
                     );
                     return (
-                      <div key={ec.key} className={`'${cellPad} text-right">
+                      <div key={ec.key} className={`${cellPad} text-right`}>
                         {tip && v ? (
                           <Tooltip>
                             <TooltipTrigger asChild>{inner}</TooltipTrigger>
@@ -380,10 +380,10 @@ export function SeasonsRankTable({
                       </div>
                     );
                   })}
-                  <div className={`'${cellPad} text-right font-semibold tabular-nums">
+                  <div className={`${cellPad} text-right font-semibold tabular-nums`}>
                     {fmtPts(mode === "raw" ? e.raw : e.weighted)}
                   </div>
-                  <div className={`'${cellPad} text-right">
+                  <div className={`${cellPad} text-right`}>
                     {d ? <DeltaCell ptsDelta={d.ptsDelta} rankDelta={d.rankDelta} /> : <span className="text-muted-foreground/40">—</span>}
                   </div>
                   {years.map((y) => {
