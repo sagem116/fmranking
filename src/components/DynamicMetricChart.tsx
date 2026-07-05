@@ -35,6 +35,8 @@ const COMMON_SUM: Metric[] = [
   { key: "ast", label: "Assistências", agg: "sum", pick: (r) => NUM(r.ast) },
   { key: "games", label: "Jogos", agg: "sum", pick: (r) => NUM(r.games) },
   { key: "hdj", label: "Homem do Jogo", agg: "sum", pick: (r) => NUM(r.hdj) },
+  { key: "yellows", label: "Amarelos", agg: "sum", pick: (r) => NUM(r.yellows) },
+  { key: "reds", label: "Vermelhos", agg: "sum", pick: (r) => NUM(r.reds) },
 ];
 
 const COMMON_AVG: Metric[] = [
@@ -46,6 +48,12 @@ const COMMON_AVG: Metric[] = [
   { key: "rm", label: "R.M.", agg: "avg", pick: (r) => NUM(r.rm) },
   { key: "rc", label: "R.C.", agg: "avg", pick: (r) => NUM(r.rc) },
   { key: "age", label: "Idade", agg: "avg", pick: (r) => NUM(r.age) },
+  { key: "xg", label: "xG", agg: "avg", pick: (r) => NUM(r.xg) },
+  { key: "pass_pct", label: "% Passe", agg: "avg", pick: (r) => NUM(r.pass_pct) },
+  { key: "tackles_per90", label: "Des/90", agg: "avg", pick: (r) => NUM(r.tackles_per90) },
+  { key: "fouls_per90", label: "Fnt/90", agg: "avg", pick: (r) => NUM(r.fouls_per90) },
+  { key: "shot_pct", label: "% Remates", agg: "avg", pick: (r) => NUM(r.shot_pct) },
+  { key: "avg_rating", label: "Classificação Média", agg: "avg", pick: (r) => NUM(r.avg_rating) },
 ];
 
 const SUM_AS_COUNT_FOR_NON_PLAYER: Metric[] = [

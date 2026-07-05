@@ -12,6 +12,7 @@ import { fmtPts } from "@/lib/fmt";
 import { ClubNewStatsSection } from "@/components/NewStatsSections";
 import { ClubRecordsSection } from "@/components/RecordsSection";
 import { RankingEvolutionSection } from "@/components/RankingEvolutionSection";
+import { ClubReputationSection } from "@/components/ClubReputationSection";
 
 export const Route = createFileRoute("/clubes/$name")({
   component: ClubProfilePage,
@@ -86,6 +87,8 @@ function ClubProfilePage() {
           <Badge variant="secondary" className="gap-1"><Crown className="size-3" /> {profile.continentalTitles} Continentais</Badge>
         )}
       </div>
+
+      <ClubReputationSection clubName={profile.name} />
 
       <DynamicMetricChart kind="club" name={profile.name} title="Evolução por época" />
 

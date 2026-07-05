@@ -145,6 +145,15 @@ export interface CompetitionStatRow {
   rm_avg: number;
   rc_avg: number;
   age_avg: number;
+  // Averages of the new v2 metrics (may be absent on legacy rows)
+  xg_avg?: number | null;
+  pass_pct_avg?: number | null;
+  tackles_per90_avg?: number | null;
+  fouls_per90_avg?: number | null;
+  shot_pct_avg?: number | null;
+  yellows_avg?: number | null;
+  reds_avg?: number | null;
+  avg_rating_avg?: number | null;
 }
 
 export async function fetchAllCompetitionStats(): Promise<CompetitionStatRow[]> {
