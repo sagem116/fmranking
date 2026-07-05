@@ -180,6 +180,11 @@ function RankingsPage() {
     setMounted(true);
   }, []);
 
+  // Default the "Clubes (estatísticas)" tab to Pontos Brutos.
+  useEffect(() => {
+    if (view === "clubs_stats") setMode("raw");
+  }, [view]);
+
   const availableYears = useMemo(() => {
     const set = new Set<number>();
     for (const s of data?.data.standings ?? []) if (s.season_year) set.add(s.season_year);
