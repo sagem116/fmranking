@@ -377,7 +377,7 @@ export async function fetchAllData(): Promise<AllData> {
   const standingRows: StandingRow[] = standings.map((row) => {
     const s = row as Record<string, unknown> as {
       season_id: string; module: StandingRow["module"]; division_num: number;
-      division_label?: string | null; position: number; club_name: string;
+      division_label?: string | null; competition?: string | null; position: number; club_name: string;
       is_champion: boolean; info: string | null; points?: number | null; played?: number | null;
       wins?: number | null; draws?: number | null; losses?: number | null;
       gf?: number | null; ga?: number | null;
@@ -387,6 +387,7 @@ export async function fetchAllData(): Promise<AllData> {
       module: s.module,
       division_num: s.division_num,
       division_label: s.division_label ?? null,
+      competition: s.competition ?? null,
       position: s.position,
       club_name: s.club_name,
       is_champion: s.is_champion,
