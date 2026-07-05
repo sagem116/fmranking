@@ -225,7 +225,7 @@ export function SeasonsRankTable({
           </div>
         </div>
       )}
-      <div ref={parentRef} className="overflow-auto" style={{ maxHeight: VIEWPORT_H }}>
+      <div key={density} ref={parentRef} className="overflow-auto" style={{ maxHeight: VIEWPORT_H }}>
         <div style={{ display: "grid", gridTemplateColumns: cols, minWidth: "max-content" }}>
           {/* Header row */}
           <div
