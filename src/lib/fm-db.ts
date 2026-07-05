@@ -452,13 +452,16 @@ export async function fetchAllData(): Promise<AllData> {
     };
   });
   const coachRows: CoachRow[] = coachAssign.map((row) => {
-    const c = row as { season_id: string; module: CoachRow["module"]; coach_name: string; club_name: string | null };
+    const c = row as { season_id: string; module: CoachRow["module"]; coach_name: string; club_name: string | null; club_role?: string | null; intl_role?: string | null; country_name?: string | null };
     return {
       season_year: seasonMap.get(c.season_id) ?? 0,
       module: c.module,
       name: c.coach_name,
       nationality: coachNatMap.get(c.coach_name) ?? null,
       club_name: c.club_name,
+      club_role: c.club_role ?? null,
+      intl_role: c.intl_role ?? null,
+      country_name: c.country_name ?? null,
     };
   });
   const playerRows: PlayerRow[] = playersRaw.map((row) => {
