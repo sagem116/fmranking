@@ -72,7 +72,7 @@ function Index() {
       playerSet.add(pid);
     }
     for (const p of players) {
-      const pid = (p.uid ? `idu:${p.uid}` : `nm:${p.name.toLowerCase()}`);
+      const pid = (p.idu && p.idu.trim()) ? `idu:${p.idu.trim()}` : `nm:${p.name.toLowerCase()}`;
       playerSet.add(pid);
     }
 
