@@ -60,6 +60,14 @@ export function PlayerNewStatsSection({ playerName }: { playerName: string }) {
               <th className="text-right p-3">Ast</th>
               <th className="text-right p-3">Jogos</th>
               <th className="text-right p-3">HDJ</th>
+              <th className="text-right p-3">xG</th>
+              <th className="text-right p-3">% Passe</th>
+              <th className="text-right p-3">Des/90</th>
+              <th className="text-right p-3">Fnt/90</th>
+              <th className="text-right p-3">% Rem.</th>
+              <th className="text-right p-3">Amr</th>
+              <th className="text-right p-3">Ver</th>
+              <th className="text-right p-3">Cl Med</th>
               <th className="text-right p-3">CA</th>
               <th className="text-right p-3">CP</th>
               <th className="text-right p-3">RM</th>
@@ -83,6 +91,14 @@ export function PlayerNewStatsSection({ playerName }: { playerName: string }) {
                 <td className="p-3 text-right tabular-nums">{fmtNum(r.ast, 2)}</td>
                 <td className="p-3 text-right tabular-nums">{fmtNum(r.games, 2)}</td>
                 <td className="p-3 text-right tabular-nums">{fmtNum(r.hdj, 2)}</td>
+                <td className="p-3 text-right tabular-nums">{r.xg == null ? "—" : fmtNum(r.xg, 2)}</td>
+                <td className="p-3 text-right tabular-nums">{r.pass_pct == null ? "—" : fmtNum(r.pass_pct, 2)}</td>
+                <td className="p-3 text-right tabular-nums">{r.tackles_per90 == null ? "—" : fmtNum(r.tackles_per90, 2)}</td>
+                <td className="p-3 text-right tabular-nums">{r.fouls_per90 == null ? "—" : fmtNum(r.fouls_per90, 2)}</td>
+                <td className="p-3 text-right tabular-nums">{r.shot_pct == null ? "—" : fmtNum(r.shot_pct, 2)}</td>
+                <td className="p-3 text-right tabular-nums">{r.yellows == null ? "—" : fmtNum(r.yellows, 2)}</td>
+                <td className="p-3 text-right tabular-nums">{r.reds == null ? "—" : fmtNum(r.reds, 2)}</td>
+                <td className="p-3 text-right tabular-nums">{r.avg_rating == null ? "—" : fmtNum(r.avg_rating, 2)}</td>
                 <td className="p-3 text-right tabular-nums">{fmtNum(r.ca, 2)}</td>
                 <td className="p-3 text-right tabular-nums">{fmtNum(r.cp, 2)}</td>
                 <td className="p-3 text-right tabular-nums">{fmtNum(r.rm, 2)}</td>
@@ -95,7 +111,7 @@ export function PlayerNewStatsSection({ playerName }: { playerName: string }) {
               <td className="p-3 text-right tabular-nums">{fmtNum(totals.ast, 2)}</td>
               <td className="p-3 text-right tabular-nums">{fmtNum(totals.games, 2)}</td>
               <td className="p-3 text-right tabular-nums">{fmtNum(totals.hdj, 2)}</td>
-              <td className="p-3" colSpan={4}></td>
+              <td className="p-3" colSpan={12}></td>
             </tr>
           </tbody>
         </table>
