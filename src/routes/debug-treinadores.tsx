@@ -37,6 +37,29 @@ function DebugPage() {
     );
   }, [data]);
 
+  // Coach-level diagnostics: no club (any season), no nationality, duplicates
+  const coachDiag = useMemo(() => {
+    if (!data) return null;
+    const coaches = data.data.coaches ?? [];
+    const byName = new Map<string, { seasons: Set<number>; clubs: Set<string>; nats: Set<string> }>();
+    for (const c of coaches) {
+      if (!c.name) continue;
+      let e = byName.get(c.name); if (!e) { e = { seasons: new Set(), clubs: new Set(), nats: new Set() }; byName.set(c.name, e); }
+      e.seasons.add(c.season_year);
+      if (c.club_name) e.clubs.add(c.club_name);
+      if (c.nationality) e.nats.add(c.nationality);
+    }
+    const noClub: string[] = [];
+    const noCountry: string[] = [];
+    const duplicates: { name: string; nats: string[] }[] = [];
+    for (const [name, e] of byName) {
+      if (e.clubs.size === 0) noClub.push(name);
+      if (e.nats.size === 0) noCountry.push(name);
+      if (e.nats.size > 1) duplicates.push({ name, nats: [...e.nats] });
+    }
+    return { noClub: noClub.sort(), noCountry: noCountry.sort(), duplicates };
+  }, [data]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-32 text-muted-foreground">
@@ -52,21 +75,53 @@ function DebugPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-          <Bug className="size-6 text-primary" /> Debug · Títulos de Treinadores
-        </h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Trace de como os títulos são atribuídos a cada treinador, por (época, módulo, clube). Útil para perceber
-          porque é que alguns ficam a <code className="text-foreground">0</code>.
-        </p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+            <Bug className="size-6 text-primary" /> Debug · Treinadores
+          </h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Diagnóstico de treinadores: dados em falta, duplicados, atribuições sem clube e trace de títulos por (época, módulo, clube).
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button asChild size="sm" variant="outline">
+            <Link to="/debug-mapeamento-clubes"><ExternalLink className="size-3.5" /> Mapeamento de Clubes</Link>
+          </Button>
+        </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <Stat label="Treinadores rastreados" value={report.rows.length} />
-        <Stat label="Com 0 títulos atribuídos" value={withZero.length} tone="warn" />
-        <Stat label="Atribuições sem clube válido" value={report.skippedNoClub.length} tone="warn" />
+        <Stat label="Com 0 títulos" value={withZero.length} tone="warn" />
+        <Stat label="Atribuições sem clube" value={report.skippedNoClub.length} tone="warn" />
+        <Stat label="Sem clube (todas épocas)" value={coachDiag?.noClub.length ?? 0} tone="warn" />
+        <Stat label="Sem nacionalidade" value={coachDiag?.noCountry.length ?? 0} tone="warn" />
+        <Stat label="Nacionalidade inconsistente" value={coachDiag?.duplicates.length ?? 0} tone="warn" />
       </div>
+
+      {coachDiag && (
+        <div className="grid gap-4 md:grid-cols-3">
+          <CoachChipList title="Sem clube em todas as épocas" names={coachDiag.noClub} />
+          <CoachChipList title="Sem nacionalidade" names={coachDiag.noCountry} />
+          <Card>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="size-4 text-amber-500" /> Nacionalidade inconsistente ({coachDiag.duplicates.length})</CardTitle></CardHeader>
+            <CardContent>
+              {coachDiag.duplicates.length === 0 ? <p className="text-sm text-muted-foreground">Sem inconsistências.</p> : (
+                <div className="max-h-[220px] overflow-y-auto text-xs space-y-1">
+                  {coachDiag.duplicates.slice(0, 200).map((d) => (
+                    <div key={d.name} className="flex gap-2 items-center">
+                      <Link to="/treinadores/$name" params={{ name: d.name }} className="font-medium hover:text-primary">{d.name}</Link>
+                      <span className="text-muted-foreground">{d.nats.join(" · ")}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
 
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
