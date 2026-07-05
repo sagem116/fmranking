@@ -78,6 +78,8 @@ function CountryProfilePage() {
         <Stat label="Clubes" value={profile.clubs.length} />
       </div>
 
+      {data && <CountryInternationalPointsCard data={data.data} cfg={data.config} countryName={profile.name} />}
+
       {(profile.internationalTitles > 0 ||
         profile.finalsReached > 0 ||
         profile.semifinalsReached > 0 ||
