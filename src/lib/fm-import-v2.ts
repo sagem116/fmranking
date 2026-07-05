@@ -291,6 +291,8 @@ const REP_CLUBES_COLS = {
 
 const REP_COMPS_COLS = {
   competition: ["Competição", "Competicao", "Competition", "Comp"],
+  country:     ["País", "Pais", "Country"],
+  continent:   ["Continente", "Continent"],
   reputation:  ["Reputação", "Reputacao", "Reputation", "Rep"],
 };
 
