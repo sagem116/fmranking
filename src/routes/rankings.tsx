@@ -778,6 +778,14 @@ function RankingsPage() {
               Sem decaimento
             </Button>
           </div>
+          <div className="flex rounded-lg border border-border p-1" title="Densidade da tabela">
+            <Button size="sm" variant={density === "comfy" ? "default" : "ghost"} onClick={() => setDensity("comfy")}>
+              Confortável
+            </Button>
+            <Button size="sm" variant={density === "compact" ? "default" : "ghost"} onClick={() => setDensity("compact")}>
+              Compacto
+            </Button>
+          </div>
           <Button size="sm" variant="outline" onClick={() => setUiVersion("v2")} title="Mudar para a UI Moderna">
             <Sparkles className="size-3.5" /> UI Moderna
           </Button>
