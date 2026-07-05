@@ -95,12 +95,14 @@ function HeaderCell({
   active,
   dir = "desc",
   className = "",
+  pad = "p-3",
 }: {
   children: React.ReactNode;
   onClick?: () => void;
   active?: boolean;
   dir?: "asc" | "desc";
   className?: string;
+  pad?: string;
 }) {
   const inner = onClick ? (
     <button
@@ -119,7 +121,7 @@ function HeaderCell({
   ) : (
     children
   );
-  return <div className={`p-3 ${className}`}>{inner}</div>;
+  return <div className={`${pad} ${className}`}>{inner}</div>;
 }
 
 export function SeasonsRankTable({
