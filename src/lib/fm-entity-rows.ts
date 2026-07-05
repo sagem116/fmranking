@@ -173,5 +173,60 @@ export function metaFieldsFor(kind: EntityKind): { key: string; label: string }[
     { key: "PAIS", label: "País" }, { key: "CONTINENTE", label: "Continente" },
     { key: "COMP_TYPE", label: "Tipo" }, { key: "COMPETICAO", label: "Nome" },
   ];
+  if (kind === "treinador") return [
+    { key: "NAC", label: "Nacionalidade" }, { key: "CLUBE", label: "Último Clube" },
+    { key: "MODULOS", label: "Módulos" },
+  ];
   return [{ key: "CONTINENTE", label: "Continente" }, { key: "PAIS", label: "País" }];
+}
+
+/**
+ * Build coach entity rows from CoachRow data. Not derived from player_stats
+ * (that source has no coach columns), so callers must pass the coach dataset
+ * directly.
+ */
+import type { CoachRow } from "./fm-rankings";
+import type { RankingEntry } from "./fm-rankings";
+
+export function buildCoachRowsFrom(coaches: CoachRow[], ranks?: RankingEntry[]): EntityRow[] {
+  const rankMap = new Map<string, RankingEntry>();
+  for (const r of ranks ?? []) rankMap.set(r.name.toLowerCase(), r);
+  const map = new Map<string, {
+    name: string; nationality: string | null; latestClub: string | null;
+    epocas: Set<number>; clubes: Set<string>; modulos: Set<string>; nacional: boolean;
+  }>();
+  for (const c of coaches) {
+    if (!c.name) continue;
+    const k = c.name;
+    let e = map.get(k);
+    if (!e) { e = { name: c.name, nationality: c.nationality ?? null, latestClub: c.club_name ?? null, epocas: new Set(), clubes: new Set(), modulos: new Set(), nacional: false }; map.set(k, e); }
+    e.epocas.add(c.season_year);
+    if (c.club_name) e.clubes.add(c.club_name);
+    if (c.module) e.modulos.add(c.module);
+    if (c.intl_role || c.country_name) e.nacional = true;
+    if (c.nationality) e.nationality = c.nationality;
+    if (c.club_name) e.latestClub = c.club_name;
+  }
+  return [...map.values()].map((e, i) => {
+    const rk = rankMap.get(e.name.toLowerCase());
+    return {
+      id: `coach-${i}-${e.name}`,
+      name: e.name,
+      link: `/treinadores/${encodeURIComponent(e.name)}`,
+      meta: {
+        NAC: e.nationality,
+        CLUBE: e.latestClub,
+        MODULOS: [...e.modulos].join(", "),
+      },
+      ctx: {
+        EPOCAS: e.epocas.size,
+        N_CLUBES: e.clubes.size,
+        N_MODULOS: e.modulos.size,
+        NACIONAL: e.nacional ? 1 : 0,
+        PONTOS: rk?.raw ?? 0,
+        PONTOS_PONDERADOS: rk?.weighted ?? 0,
+        TITULOS: rk?.titles ?? 0,
+      },
+    };
+  });
 }
