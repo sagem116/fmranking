@@ -242,7 +242,7 @@ export async function importSeason(parse: ParseResult, year: number, filename: s
 export interface ImportLogRow {
   id: string;
   filename: string | null;
-  module: "superleague" | "national" | "player_stats";
+  module: "superleague" | "national" | "player_stats" | "competitions";
   status: string;
   created_at: string;
   season_id: string;
@@ -271,6 +271,17 @@ export async function deleteImport(row: ImportLogRow): Promise<void> {
   if (row.module === "player_stats") {
     await supabase.from("player_stats").delete().eq("season_year", row.season_year);
     await supabase.from("competition_stats").delete().eq("season_year", row.season_year);
+  } else if (row.module === "competitions") {
+    // New two-file model: Competições file populates standings + coach_assignments +
+    // continental + international + club_reputation_season + competition_reputation.
+    await supabase.from("standings").delete().eq("season_id", row.season_id).in("module", ["superleague", "national"]);
+    await supabase.from("coach_assignments").delete().eq("season_id", row.season_id);
+    await supabase.from("continental_results").delete().eq("season_id", row.season_id);
+    await supabase.from("international_results").delete().eq("season_id", row.season_id);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from("club_reputation_season").delete().eq("season_id", row.season_id);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from("competition_reputation").delete().eq("season_year", row.season_year);
   } else {
     await supabase.from("standings").delete().eq("season_id", row.season_id).eq("module", row.module);
     await supabase.from("coach_assignments").delete().eq("season_id", row.season_id).eq("module", row.module);
