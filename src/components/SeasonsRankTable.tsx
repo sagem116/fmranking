@@ -17,6 +17,12 @@ export interface ExtraCol {
   label: string;
   values: Record<string, number>;
   tips?: Record<string, React.ReactNode>;
+  /** Optional display override; when present, rendered instead of the numeric value. Sort still uses `values`. */
+  labels?: Record<string, React.ReactNode>;
+  /** Column width, e.g. "8rem". Defaults to "6rem". */
+  width?: string;
+  /** Text alignment for the cell. Defaults to "right". */
+  align?: "left" | "right" | "center";
 }
 
 
