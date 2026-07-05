@@ -511,6 +511,7 @@ export function CompetitionRankingsView({ mode, withDecay }: { mode: "weighted" 
                   <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.rc, 2)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.age, 2)}</td>
                   <td className="px-3 py-2 text-right tabular-nums font-semibold">{r.reputation == null ? "—" : fmtNum(r.reputation, 2)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{r.reputation_clubs_avg == null ? "—" : fmtNum(r.reputation_clubs_avg, 2)}</td>
                 </tr>
               ))}
               {pageRows.length === 0 && (<tr><td colSpan={15} className="px-3 py-8 text-center text-muted-foreground">Sem resultados.</td></tr>)}
