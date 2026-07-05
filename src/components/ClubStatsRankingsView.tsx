@@ -157,7 +157,8 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
           playerIds: new Set<string>(), games: 0,
           gls: 0, ast: 0,
           sumCA: 0, sumCP: 0, sumRA: 0, sumRM: 0, sumRC: 0, sumVP: 0, sumSalary: 0, sumAge: 0, wSum: 0,
-          sumVPRaw: 0, sumSalaryRaw: 0 };
+          sumVPRaw: 0, sumSalaryRaw: 0,
+          playerAgg: new Map() };
         map.set(club, a);
       }
       // Distinct player key: prefer IDU, fall back to normalized name.
@@ -180,6 +181,14 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
       a.wSum += w;
       a.sumVPRaw += p.vp || 0;
       a.sumSalaryRaw += p.salary || 0;
+      const pa = a.playerAgg.get(pid);
+      if (pa) {
+        pa.games += p.games || 0;
+        pa.gls += p.gls || 0;
+        pa.ast += p.ast || 0;
+      } else {
+        a.playerAgg.set(pid, { name: p.player_name || pid, games: p.games || 0, gls: p.gls || 0, ast: p.ast || 0 });
+      }
     }
     if (clubMap) {
       for (const [season, sm] of clubMap.bySeason) {
@@ -195,6 +204,9 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
     let out: Row[] = [...map.values()].map((a) => {
       const k = a.wSum || 1;
       const comps = [...a.competitions].sort((x, y) => x.localeCompare(y, "pt-PT"));
+      const players: PlayerDrillRow[] = [...a.playerAgg.entries()]
+        .map(([id, v]) => ({ id, name: v.name, games: v.games, gls: v.gls, ast: v.ast }))
+        .sort((x, y) => y.games - x.games || y.gls - x.gls);
       return {
         club: a.club, country: a.country,
         continent: continentOf(a.country),
@@ -207,6 +219,7 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
         salary: compFilter === "unified" ? a.sumSalaryRaw : a.sumSalary / k,
         age: a.sumAge / k,
         reputation: reputationFor(a.club, aliases, reps),
+        players,
       };
     });
     if (q) out = out.filter((r) => normText(`${r.club} ${r.country ?? ""}`).includes(q));
