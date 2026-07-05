@@ -483,6 +483,8 @@ export function parseCompetitionsFile(buffer: ArrayBuffer): ParsedCompetitionsFi
           out.competitionReputation.push({
             competition,
             reputation: cols.reputation ? toNum(r[cols.reputation]) : null,
+            country: cols.country ? toStr(r[cols.country]) : null,
+            continent: cols.continent ? toStr(r[cols.continent]) : null,
           });
         }
       }
