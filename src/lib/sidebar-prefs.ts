@@ -15,9 +15,16 @@ export interface SidebarPrefs {
   debugHidden?: boolean;
   debugItemsHidden?: string[];
   debugItemsOrder?: string[];
+  /**
+   * Optional override: move a sidebar item (identified by its route `to`)
+   * into a different group. Key = `to`, value = target group title.
+   * The special value "__debug__" moves the item into the Debug group.
+   */
+  itemGroups?: Record<string, string>;
 }
 
 const STORAGE_KEY = "fm-sidebar-prefs-v1";
+export const DEBUG_GROUP = "__debug__";
 
 export const DEFAULT_PREFS: SidebarPrefs = { groups: {} };
 
