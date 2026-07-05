@@ -19,7 +19,7 @@ export const Route = createFileRoute("/formulas-personalizadas")({
   component: FormulasPage,
 });
 
-const ENTITIES: EntityKind[] = ["jogador", "clube", "competicao", "pais"];
+const ENTITIES: EntityKind[] = ["jogador", "clube", "competicao", "pais", "treinador"];
 
 function emptyFormula(): CustomFormula {
   return {

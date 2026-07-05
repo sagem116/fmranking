@@ -43,27 +43,58 @@ function Podium({ title, icon: Icon, entries, to }: {
   to: "/clubes/$name" | "/treinadores/$name" | "/paises/$name";
 }) {
   const medals = ["text-gold", "text-muted-foreground", "text-amber-700"];
+  const heroBgs = [
+    "bg-gradient-to-br from-gold/25 via-gold/10 to-transparent border-gold/40",
+    "bg-gradient-to-br from-muted-foreground/20 via-muted-foreground/5 to-transparent border-muted-foreground/30",
+    "bg-gradient-to-br from-amber-700/20 via-amber-700/5 to-transparent border-amber-700/30",
+  ];
+  const top3 = entries.slice(0, 3);
+  const rest = entries.slice(3, 10);
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2"><Icon className="size-5 text-primary" /> {title}</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2">
-        {entries.slice(0, 10).map((e, i) => (
-          <Link
-            key={e.name}
-            to={to}
-            params={{ name: e.name }}
-            className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted/60 transition-colors"
-          >
-            <span className={`w-6 text-center font-bold ${i < 3 ? medals[i] : "text-muted-foreground"}`}>{i + 1}</span>
-            <span className="flex-1 font-medium truncate">{e.name}</span>
-            {e.titles > 0 && (
-              <span className="text-xs text-gold flex items-center gap-1"><Crown className="size-3" /> {e.titles}</span>
-            )}
-            <span className="text-sm font-semibold tabular-nums">{fmtPts(e.weighted)}</span>
-          </Link>
-        ))}
+      <CardContent className="space-y-3">
+        {top3.length > 0 && (
+          <div className="grid grid-cols-3 gap-2">
+            {top3.map((e, i) => (
+              <Link
+                key={e.name}
+                to={to}
+                params={{ name: e.name }}
+                className={`rounded-xl border p-3 text-center transition-colors ${heroBgs[i]} hover:brightness-110`}
+              >
+                <div className={`text-2xl font-bold ${medals[i]}`}>{i + 1}º</div>
+                <div className="mt-1 font-display font-bold text-sm truncate" title={e.name}>{e.name}</div>
+                <div className="text-xs text-muted-foreground tabular-nums mt-1">{fmtPts(e.weighted)}</div>
+                {e.titles > 0 && (
+                  <div className="text-[10px] text-gold flex items-center justify-center gap-1 mt-1"><Crown className="size-2.5" /> {e.titles}</div>
+                )}
+              </Link>
+            ))}
+          </div>
+        )}
+        <div className="space-y-1">
+          {rest.map((e, idx) => {
+            const i = idx + 3;
+            return (
+              <Link
+                key={e.name}
+                to={to}
+                params={{ name: e.name }}
+                className="flex items-center gap-3 rounded-lg px-3 py-1.5 hover:bg-muted/60 transition-colors"
+              >
+                <span className="w-5 text-center font-bold text-muted-foreground text-xs">{i + 1}</span>
+                <span className="flex-1 font-medium truncate text-sm">{e.name}</span>
+                {e.titles > 0 && (
+                  <span className="text-xs text-gold flex items-center gap-1"><Crown className="size-3" /> {e.titles}</span>
+                )}
+                <span className="text-sm font-semibold tabular-nums">{fmtPts(e.weighted)}</span>
+              </Link>
+            );
+          })}
+        </div>
       </CardContent>
     </Card>
   );

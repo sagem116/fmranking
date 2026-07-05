@@ -118,11 +118,12 @@ const NAV_GROUPS: NavGroup[] = [
 ];
 
 const DEBUG_ITEMS: NavItem[] = [
+  { to: "/debug-clubes", label: "Clubes", icon: Bug },
   { to: "/debug-treinadores", label: "Treinadores", icon: Bug },
+  { to: "/debug-jogadores", label: "Jogadores", icon: Bug },
+  { to: "/debug-competicoes", label: "Competições", icon: Bug },
   { to: "/debug-continentais", label: "Continentais", icon: Bug },
   { to: "/debug-pontos", label: "Pontos", icon: Bug },
-  { to: "/debug-clubes", label: "Clubes", icon: Bug },
-  { to: "/debug-jogadores", label: "Jogadores", icon: Bug },
   { to: "/debug-continentes", label: "Continentes", icon: Bug },
   { to: "/debug-paises", label: "Países", icon: Bug },
   { to: "/debug-reputacao-clubes", label: "Reputação Clubes", icon: Bug },
@@ -155,52 +156,85 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [prefs, setPrefs] = useSidebarPrefs();
 
+  // Build a combined set of items per group, honouring any item→group override
+  // stored in prefs.itemGroups. An item can be moved from its default group to
+  // any other group (or to "__debug__" for the Debug section).
+  const { effectiveGroups, effectiveDebug } = useMemo(() => {
+    const overrides = prefs.itemGroups ?? {};
+    // Start with cloned default groups
+    const groupsMap = new Map<string, NavItem[]>();
+    for (const g of NAV_GROUPS) groupsMap.set(g.title, [...g.items.filter((it) => (overrides[it.to] ?? g.title) === g.title)]);
+    const debugItems: NavItem[] = DEBUG_ITEMS.filter((it) => (overrides[it.to] ?? "__debug__") === "__debug__");
+    // Reassign items whose override sends them elsewhere
+    const relocate = (item: NavItem, target: string) => {
+      if (target === "__debug__") {
+        if (!debugItems.some((x) => x.to === item.to)) debugItems.push(item);
+        return;
+      }
+      let arr = groupsMap.get(target);
+      if (!arr) { arr = []; groupsMap.set(target, arr); }
+      if (!arr.some((x) => x.to === item.to)) arr.push(item);
+    };
+    for (const g of NAV_GROUPS) {
+      for (const it of g.items) {
+        const tgt = overrides[it.to];
+        if (tgt && tgt !== g.title) relocate(it, tgt);
+      }
+    }
+    for (const it of DEBUG_ITEMS) {
+      const tgt = overrides[it.to];
+      if (tgt && tgt !== "__debug__") relocate(it, tgt);
+    }
+    return { effectiveGroups: groupsMap, effectiveDebug: debugItems };
+  }, [prefs.itemGroups]);
+
   // Apply prefs -> orderedGroups
   const orderedGroups = useMemo(() => {
+    const groupTitles = [...effectiveGroups.keys()];
     const ord =
       prefs.groupOrder && prefs.groupOrder.length
         ? [
-            ...prefs.groupOrder.filter((t) => NAV_GROUPS.some((g) => g.title === t)),
-            ...NAV_GROUPS.map((g) => g.title).filter((t) => !prefs.groupOrder!.includes(t)),
+            ...prefs.groupOrder.filter((t) => groupTitles.includes(t)),
+            ...groupTitles.filter((t) => !prefs.groupOrder!.includes(t)),
           ]
-        : NAV_GROUPS.map((g) => g.title);
+        : groupTitles;
     return ord
       .map((title) => {
-        const g = NAV_GROUPS.find((x) => x.title === title)!;
+        const items0 = effectiveGroups.get(title) ?? [];
         const gp = prefs.groups[title] || {};
         if (gp.hidden) return null;
         const hidden = new Set(gp.hiddenItems ?? []);
         const order = gp.order ?? [];
-        const byTo = new Map(g.items.map((i) => [i.to, i]));
+        const byTo = new Map(items0.map((i) => [i.to, i]));
         const items: NavItem[] = [];
         for (const to of order) {
           const it = byTo.get(to);
           if (it && !hidden.has(it.to)) items.push(it);
         }
-        for (const it of g.items) {
+        for (const it of items0) {
           if (!order.includes(it.to) && !hidden.has(it.to)) items.push(it);
         }
         if (!items.length) return null;
         return { title, items, collapsed: !!gp.collapsed };
       })
       .filter((x): x is { title: string; items: NavItem[]; collapsed: boolean } => !!x);
-  }, [prefs]);
+  }, [prefs, effectiveGroups]);
 
   const orderedDebug = useMemo(() => {
     if (prefs.debugHidden) return [];
     const hidden = new Set(prefs.debugItemsHidden ?? []);
     const order = prefs.debugItemsOrder ?? [];
-    const byTo = new Map(DEBUG_ITEMS.map((i) => [i.to, i]));
+    const byTo = new Map(effectiveDebug.map((i) => [i.to, i]));
     const items: NavItem[] = [];
     for (const to of order) {
       const it = byTo.get(to);
       if (it && !hidden.has(it.to)) items.push(it);
     }
-    for (const it of DEBUG_ITEMS) {
+    for (const it of effectiveDebug) {
       if (!order.includes(it.to) && !hidden.has(it.to)) items.push(it);
     }
     return items;
-  }, [prefs]);
+  }, [prefs, effectiveDebug]);
 
   const toggleGroupCollapsed = (title: string) => {
     const g = prefs.groups[title] || {};

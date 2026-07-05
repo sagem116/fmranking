@@ -9,11 +9,13 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ChevronUp, ChevronDown, RotateCcw } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ChevronUp, ChevronDown, RotateCcw, MoveRight } from "lucide-react";
 import {
   type SidebarPrefs,
   DEFAULT_PREFS,
   reorder,
+  DEBUG_GROUP,
 } from "@/lib/sidebar-prefs";
 import { cn } from "@/lib/utils";
 
@@ -116,6 +118,14 @@ export function SidebarCustomizeDialog({
 
   const handleReset = () => setDraft(DEFAULT_PREFS);
 
+  const moveItemTo = (to: string, targetTitle: string) => {
+    const next = { ...(draft.itemGroups ?? {}) } as Record<string, string>;
+    next[to] = targetTitle;
+    setDraft({ ...draft, itemGroups: next });
+  };
+
+  const groupTargets = groups.map((g) => g.title);
+
   return (
     <Dialog open={open} onOpenChange={handleOpen}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
@@ -152,13 +162,24 @@ export function SidebarCustomizeDialog({
                 <div className="pl-6 space-y-1">
                   {items.map((it, iIdx) => {
                     const hidden = (gPrefs.hiddenItems ?? []).includes(it.to);
+                    const currentGroup = draft.itemGroups?.[it.to] ?? title;
                     return (
                       <div key={it.to} className="flex items-center gap-2">
                         <Checkbox
                           checked={!hidden}
                           onCheckedChange={() => toggleItemHidden(group, it.to)}
                         />
-                        <span className={cn("text-sm flex-1", hidden && "opacity-50 line-through")}>{it.label}</span>
+                        <span className={cn("text-sm flex-1 min-w-0 truncate", hidden && "opacity-50 line-through")}>{it.label}</span>
+                        <Select value={currentGroup} onValueChange={(v) => moveItemTo(it.to, v)}>
+                          <SelectTrigger className="h-7 w-[140px] text-xs" title="Mover para outro grupo">
+                            <MoveRight className="size-3 mr-1" />
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {groupTargets.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                            <SelectItem value={DEBUG_GROUP}>Debug</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <Button size="icon" variant="ghost" className="size-6" onClick={() => moveItem(group, iIdx, -1)} disabled={iIdx === 0}>
                           <ChevronUp className="size-3.5" />
                         </Button>
@@ -194,6 +215,7 @@ export function SidebarCustomizeDialog({
                 for (const it of debugItems) if (!ord.includes(it.to)) ordered.push(it);
                 return ordered.map((it, iIdx) => {
                   const hidden = (draft.debugItemsHidden ?? []).includes(it.to);
+                  const currentGroup = draft.itemGroups?.[it.to] ?? DEBUG_GROUP;
                   return (
                     <div key={it.to} className="flex items-center gap-2">
                       <Checkbox
@@ -205,7 +227,17 @@ export function SidebarCustomizeDialog({
                           setDraft({ ...draft, debugItemsHidden: Array.from(set) });
                         }}
                       />
-                      <span className={cn("text-sm flex-1", hidden && "opacity-50 line-through")}>{it.label}</span>
+                      <span className={cn("text-sm flex-1 min-w-0 truncate", hidden && "opacity-50 line-through")}>{it.label}</span>
+                      <Select value={currentGroup} onValueChange={(v) => moveItemTo(it.to, v)}>
+                        <SelectTrigger className="h-7 w-[140px] text-xs" title="Mover para outro grupo">
+                          <MoveRight className="size-3 mr-1" />
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {groupTargets.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                          <SelectItem value={DEBUG_GROUP}>Debug</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <Button
                         size="icon"
                         variant="ghost"

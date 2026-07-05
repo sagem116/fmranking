@@ -1,8 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo } from "react";
 import { Loader2, Bug, AlertTriangle, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useRankings } from "@/lib/useRankings";
+import { usePlayerStatsData } from "@/lib/usePlayerStatsData";
 import { buildPlayerKey, computeGoals, computeAssists, computePerformance } from "@/lib/fm-players";
 
 export const Route = createFileRoute("/debug-jogadores")({
@@ -12,6 +14,37 @@ export const Route = createFileRoute("/debug-jogadores")({
 
 function DebugJogadores() {
   const { data, isLoading } = useRankings();
+  const { data: psData } = usePlayerStatsData();
+  const stats = useMemo(() => {
+    if (!psData) return null;
+    const ps = psData.players;
+    const noClub = ps.filter((p) => !p.club || !p.club.trim());
+    const noNat = ps.filter((p) => !p.nationality || !p.nationality.trim());
+    const badVp = ps.filter((p) => p.vp < 0 || (p.vp !== 0 && p.vp < 100));
+    const badSal = ps.filter((p) => p.salary < 0);
+    // Duplicates: same IDU across the same season with different club/name
+    const bySeasonIdu = new Map<string, { names: Set<string>; clubs: Set<string> }>();
+    for (const p of ps) {
+      if (!p.idu) continue;
+      const k = `${p.season_year}|${p.idu}`;
+      let e = bySeasonIdu.get(k);
+      if (!e) { e = { names: new Set(), clubs: new Set() }; bySeasonIdu.set(k, e); }
+      e.names.add(p.player_name); if (p.club) e.clubs.add(p.club);
+    }
+    const duplicates: { key: string; names: string[]; clubs: string[] }[] = [];
+    for (const [key, v] of bySeasonIdu) if (v.names.size > 1 || v.clubs.size > 1) duplicates.push({ key, names: [...v.names], clubs: [...v.clubs] });
+    // Inconsistent: player with same name but different nationalities across seasons
+    const byName = new Map<string, Set<string>>();
+    for (const p of ps) {
+      if (!p.player_name || !p.nationality) continue;
+      let s = byName.get(p.player_name); if (!s) { s = new Set(); byName.set(p.player_name, s); }
+      s.add(p.nationality);
+    }
+    const inconsistent: { name: string; nats: string[] }[] = [];
+    for (const [name, s] of byName) if (s.size > 1) inconsistent.push({ name, nats: [...s] });
+    return { noClub, noNat, badVp, badSal, duplicates, inconsistent };
+  }, [psData]);
+
   if (isLoading || !data) {
     return <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="size-4 animate-spin" /> A carregar…</div>;
   }
@@ -45,6 +78,65 @@ function DebugJogadores() {
         <Stat label="IDUs únicos" value={uniqueIdus} />
         <Stat label="Sem IDU" value={noIduCount} tone={noIduCount ? "warn" : "ok"} />
       </div>
+
+      {stats && (
+        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+          <Stat label="Sem clube" value={stats.noClub.length} tone={stats.noClub.length ? "warn" : "ok"} />
+          <Stat label="Sem nacionalidade" value={stats.noNat.length} tone={stats.noNat.length ? "warn" : "ok"} />
+          <Stat label="Duplicados (IDU/época)" value={stats.duplicates.length} tone={stats.duplicates.length ? "warn" : "ok"} />
+          <Stat label="Dados inconsistentes" value={stats.inconsistent.length} tone={stats.inconsistent.length ? "warn" : "ok"} />
+          <Stat label="V.P. inválido" value={stats.badVp.length} tone={stats.badVp.length ? "warn" : "ok"} />
+          <Stat label="Salário inválido" value={stats.badSal.length} tone={stats.badSal.length ? "warn" : "ok"} />
+        </div>
+      )}
+
+      {stats && (
+        <>
+          <ListCard title="Jogadores sem clube" items={stats.noClub.slice(0, 400).map((p) => `${p.player_name} · ${p.season_year}${p.nationality ? " · " + p.nationality : ""}`)} total={stats.noClub.length} />
+          <ListCard title="Jogadores sem nacionalidade" items={stats.noNat.slice(0, 400).map((p) => `${p.player_name} · ${p.season_year}${p.club ? " · " + p.club : ""}`)} total={stats.noNat.length} />
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <AlertTriangle className="size-4 text-amber-500" /> Duplicados por IDU na mesma época ({stats.duplicates.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {stats.duplicates.length === 0 ? <p className="text-sm text-muted-foreground">Nenhuma duplicação encontrada.</p> : (
+                <div className="max-h-[300px] overflow-y-auto space-y-1 text-xs">
+                  {stats.duplicates.slice(0, 200).map((d) => (
+                    <div key={d.key} className="flex items-center gap-2">
+                      <code className="font-mono text-[10px]">{d.key}</code>
+                      <span className="text-muted-foreground">{d.names.join(" · ")}</span>
+                      {d.clubs.length > 0 && <Badge variant="outline" className="text-[10px]">{d.clubs.join(", ")}</Badge>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <AlertTriangle className="size-4 text-amber-500" /> Nacionalidade inconsistente ({stats.inconsistent.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {stats.inconsistent.length === 0 ? <p className="text-sm text-muted-foreground">Sem inconsistências.</p> : (
+                <div className="max-h-[280px] overflow-y-auto text-xs space-y-1">
+                  {stats.inconsistent.slice(0, 200).map((r) => (
+                    <div key={r.name} className="flex gap-2">
+                      <Link to="/jogadores/$name" params={{ name: r.name }} className="font-medium hover:text-primary">{r.name}</Link>
+                      <span className="text-muted-foreground">{r.nats.join(" · ")}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          <ListCard title="Valores de mercado inválidos ou fora do intervalo" items={stats.badVp.slice(0, 400).map((p) => `${p.player_name} · ${p.season_year} · ${p.vp}`)} total={stats.badVp.length} />
+          <ListCard title="Salários inválidos" items={stats.badSal.slice(0, 400).map((p) => `${p.player_name} · ${p.season_year} · ${p.salary}`)} total={stats.badSal.length} />
+        </>
+      )}
 
       <Card>
         <CardHeader>
@@ -160,6 +252,28 @@ function RankCard({ title, rows, unit }: { title: string; rows: { name: string; 
             </tbody>
           </table>
         </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ListCard({ title, items, total }: { title: string; items: string[]; total: number }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <AlertTriangle className="size-4 text-amber-500" /> {title} ({total})
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {items.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Sem ocorrências.</p>
+        ) : (
+          <div className="flex flex-wrap gap-1.5 max-h-[240px] overflow-y-auto">
+            {items.map((s, i) => <Badge key={i} variant="outline" className="text-xs">{s}</Badge>)}
+            {total > items.length && <span className="text-xs text-muted-foreground">… e mais {total - items.length}</span>}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

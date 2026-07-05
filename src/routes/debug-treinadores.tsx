@@ -1,10 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Loader2, Bug, Search, AlertTriangle, Award } from "lucide-react";
+import { Loader2, Bug, Search, AlertTriangle, Award, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useRankings } from "@/lib/useRankings";
 import { buildCoachDebug } from "@/lib/fm-coach-debug";
 
@@ -35,6 +37,29 @@ function DebugPage() {
     );
   }, [data]);
 
+  // Coach-level diagnostics: no club (any season), no nationality, duplicates
+  const coachDiag = useMemo(() => {
+    if (!data) return null;
+    const coaches = data.data.coaches ?? [];
+    const byName = new Map<string, { seasons: Set<number>; clubs: Set<string>; nats: Set<string> }>();
+    for (const c of coaches) {
+      if (!c.name) continue;
+      let e = byName.get(c.name); if (!e) { e = { seasons: new Set(), clubs: new Set(), nats: new Set() }; byName.set(c.name, e); }
+      e.seasons.add(c.season_year);
+      if (c.club_name) e.clubs.add(c.club_name);
+      if (c.nationality) e.nats.add(c.nationality);
+    }
+    const noClub: string[] = [];
+    const noCountry: string[] = [];
+    const duplicates: { name: string; nats: string[] }[] = [];
+    for (const [name, e] of byName) {
+      if (e.clubs.size === 0) noClub.push(name);
+      if (e.nats.size === 0) noCountry.push(name);
+      if (e.nats.size > 1) duplicates.push({ name, nats: [...e.nats] });
+    }
+    return { noClub: noClub.sort(), noCountry: noCountry.sort(), duplicates };
+  }, [data]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-32 text-muted-foreground">
@@ -50,21 +75,53 @@ function DebugPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-          <Bug className="size-6 text-primary" /> Debug · Títulos de Treinadores
-        </h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Trace de como os títulos são atribuídos a cada treinador, por (época, módulo, clube). Útil para perceber
-          porque é que alguns ficam a <code className="text-foreground">0</code>.
-        </p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+            <Bug className="size-6 text-primary" /> Debug · Treinadores
+          </h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Diagnóstico de treinadores: dados em falta, duplicados, atribuições sem clube e trace de títulos por (época, módulo, clube).
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button asChild size="sm" variant="outline">
+            <Link to="/debug-mapeamento-clubes"><ExternalLink className="size-3.5" /> Mapeamento de Clubes</Link>
+          </Button>
+        </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <Stat label="Treinadores rastreados" value={report.rows.length} />
-        <Stat label="Com 0 títulos atribuídos" value={withZero.length} tone="warn" />
-        <Stat label="Atribuições sem clube válido" value={report.skippedNoClub.length} tone="warn" />
+        <Stat label="Com 0 títulos" value={withZero.length} tone="warn" />
+        <Stat label="Atribuições sem clube" value={report.skippedNoClub.length} tone="warn" />
+        <Stat label="Sem clube (todas épocas)" value={coachDiag?.noClub.length ?? 0} tone="warn" />
+        <Stat label="Sem nacionalidade" value={coachDiag?.noCountry.length ?? 0} tone="warn" />
+        <Stat label="Nacionalidade inconsistente" value={coachDiag?.duplicates.length ?? 0} tone="warn" />
       </div>
+
+      {coachDiag && (
+        <div className="grid gap-4 md:grid-cols-3">
+          <CoachChipList title="Sem clube em todas as épocas" names={coachDiag.noClub} />
+          <CoachChipList title="Sem nacionalidade" names={coachDiag.noCountry} />
+          <Card>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="size-4 text-amber-500" /> Nacionalidade inconsistente ({coachDiag.duplicates.length})</CardTitle></CardHeader>
+            <CardContent>
+              {coachDiag.duplicates.length === 0 ? <p className="text-sm text-muted-foreground">Sem inconsistências.</p> : (
+                <div className="max-h-[220px] overflow-y-auto text-xs space-y-1">
+                  {coachDiag.duplicates.slice(0, 200).map((d) => (
+                    <div key={d.name} className="flex gap-2 items-center">
+                      <Link to="/treinadores/$name" params={{ name: d.name }} className="font-medium hover:text-primary">{d.name}</Link>
+                      <span className="text-muted-foreground">{d.nats.join(" · ")}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
 
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
@@ -109,12 +166,24 @@ function DebugPage() {
                 </thead>
                 <tbody>
                   {report.orphanTitleClubSeasons.map((o, i) => (
-                    <tr key={i} className="border-b border-border/40">
-                      <td className="p-3 tabular-nums">{o.season}</td>
-                      <td className="p-3"><Badge variant="outline">{o.module}</Badge></td>
-                      <td className="p-3 font-medium">{o.club}</td>
-                      <td className="p-3 text-right tabular-nums">{o.titles}</td>
-                    </tr>
+                    <Tooltip key={i}>
+                      <TooltipTrigger asChild>
+                        <tr className="border-b border-border/40 hover:bg-muted/40 cursor-help">
+                          <td className="p-3 tabular-nums">{o.season}</td>
+                          <td className="p-3"><Badge variant="outline">{o.module}</Badge></td>
+                          <td className="p-3 font-medium">
+                            <Link to="/clubes/$name" params={{ name: o.club }} className="hover:text-primary">{o.club}</Link>
+                          </td>
+                          <td className="p-3 text-right tabular-nums">{o.titles}</td>
+                        </tr>
+                      </TooltipTrigger>
+                      <TooltipContent side="left">
+                        <div className="text-xs">
+                          <p className="font-medium">{o.titles} título{o.titles === 1 ? "" : "s"} sem treinador</p>
+                          <p className="text-muted-foreground mt-1">{o.season} · {o.module} · {o.club}</p>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
                   ))}
                 </tbody>
               </table>
@@ -122,12 +191,15 @@ function DebugPage() {
           </Card>
           <p className="text-xs text-muted-foreground mt-2">
             Estes (época, módulo, clube) tiveram títulos mas <strong>nenhum treinador</strong> foi importado para essa atribuição,
-            por isso ninguém herda esses títulos.
+            por isso ninguém herda esses títulos. Passe o rato sobre a linha para ver o resumo do título.
           </p>
         </TabsContent>
 
         <TabsContent value="skipped" className="mt-4">
           <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Atribuições sem clube — origem do problema</CardTitle>
+            </CardHeader>
             <CardContent className="p-0 max-h-[600px] overflow-auto">
               <table className="w-full text-sm">
                 <thead className="sticky top-0 bg-card/95 backdrop-blur">
@@ -140,7 +212,9 @@ function DebugPage() {
                 <tbody>
                   {report.skippedNoClub.map((s, i) => (
                     <tr key={i} className="border-b border-border/40">
-                      <td className="p-3 font-medium">{s.coach}</td>
+                      <td className="p-3 font-medium">
+                        <Link to="/treinadores/$name" params={{ name: s.coach }} className="hover:text-primary">{s.coach}</Link>
+                      </td>
                       <td className="p-3 tabular-nums">{s.season}</td>
                       <td className="p-3"><Badge variant="outline">{s.module}</Badge></td>
                     </tr>
@@ -149,12 +223,33 @@ function DebugPage() {
               </table>
             </CardContent>
           </Card>
-          <p className="text-xs text-muted-foreground mt-2">
-            Atribuições importadas sem <code>club_name</code> são ignoradas no cálculo (não há a quem herdar pontos/títulos).
-          </p>
+          <div className="mt-2 p-3 rounded-md bg-muted/40 border border-border/60 text-xs space-y-1">
+            <p><strong>Origem do problema:</strong> na importação da época/módulo indicados o treinador ficou <em>sem clube atribuído</em>.</p>
+            <p className="text-muted-foreground">Sem clube, o sistema não consegue cruzar a atribuição com o standings correspondente e por isso nenhum ponto/título lhe é herdado. Verifique os ficheiros de origem ou o <Link to="/debug-mapeamento-clubes" className="underline hover:text-primary">Mapeamento de Clubes</Link>.</p>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+function CoachChipList({ title, names }: { title: string; names: string[] }) {
+  return (
+    <Card>
+      <CardHeader><CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="size-4 text-amber-500" /> {title} ({names.length})</CardTitle></CardHeader>
+      <CardContent>
+        {names.length === 0 ? <p className="text-sm text-muted-foreground">Sem ocorrências.</p> : (
+          <div className="flex flex-wrap gap-1.5 max-h-[220px] overflow-y-auto">
+            {names.slice(0, 400).map((n) => (
+              <Link key={n} to="/treinadores/$name" params={{ name: n }}>
+                <Badge variant="outline" className="hover:bg-muted text-xs">{n}</Badge>
+              </Link>
+            ))}
+            {names.length > 400 && <span className="text-xs text-muted-foreground">… e mais {names.length - 400}</span>}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

@@ -12,8 +12,9 @@ import { ENTITY_LABEL, varsForEntity, type EntityKind } from "@/lib/fm-entity-va
 import { useCustomRankings, upsertCustomRanking, deleteCustomRanking, duplicateCustomRanking, newCustomRankingId, applyFilter, type CustomRanking, type CustomFilter, type FilterOp } from "@/lib/fm-custom-rankings";
 import { useCustomFormulas } from "@/lib/fm-custom-formulas";
 import { evalFormula } from "@/lib/fm-custom-formulas";
-import { buildRows, metaFieldsFor } from "@/lib/fm-entity-rows";
+import { buildRows, buildCoachRowsFrom, metaFieldsFor } from "@/lib/fm-entity-rows";
 import { usePlayerStatsData } from "@/lib/usePlayerStatsData";
+import { useRankings } from "@/lib/useRankings";
 import { fmtNum } from "@/lib/fmt";
 
 export const Route = createFileRoute("/rankings-personalizados")({
@@ -21,7 +22,7 @@ export const Route = createFileRoute("/rankings-personalizados")({
   component: RankingsPersonalizadosPage,
 });
 
-const ENTITIES: EntityKind[] = ["jogador", "clube", "competicao", "pais"];
+const ENTITIES: EntityKind[] = ["jogador", "clube", "competicao", "pais", "treinador"];
 const OPS: { value: FilterOp; label: string }[] = [
   { value: ">=", label: "≥" }, { value: "<=", label: "≤" },
   { value: "=", label: "=" }, { value: "!=", label: "≠" },
@@ -221,11 +222,14 @@ function RankingEditor({
 
 function RankingResults({ ranking, onClose }: { ranking: CustomRanking; onClose: () => void }) {
   const { data, isLoading } = usePlayerStatsData();
+  const { data: rankData } = useRankings();
   const [formulas] = useCustomFormulas();
 
   const rows = useMemo(() => {
     if (!data) return [];
-    const all = buildRows(ranking.entity, data.players);
+    const all = ranking.entity === "treinador"
+      ? buildCoachRowsFrom(rankData?.data.coaches ?? [], rankData?.ranks.coaches)
+      : buildRows(ranking.entity, data.players);
     const filtered = all.filter((row) => {
       for (const f of ranking.filters) {
         const merged = { ...row.ctx, ...row.meta } as Record<string, number | string | null | undefined>;
@@ -248,7 +252,7 @@ function RankingResults({ ranking, onClose }: { ranking: CustomRanking; onClose:
     const sorted = [...filtered].sort((a, b) => (getVal(a) - getVal(b)) * sign);
     const limited = ranking.limit && ranking.limit > 0 ? sorted.slice(0, ranking.limit) : sorted;
     return limited.map((r) => ({ ...r, _value: getVal(r) }));
-  }, [data, ranking, formulas]);
+  }, [data, ranking, formulas, rankData]);
 
   const orderLabel =
     ranking.orderBy.startsWith("FORMULA:")
