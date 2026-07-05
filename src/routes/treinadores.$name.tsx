@@ -9,6 +9,8 @@ import { EvolutionChart, MODULE_LABEL } from "@/components/EvolutionChart";
 import { DesafiosProfileCard } from "@/components/DesafiosProfileCard";
 import { RankingEvolutionSection } from "@/components/RankingEvolutionSection";
 import { CoachAttributesSection } from "@/components/CoachAttributesSection";
+import { CoachTitlesSection } from "@/components/CoachTitlesSection";
+import { CoachSeasonMetricsChart } from "@/components/CoachSeasonMetricsChart";
 import { fmtPts } from "@/lib/fmt";
 
 export const Route = createFileRoute("/treinadores/$name")({
@@ -30,6 +32,19 @@ function CoachProfilePage() {
   const { name } = Route.useParams();
   const { data, isLoading } = useRankings();
   const profile = useMemo(() => (data ? buildCoachProfile(data.data, name, data.config) : null), [data, name]);
+
+  // Map (year|module|club_name) -> real competition name from standings
+  const competitionByKey = useMemo(() => {
+    const m = new Map<string, string>();
+    if (!data) return m;
+    for (const s of data.data.standings) {
+      const key = `${s.season_year}|${s.module}|${s.club_name}`;
+      const label = (s.competition && s.competition.trim())
+        || (s.module === "superleague" ? (s.division_num ? `Div. ${s.division_num}` : "Super League") : s.division_label ?? "Liga Nacional");
+      if (!m.has(key)) m.set(key, label);
+    }
+    return m;
+  }, [data]);
 
   if (isLoading) {
     return (
@@ -73,6 +88,10 @@ function CoachProfilePage() {
         <CardContent><EvolutionChart data={profile.chart} showModeToggle={false} mode="raw" /></CardContent>
       </Card>
 
+      {data && <CoachSeasonMetricsChart profile={profile} standings={data.data.standings} />}
+
+      <CoachTitlesSection profile={profile} competitionByKey={competitionByKey} />
+
       <DesafiosProfileCard results={data?.desafioResults} subject="coaches" entity={profile.name} />
 
       <RankingEvolutionSection kind="coach" name={profile.name} />
@@ -107,7 +126,11 @@ function CoachProfilePage() {
                 {profile.continentalTitles.map((t, i) => (
                   <tr key={i} className="border-b border-border/50 hover:bg-muted/50">
                     <td className="p-3 tabular-nums">{t.year}</td>
-                    <td className="p-3">{t.competition}</td>
+                    <td className="p-3">
+                      <Link to="/competicoes/$name" params={{ name: t.competition }} className="hover:text-primary hover:underline">
+                        {t.competition}
+                      </Link>
+                    </td>
                     <td className="p-3">
                       <Link to="/clubes/$name" params={{ name: t.club }} className="hover:text-primary hover:underline">
                         {t.club}
@@ -195,10 +218,18 @@ function CoachProfilePage() {
               </tr>
             </thead>
             <tbody>
-              {profile.seasons.map((s, i) => (
+              {profile.seasons.map((s, i) => {
+                const compLabel = s.club_name
+                  ? competitionByKey.get(`${s.year}|${s.module}|${s.club_name}`) ?? MODULE_LABEL[s.module]
+                  : MODULE_LABEL[s.module];
+                return (
                 <tr key={i} className="border-b border-border/50 hover:bg-muted/50">
                   <td className="p-3">{s.year}</td>
-                  <td className="p-3">{MODULE_LABEL[s.module]}</td>
+                  <td className="p-3">
+                    <Link to="/competicoes/$name" params={{ name: compLabel }} className="hover:text-primary hover:underline">
+                      {compLabel}
+                    </Link>
+                  </td>
                   <td className="p-3">
                     {s.club_name ? (
                       <Link to="/clubes/$name" params={{ name: s.club_name }} className="hover:text-primary hover:underline">
@@ -210,7 +241,8 @@ function CoachProfilePage() {
                   <td className="p-3 text-right tabular-nums">{s.position ?? "—"}</td>
                   <td className="p-3 text-right tabular-nums">{fmtPts(s.raw)}</td>
                 </tr>
-              ))}
+              );
+              })}
             </tbody>
           </table>
         </CardContent>
