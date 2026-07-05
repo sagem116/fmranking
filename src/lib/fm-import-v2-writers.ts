@@ -304,6 +304,13 @@ export async function importPlayersFile(
     if (er2) throw new Error(`competition_stats delete: ${er2.message}`);
   }
   await sb().from("imports").delete().eq("season_id", seasonId).eq("module", "player_stats");
+  // Legacy `players` table is still read by useRankings/buildPlayerProfile and
+  // several other consumers (Hall of Fame, Insights, profile lookup). Wipe the
+  // slice for this season so we can repopulate it below.
+  {
+    const { error } = await sb().from("players").delete().eq("season_id", seasonId);
+    if (error) throw new Error(`players delete: ${error.message}`);
+  }
 
   const rows = parsed.players.map((p) => {
     const country = p.club ? countryMap.get(p.club) ?? null : null;
