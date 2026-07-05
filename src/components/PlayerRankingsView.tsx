@@ -1,4 +1,5 @@
 import { useMemo, useState, useSyncExternalStore } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -15,6 +16,7 @@ import type { CompType, PlayerStatRow } from "@/lib/fm-player-stats-db";
 import { continentOf, CONTINENTS } from "@/lib/fm-continents";
 import { fmtNum, fmtMoney } from "@/lib/fmt";
 import { loadReputations, loadClubAliases, reputationFor, onReputationChanged } from "@/lib/fm-club-reputation";
+import { loadCompetitionReputationRows } from "@/lib/fm-competition-reputation";
 import { CountryLink } from "@/components/CountryLink";
 import { resolveClub } from "@/lib/fm-club-map";
 
@@ -328,6 +330,39 @@ export function CompetitionRankingsView({ mode, withDecay }: { mode: "weighted" 
     return map;
   }, [playersAll]);
 
+  // Per-season official competition reputation (from Reputação Competições sheet).
+  const compRepQuery = useQuery({
+    queryKey: ["competition-reputation-rows"],
+    queryFn: loadCompetitionReputationRows,
+    staleTime: 60 * 60 * 1000,
+  });
+  const compRepBySeason = useMemo(() => {
+    // competition -> Map<year, {rep, country, continent}>
+    const map = new Map<string, Map<number, { rep: number; country: string | null; continent: string | null }>>();
+    for (const r of compRepQuery.data ?? []) {
+      const y = r.season_year ?? -1;
+      const inner = map.get(r.competition) ?? new Map();
+      inner.set(y, { rep: Number(r.reputation), country: r.country ?? null, continent: r.continent ?? null });
+      map.set(r.competition, inner);
+    }
+    return map;
+  }, [compRepQuery.data]);
+
+  // "Selected season" for the new Reputação column: uses filters.yearTo, else latest.
+  const selectedYear = filters.yearTo ?? latestYear;
+
+  const officialRepFor = (competition: string): number | null => {
+    const inner = compRepBySeason.get(competition);
+    if (!inner) return null;
+    // Pick the row for selectedYear when present, otherwise the most recent
+    // available year <= selectedYear, otherwise the most recent overall.
+    if (inner.has(selectedYear)) return inner.get(selectedYear)!.rep;
+    const years = [...inner.keys()].sort((a, b) => b - a);
+    const leq = years.find((y) => y <= selectedYear);
+    if (leq != null) return inner.get(leq)!.rep;
+    return years.length ? inner.get(years[0])!.rep : null;
+  };
+
   const ranked = useMemo(() => {
     if (!cfg.data) return [];
     const f: CompFilters = { ...filters, comp_type: compFilter };
@@ -338,7 +373,11 @@ export function CompetitionRankingsView({ mode, withDecay }: { mode: "weighted" 
     });
     const enriched = rows.map((r) => {
       const ck = `${r.comp_type}|${r.competition}`;
-      const out = { ...r, reputation: repByCompetition[ck] ?? null };
+      const out = {
+        ...r,
+        reputation_clubs_avg: repByCompetition[ck] ?? null,
+        reputation: officialRepFor(r.competition),
+      };
       if (compFilter === "all") {
         const tot = totalsByCompetition.get(ck);
         if (tot) { out.vp = tot.vp; out.salary = tot.salary; }
@@ -353,7 +392,8 @@ export function CompetitionRankingsView({ mode, withDecay }: { mode: "weighted" 
       if (typeof an === "number" && typeof bn === "number") return (an - bn) * dir;
       return String(an ?? "").localeCompare(String(bn ?? "")) * dir;
     });
-  }, [comps, filters, compFilter, mode, withDecay, cfg.data, latestYear, sortKey, sortDir, repByCompetition, totalsByCompetition]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [comps, filters, compFilter, mode, withDecay, cfg.data, latestYear, sortKey, sortDir, repByCompetition, totalsByCompetition, compRepBySeason, selectedYear]);
 
   const totalPages = Math.max(1, Math.ceil(ranked.length / PAGE_SIZE));
   const pageRows = ranked.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
@@ -447,6 +487,7 @@ export function CompetitionRankingsView({ mode, withDecay }: { mode: "weighted" 
                 <Th k="rc" label="RC" />
                 <Th k="age" label="Idade" />
                 <Th k="reputation" label="Reputação" />
+                <Th k="reputation_clubs_avg" label="Reputação Média dos Clubes" />
               </tr>
             </thead>
             <tbody>
@@ -470,9 +511,10 @@ export function CompetitionRankingsView({ mode, withDecay }: { mode: "weighted" 
                   <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.rc, 2)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.age, 2)}</td>
                   <td className="px-3 py-2 text-right tabular-nums font-semibold">{r.reputation == null ? "—" : fmtNum(r.reputation, 2)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{r.reputation_clubs_avg == null ? "—" : fmtNum(r.reputation_clubs_avg, 2)}</td>
                 </tr>
               ))}
-              {pageRows.length === 0 && (<tr><td colSpan={15} className="px-3 py-8 text-center text-muted-foreground">Sem resultados.</td></tr>)}
+              {pageRows.length === 0 && (<tr><td colSpan={16} className="px-3 py-8 text-center text-muted-foreground">Sem resultados.</td></tr>)}
             </tbody>
           </table>
         </div>

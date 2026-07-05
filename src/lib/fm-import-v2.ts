@@ -19,7 +19,12 @@ export interface ClubReputationRow {
   avg_attendance: number | null;
   season_ticket_holders: number | null;
 }
-export interface CompetitionReputationRow { competition: string; reputation: number | null; }
+export interface CompetitionReputationRow {
+  competition: string;
+  reputation: number | null;
+  country: string | null;
+  continent: string | null;
+}
 
 export interface CoachRow {
   idu: string | null;
@@ -286,6 +291,8 @@ const REP_CLUBES_COLS = {
 
 const REP_COMPS_COLS = {
   competition: ["Competição", "Competicao", "Competition", "Comp"],
+  country:     ["País", "Pais", "Country"],
+  continent:   ["Continente", "Continent"],
   reputation:  ["Reputação", "Reputacao", "Reputation", "Rep"],
 };
 
@@ -476,6 +483,8 @@ export function parseCompetitionsFile(buffer: ArrayBuffer): ParsedCompetitionsFi
           out.competitionReputation.push({
             competition,
             reputation: cols.reputation ? toNum(r[cols.reputation]) : null,
+            country: cols.country ? toStr(r[cols.country]) : null,
+            continent: cols.continent ? toStr(r[cols.continent]) : null,
           });
         }
       }
