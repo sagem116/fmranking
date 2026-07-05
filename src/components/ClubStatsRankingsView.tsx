@@ -5,7 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Filter, Loader2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Filter, Loader2, GitCompare, X } from "lucide-react";
 import { usePlayerStatsData } from "@/lib/usePlayerStatsData";
 import { useActiveConfig } from "@/lib/useRankings";
 import type { CompType, PlayerStatRow } from "@/lib/fm-player-stats-db";
@@ -15,13 +17,14 @@ import { resolveClub } from "@/lib/fm-club-map";
 import { fmtNum, fmtMoney } from "@/lib/fmt";
 import { loadReputations, loadClubAliases, reputationFor, onReputationChanged } from "@/lib/fm-club-reputation";
 
-type ColKey = "gls" | "ast" | "ca" | "cp" | "ra" | "rm" | "rc" | "vp" | "salary" | "age" | "reputation" | "n_players";
+type ColKey = "gls" | "ast" | "ca" | "cp" | "ra" | "rm" | "rc" | "vp" | "salary" | "age" | "reputation" | "n_players" | "games";
 interface Row {
   club: string;
   country: string | null;
   continent: string | null;
   competitions: string[];
   n_players: number;
+  games: number;
   gls: number;
   ast: number;
   ca: number;
@@ -63,7 +66,7 @@ function useReputationStore() {
 export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | "raw"; withDecay: boolean }) {
   const data = usePlayerStatsData();
   const cfg = useActiveConfig();
-  useReputationStore(); // subscribe so we re-render on changes
+  useReputationStore();
 
   const [compFilter, setCompFilter] = useState<CompType | "unified">("unified");
   const [search, setSearch] = useState("");
@@ -77,6 +80,18 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 25;
 
+  // Comparison selection
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [compareOpen, setCompareOpen] = useState(false);
+  const toggleSelected = (club: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(club)) next.delete(club); else next.add(club);
+      return next;
+    });
+  };
+  const clearSelected = () => setSelected(new Set());
+
   const players = data.data?.players ?? [];
   const clubMap = data.data?.clubMap;
 
@@ -89,13 +104,7 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
     [players, compFilter],
   );
 
-  // "País" is the country of the COMPETITION (per user spec): even if a
-  // foreign club plays in a competition, the country shown is the
-  // competition's. We pick the most-common p.country per club within the
-  // current category filter so the column reflects what the user sees.
   const clubCountry = useMemo(() => {
-    // SSOT: country comes from the club's mapping in Importar Época. We use
-    // the most recent season's mapping per club for the display column.
     const out: Record<string, string> = {};
     if (!clubMap) return out;
     for (const [club, m] of clubMap.latest) {
@@ -115,7 +124,9 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
     const reps = loadReputations();
 
     type Agg = {
-      club: string; country: string | null; competitions: Set<string>; n_players: number; gls: number; ast: number;
+      club: string; country: string | null; competitions: Set<string>;
+      playerIds: Set<string>; games: number;
+      gls: number; ast: number;
       sumCA: number; sumCP: number; sumRA: number; sumRM: number; sumRC: number;
       sumVP: number; sumSalary: number; sumAge: number; wSum: number;
       sumVPRaw: number; sumSalaryRaw: number;
@@ -124,7 +135,6 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
     const filtered: PlayerStatRow[] = [];
     for (const p of players) {
       if (!p.club) continue;
-      // SSOT: drop rows for clubs without a mapping for their season.
       if (clubMap && !resolveClub(p.club, p.season_year, clubMap, { strict: true })) continue;
       if (p.season_year < yMin || p.season_year > yMax) continue;
       if (compFilter !== "unified" && p.comp_type !== compFilter) continue;
@@ -139,16 +149,17 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
       const w = mode === "weighted" ? compWeight(cfg.data.config, p) * decayFactor(cfg.data.config, p.season_year, latestYear, withDecay) : 1;
       let a = map.get(club);
       if (!a) {
-        a = { club, country: clubCountry[club] ?? null, competitions: new Set<string>(), n_players: 0, gls: 0, ast: 0,
+        a = { club, country: clubCountry[club] ?? null, competitions: new Set<string>(),
+          playerIds: new Set<string>(), games: 0,
+          gls: 0, ast: 0,
           sumCA: 0, sumCP: 0, sumRA: 0, sumRM: 0, sumRC: 0, sumVP: 0, sumSalary: 0, sumAge: 0, wSum: 0,
           sumVPRaw: 0, sumSalaryRaw: 0 };
         map.set(club, a);
       }
-      a.n_players++;
-      // SSOT: only continental / international competitions come from player
-      // rows. Structural competitions (Super League / National League) are
-      // added below from `clubMap` (Importar Época) so a player uploaded on a
-      // continental sheet never re-labels his club's structural competition.
+      // Distinct player key: prefer IDU, fall back to normalized name.
+      const pid = (p.idu && p.idu.trim()) ? `idu:${p.idu.trim()}` : `nm:${normText(p.player_name)}`;
+      a.playerIds.add(pid);
+      a.games += p.games || 0;
       if (p.competition && (p.comp_type === "continental" || p.comp_type === "international")) {
         a.competitions.add(p.competition);
       }
@@ -166,9 +177,6 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
       a.sumVPRaw += p.vp || 0;
       a.sumSalaryRaw += p.salary || 0;
     }
-    // Add structural competitions from the clubMap (Importar Época) for every
-    // season inside the active [yMin, yMax] range. This is the ONLY source of
-    // truth for Super League / National League associations.
     if (clubMap) {
       for (const [season, sm] of clubMap.bySeason) {
         if (season < yMin || season > yMax) continue;
@@ -187,7 +195,8 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
         club: a.club, country: a.country,
         continent: continentOf(a.country),
         competitions: comps,
-        n_players: a.n_players,
+        n_players: a.playerIds.size,
+        games: a.games,
         gls: a.gls, ast: a.ast,
         ca: a.sumCA / k, cp: a.sumCP / k, ra: a.sumRA / k, rm: a.sumRM / k, rc: a.sumRC / k,
         vp: compFilter === "unified" ? a.sumVPRaw : a.sumVP / k,
@@ -213,6 +222,7 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
 
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const pageRows = sorted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const selectedRows = useMemo(() => sorted.filter((r) => selected.has(r.club)), [sorted, selected]);
 
   const Th = ({ k, label, align = "right" as "left" | "right" }: { k: ColKey; label: string; align?: "left" | "right" }) => (
     <th
@@ -241,6 +251,15 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
             {t.label}
           </Button>
         ))}
+        {selected.size > 0 && (
+          <div className="ml-auto flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">{selected.size} selecionado{selected.size === 1 ? "" : "s"}</span>
+            <Button size="sm" variant="ghost" onClick={clearSelected}><X className="size-3.5" /> Limpar</Button>
+            <Button size="sm" variant="default" disabled={selected.size < 2} onClick={() => setCompareOpen(true)}>
+              <GitCompare className="size-3.5" /> Comparar
+            </Button>
+          </div>
+        )}
       </div>
 
       <Card className="p-4 space-y-3">
@@ -296,11 +315,13 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
           <table className="w-full text-sm">
             <thead className="bg-muted/40 text-xs uppercase">
               <tr>
+                <th className="px-2 py-2 w-8"></th>
                 <th className="px-3 py-2 text-left">#</th>
                 <th className="px-3 py-2 text-left">Clube</th>
                 <th className="px-3 py-2 text-left">{compFilter === "continental" || compFilter === "international" ? "Continente" : "País"}</th>
                 <th className="px-3 py-2 text-left">Competição</th>
                 <Th k="n_players" label="Nº jog." />
+                <Th k="games" label="Jogos" />
                 <Th k="gls" label="Golos" />
                 <Th k="ast" label="Assist." />
                 <Th k="ca" label="C.A." />
@@ -316,7 +337,10 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
             </thead>
             <tbody>
               {pageRows.map((r, i) => (
-                <tr key={r.club} className="border-t border-border/50 hover:bg-muted/30">
+                <tr key={r.club} className={`border-t border-border/50 hover:bg-muted/30 ${selected.has(r.club) ? "bg-primary/5" : ""}`}>
+                  <td className="px-2 py-2">
+                    <Checkbox checked={selected.has(r.club)} onCheckedChange={() => toggleSelected(r.club)} aria-label={`Selecionar ${r.club}`} />
+                  </td>
                   <td className="px-3 py-2 text-muted-foreground tabular-nums">{page * PAGE_SIZE + i + 1}</td>
                   <td className="px-3 py-2 font-medium">
                     <Link to="/clubes/$name" params={{ name: r.club }} className="hover:text-primary hover:underline">{r.club}</Link>
@@ -334,6 +358,7 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
                     )}
                   </td>
                   <td className="px-3 py-2 text-right tabular-nums">{r.n_players}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{r.games}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.gls, 2)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.ast, 2)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.ca, 2)}</td>
@@ -347,7 +372,7 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
                   <td className="px-3 py-2 text-right tabular-nums font-semibold">{r.reputation == null ? "—" : fmtNum(r.reputation, 2)}</td>
                 </tr>
               ))}
-              {pageRows.length === 0 && (<tr><td colSpan={16} className="px-3 py-8 text-center text-muted-foreground">Sem resultados.</td></tr>)}
+              {pageRows.length === 0 && (<tr><td colSpan={18} className="px-3 py-8 text-center text-muted-foreground">Sem resultados.</td></tr>)}
             </tbody>
           </table>
         </div>
@@ -359,6 +384,72 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
           </div>
         </div>
       </Card>
+
+      <CompareDialog open={compareOpen} onOpenChange={setCompareOpen} rows={selectedRows} />
     </div>
+  );
+}
+
+const COMPARE_METRICS: { key: ColKey; label: string; fmt: (v: number | null) => string; higherBetter: boolean }[] = [
+  { key: "reputation", label: "Reputação", fmt: (v) => v == null ? "—" : fmtNum(v, 2), higherBetter: true },
+  { key: "n_players", label: "Nº jogadores", fmt: (v) => v == null ? "—" : String(v), higherBetter: true },
+  { key: "games", label: "Jogos", fmt: (v) => v == null ? "—" : String(v), higherBetter: true },
+  { key: "gls", label: "Golos", fmt: (v) => fmtNum(v ?? 0, 2), higherBetter: true },
+  { key: "ast", label: "Assistências", fmt: (v) => fmtNum(v ?? 0, 2), higherBetter: true },
+  { key: "ca", label: "C.A.", fmt: (v) => fmtNum(v ?? 0, 2), higherBetter: true },
+  { key: "cp", label: "C.P.", fmt: (v) => fmtNum(v ?? 0, 2), higherBetter: true },
+  { key: "ra", label: "R.A.", fmt: (v) => fmtNum(v ?? 0, 2), higherBetter: true },
+  { key: "rm", label: "R.M.", fmt: (v) => fmtNum(v ?? 0, 2), higherBetter: true },
+  { key: "rc", label: "R.C.", fmt: (v) => fmtNum(v ?? 0, 2), higherBetter: true },
+  { key: "vp", label: "V.P.", fmt: (v) => fmtMoney(v ?? 0), higherBetter: true },
+  { key: "salary", label: "Salário", fmt: (v) => fmtMoney(v ?? 0), higherBetter: true },
+  { key: "age", label: "Idade média", fmt: (v) => fmtNum(v ?? 0, 2), higherBetter: false },
+];
+
+function CompareDialog({ open, onOpenChange, rows }: { open: boolean; onOpenChange: (v: boolean) => void; rows: Row[] }) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-5xl">
+        <DialogHeader>
+          <DialogTitle>Comparação de clubes ({rows.length})</DialogTitle>
+        </DialogHeader>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/40 text-xs uppercase">
+              <tr>
+                <th className="px-3 py-2 text-left">Métrica</th>
+                {rows.map((r) => (
+                  <th key={r.club} className="px-3 py-2 text-right whitespace-nowrap">
+                    <Link to="/clubes/$name" params={{ name: r.club }} className="hover:text-primary hover:underline">{r.club}</Link>
+                    <div className="text-[10px] font-normal text-muted-foreground normal-case">{r.country ?? "—"}</div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {COMPARE_METRICS.map((m) => {
+                const vals = rows.map((r) => r[m.key] as number | null);
+                const nums = vals.filter((v): v is number => typeof v === "number");
+                const best = nums.length ? (m.higherBetter ? Math.max(...nums) : Math.min(...nums)) : null;
+                return (
+                  <tr key={m.key} className="border-t border-border/50">
+                    <td className="px-3 py-2 font-medium">{m.label}</td>
+                    {rows.map((r, i) => {
+                      const v = vals[i];
+                      const isBest = best != null && typeof v === "number" && v === best && rows.length > 1;
+                      return (
+                        <td key={r.club} className={`px-3 py-2 text-right tabular-nums ${isBest ? "text-primary font-semibold" : ""}`}>
+                          {m.fmt(v)}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
