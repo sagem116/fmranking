@@ -690,6 +690,83 @@ function RankingsPage() {
 
   const activeExtras = moduleFilter === "continental" ? continentalExtras : slExtras;
 
+  // Domínio (treinador dominante) — top coach by weighted contribution per club.
+  const dominioClubCol = useMemo<ExtraCol | null>(() => {
+    if (!ranks || !data) return null;
+    const csp = ranks.clubSeasonPoints;
+    const allowedYear = (y: number) => {
+      if (seasonView === "total") return true;
+      if (seasonScope === "only") return y === seasonView;
+      return y <= seasonView;
+    };
+    // per club -> per coach -> { weighted, seasons: Set<year> }
+    const acc = new Map<string, Map<string, { w: number; seasons: Set<number> }>>();
+    for (const k of Object.keys(csp)) {
+      const idx1 = k.indexOf("|");
+      const idx2 = k.indexOf("|", idx1 + 1);
+      if (idx1 < 0 || idx2 < 0) continue;
+      const year = Number(k.slice(0, idx1));
+      const club = k.slice(idx2 + 1);
+      if (!allowedYear(year)) continue;
+      const coach = coachByKey[`${year}|${club}`];
+      if (!coach) continue;
+      const w = csp[k].weighted || 0;
+      if (!w) continue;
+      let byCoach = acc.get(club);
+      if (!byCoach) { byCoach = new Map(); acc.set(club, byCoach); }
+      const cur = byCoach.get(coach) ?? { w: 0, seasons: new Set<number>() };
+      cur.w += w;
+      cur.seasons.add(year);
+      byCoach.set(coach, cur);
+    }
+    const values: Record<string, number> = {};
+    const labels: Record<string, React.ReactNode> = {};
+    const tips: Record<string, React.ReactNode> = {};
+    for (const [club, byCoach] of acc) {
+      const ranked = [...byCoach.entries()]
+        .map(([name, v]) => ({ name, w: v.w, seasons: v.seasons.size }))
+        .sort((a, b) => b.w - a.w);
+      if (!ranked.length) continue;
+      const top = ranked[0];
+      values[club] = Math.round(top.w * 10) / 10;
+      labels[club] = (
+        <Link
+          to="/treinadores/$name"
+          params={{ name: top.name }}
+          className="hover:text-primary hover:underline"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {top.name}
+        </Link>
+      );
+      tips[club] = (
+        <div className="space-y-1">
+          <div className="text-[11px] uppercase text-muted-foreground">Treinadores mais influentes · {club}</div>
+          {ranked.slice(0, 6).map((r) => (
+            <div key={r.name} className="flex items-center justify-between gap-3">
+              <span className="truncate">{r.name}</span>
+              <span className="tabular-nums text-muted-foreground shrink-0">
+                {r.seasons} ép · {Math.round(r.w * 10) / 10} pts
+              </span>
+            </div>
+          ))}
+          {ranked.length > 6 && (
+            <div className="text-[10px] text-muted-foreground">+{ranked.length - 6} outros treinadores</div>
+          )}
+        </div>
+      );
+    }
+    return {
+      key: "dominio",
+      label: "Domínio",
+      values,
+      labels,
+      tips,
+      width: "10rem",
+      align: "left",
+    };
+  }, [ranks, data, coachByKey, seasonView, seasonScope]);
+
   const desafioResults = data?.desafioResults;
   const desafioCols = useMemo(() => ({
     clubs: buildDesafioExtraCol(desafioResults, "clubs"),
@@ -698,8 +775,12 @@ function RankingsPage() {
   }), [desafioResults]);
   const withDesafios = (cols: ExtraCol[] | undefined, subject: "clubs" | "coaches" | "countries"): ExtraCol[] | undefined => {
     const d = desafioCols[subject];
-    if (!d) return cols;
-    return cols ? [...cols, d] : [d];
+    let out = cols;
+    if (subject === "clubs" && dominioClubCol) {
+      out = out ? [dominioClubCol, ...out] : [dominioClubCol];
+    }
+    if (!d) return out;
+    return out ? [...out, d] : [d];
   };
 
 

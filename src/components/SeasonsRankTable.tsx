@@ -17,6 +17,12 @@ export interface ExtraCol {
   label: string;
   values: Record<string, number>;
   tips?: Record<string, React.ReactNode>;
+  /** Optional display override; when present, rendered instead of the numeric value. Sort still uses `values`. */
+  labels?: Record<string, React.ReactNode>;
+  /** Column width, e.g. "8rem". Defaults to "6rem". */
+  width?: string;
+  /** Text alignment for the cell. Defaults to "right". */
+  align?: "left" | "right" | "center";
 }
 
 
@@ -195,7 +201,7 @@ export function SeasonsRankTable({
     const base: string[] = ["3rem", "minmax(14rem,1fr)"];
     if (showNac) base.push("5rem");
     if (showTitles) base.push("4rem");
-    for (let i = 0; i < (extraCols?.length ?? 0); i++) base.push("6rem");
+    for (const ec of extraCols ?? []) base.push(ec.width ?? "6rem");
     base.push("6rem", "7rem");
     for (let i = 0; i < years.length; i++) base.push("5.5rem");
     return base.join(" ");
@@ -253,7 +259,7 @@ export function SeasonsRankTable({
             {extraCols?.map((ec) => (
               <HeaderCell
                 key={ec.key}
-                className="text-right"
+                className={ec.align === "left" ? "text-left" : ec.align === "center" ? "text-center" : "text-right"}
                 onClick={() => setSortKey(`extra:${ec.key}`)}
                 active={sortKey === `extra:${ec.key}`}
                 dir={sortDir}
@@ -368,17 +374,23 @@ export function SeasonsRankTable({
                   {extraCols?.map((ec) => {
                     const v = ec.values[e.name] ?? 0;
                     const tip = ec.tips?.[e.name];
-                    const inner = (
+                    const label = ec.labels?.[e.name];
+                    const alignCls = ec.align === "left" ? "text-left" : ec.align === "center" ? "text-center" : "text-right";
+                    const inner = label !== undefined ? (
+                      <span className={`truncate inline-block max-w-full align-bottom ${!label ? "text-muted-foreground/30" : ""} ${tip ? "underline decoration-dotted cursor-help" : ""}`}>
+                        {label || "—"}
+                      </span>
+                    ) : (
                       <span className={`tabular-nums ${v ? "" : "text-muted-foreground/30"} ${tip && v ? "underline decoration-dotted cursor-help" : ""}`}>
                         {v || "—"}
                       </span>
                     );
                     return (
-                      <div key={ec.key} className={`${cellPad} text-right`}>
-                        {tip && v ? (
+                      <div key={ec.key} className={`${cellPad} ${alignCls} min-w-0 truncate`}>
+                        {tip && (label !== undefined || v) ? (
                           <Tooltip>
                             <TooltipTrigger asChild>{inner}</TooltipTrigger>
-                            <TooltipContent className="max-w-xs text-xs whitespace-pre-line">{tip}</TooltipContent>
+                            <TooltipContent className="max-w-sm text-xs">{tip}</TooltipContent>
                           </Tooltip>
                         ) : inner}
                       </div>
