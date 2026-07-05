@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Filter, Loader2, GitCompare, X } from "lucide-react";
+import { Filter, Loader2, GitCompare, X, Rows3, Rows2 } from "lucide-react";
+import { DrillCell } from "@/components/DrillCell";
 import { usePlayerStatsData } from "@/lib/usePlayerStatsData";
 import { useActiveConfig } from "@/lib/useRankings";
 import type { CompType, PlayerStatRow } from "@/lib/fm-player-stats-db";
