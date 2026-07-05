@@ -37,6 +37,7 @@ import { Route as ConquistasRouteImport } from './routes/conquistas'
 import { Route as ConfiguracaoRouteImport } from './routes/configuracao'
 import { Route as CompararRouteImport } from './routes/comparar'
 import { Route as ClubesRouteImport } from './routes/clubes'
+import { Route as AnaliseRouteImport } from './routes/analise'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TreinadoresIndexRouteImport } from './routes/treinadores.index'
 import { Route as PaisesIndexRouteImport } from './routes/paises.index'
@@ -201,6 +202,11 @@ const ClubesRoute = ClubesRouteImport.update({
   path: '/clubes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AnaliseRoute = AnaliseRouteImport.update({
+  id: '/analise',
+  path: '/analise',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -327,6 +333,7 @@ const ClubesNameRoute = ClubesNameRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/analise': typeof AnaliseRoute
   '/clubes': typeof ClubesRouteWithChildren
   '/comparar': typeof CompararRoute
   '/configuracao': typeof ConfiguracaoRoute
@@ -380,6 +387,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/analise': typeof AnaliseRoute
   '/comparar': typeof CompararRoute
   '/configuracao': typeof ConfiguracaoRoute
   '/conquistas': typeof ConquistasRoute
@@ -431,6 +439,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/analise': typeof AnaliseRoute
   '/clubes': typeof ClubesRouteWithChildren
   '/comparar': typeof CompararRoute
   '/configuracao': typeof ConfiguracaoRoute
@@ -486,6 +495,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/analise'
     | '/clubes'
     | '/comparar'
     | '/configuracao'
@@ -539,6 +549,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/analise'
     | '/comparar'
     | '/configuracao'
     | '/conquistas'
@@ -589,6 +600,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/analise'
     | '/clubes'
     | '/comparar'
     | '/configuracao'
@@ -643,6 +655,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AnaliseRoute: typeof AnaliseRoute
   ClubesRoute: typeof ClubesRouteWithChildren
   CompararRoute: typeof CompararRoute
   ConfiguracaoRoute: typeof ConfiguracaoRoute
@@ -887,6 +900,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClubesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/analise': {
+      id: '/analise'
+      path: '/analise'
+      fullPath: '/analise'
+      preLoaderRoute: typeof AnaliseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -1093,6 +1113,7 @@ const TreinadoresRouteWithChildren = TreinadoresRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AnaliseRoute: AnaliseRoute,
   ClubesRoute: ClubesRouteWithChildren,
   CompararRoute: CompararRoute,
   ConfiguracaoRoute: ConfiguracaoRoute,
@@ -1141,13 +1162,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
