@@ -82,6 +82,14 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 25;
+  const [density, setDensity] = useState<"comfy" | "compact">(() => {
+    try { return (typeof window !== "undefined" && window.localStorage.getItem("fm-club-stats-density") === "compact") ? "compact" : "comfy"; } catch { return "comfy"; }
+  });
+  const setDensityPersist = (d: "comfy" | "compact") => {
+    setDensity(d);
+    try { window.localStorage.setItem("fm-club-stats-density", d); } catch { /* ignore */ }
+  };
+  const cellPad = density === "compact" ? "px-2 py-1" : "px-3 py-2";
 
   // Comparison selection
   const [selected, setSelected] = useState<Set<string>>(new Set());
