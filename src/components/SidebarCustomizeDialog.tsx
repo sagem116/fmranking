@@ -118,6 +118,14 @@ export function SidebarCustomizeDialog({
 
   const handleReset = () => setDraft(DEFAULT_PREFS);
 
+  const moveItemTo = (to: string, targetTitle: string) => {
+    const next = { ...(draft.itemGroups ?? {}) } as Record<string, string>;
+    next[to] = targetTitle;
+    setDraft({ ...draft, itemGroups: next });
+  };
+
+  const groupTargets = groups.map((g) => g.title);
+
   return (
     <Dialog open={open} onOpenChange={handleOpen}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
