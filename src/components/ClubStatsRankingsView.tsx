@@ -276,15 +276,25 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
             {t.label}
           </Button>
         ))}
-        {selected.size > 0 && (
-          <div className="ml-auto flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">{selected.size} selecionado{selected.size === 1 ? "" : "s"}</span>
-            <Button size="sm" variant="ghost" onClick={clearSelected}><X className="size-3.5" /> Limpar</Button>
-            <Button size="sm" variant="default" disabled={selected.size < 2} onClick={() => setCompareOpen(true)}>
-              <GitCompare className="size-3.5" /> Comparar
+        <div className="ml-auto flex items-center gap-2">
+          {selected.size > 0 && (
+            <>
+              <span className="text-xs text-muted-foreground">{selected.size} selecionado{selected.size === 1 ? "" : "s"}</span>
+              <Button size="sm" variant="ghost" onClick={clearSelected}><X className="size-3.5" /> Limpar</Button>
+              <Button size="sm" variant="default" disabled={selected.size < 2} onClick={() => setCompareOpen(true)}>
+                <GitCompare className="size-3.5" /> Comparar
+              </Button>
+            </>
+          )}
+          <div className="flex rounded-md border border-border p-0.5" title="Densidade da tabela">
+            <Button size="sm" variant={density === "comfy" ? "secondary" : "ghost"} className="h-7 px-2" onClick={() => setDensityPersist("comfy")}>
+              <Rows3 className="size-3.5" />
+            </Button>
+            <Button size="sm" variant={density === "compact" ? "secondary" : "ghost"} className="h-7 px-2" onClick={() => setDensityPersist("compact")}>
+              <Rows2 className="size-3.5" />
             </Button>
           </div>
-        )}
+        </div>
       </div>
 
       <Card className="p-4 space-y-3">
