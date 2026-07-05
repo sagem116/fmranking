@@ -225,8 +225,14 @@ export async function importCompetitionsFile(
 
   // ---- Competition reputation (per season) ----
   const compRepPayload = parsed.competitionReputation
-    .filter((c) => c.reputation != null)
-    .map((c) => ({ competition: c.competition, reputation: c.reputation!, season_year: year }));
+    .filter((c) => c.reputation != null || c.country || c.continent)
+    .map((c) => ({
+      competition: c.competition,
+      reputation: c.reputation ?? 0,
+      country: c.country,
+      continent: c.continent,
+      season_year: year,
+    }));
   if (compRepPayload.length) await chunkInsert("competition_reputation", compRepPayload);
 
   // ---- Club reputation per season ----
