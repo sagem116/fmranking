@@ -349,6 +349,41 @@ export async function importPlayersFile(
 
   if (rows.length) await chunkInsert("player_stats", rows);
 
+  // Also populate the legacy `players` table so the existing consumers keep
+  // working (useRankings, buildPlayerProfile / player profile page, Hall of
+  // Fame, Insights, etc). Only superleague/national rows belong there — the
+  // legacy schema doesn't model continental/international player rows.
+  const legacyClubMap = new Map<string, string>();
+  const legacyClubNames = [...new Set(parsed.players
+    .filter((p) => (p.comp_type === "superleague" || p.comp_type === "national") && p.club)
+    .map((p) => p.club!),
+  )];
+  if (legacyClubNames.length) {
+    const { data: clubRows } = await sb().from("clubs").select("id,name").in("name", legacyClubNames);
+    ((clubRows ?? []) as Array<{ id: string; name: string }>).forEach((c) => legacyClubMap.set(c.name, c.id));
+  }
+  const legacyRows = parsed.players
+    .filter((p) => p.comp_type === "superleague" || p.comp_type === "national")
+    .map((p) => ({
+      season_id: seasonId,
+      module: p.comp_type as "superleague" | "national",
+      idu: p.idu,
+      name: p.player_name,
+      league: p.competition,
+      club_name: p.club,
+      club_id: p.club ? legacyClubMap.get(p.club) ?? null : null,
+      age: p.age,
+      gls: p.gls ?? 0,
+      ast: p.ast ?? 0,
+      salary: p.salary ?? 0,
+      ra: p.ra ?? 0,
+      rm: p.rm ?? 0,
+      ca: p.ca ?? 0,
+      cp: p.cp ?? 0,
+      vp: p.vp ?? 0,
+    }));
+  if (legacyRows.length) await chunkInsert("players", legacyRows);
+
   // Recompute per-(season, comp_type, competition) aggregates.
   const aggMap = new Map<string, {
     row: Record<string, unknown>; n: number;
