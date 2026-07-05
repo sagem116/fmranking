@@ -20,7 +20,7 @@ import { SeasonFilter } from "@/components/SeasonFilter";
 import { PlayerRankingsView, CompetitionRankingsView } from "@/components/PlayerRankingsView";
 import { ClubStatsRankingsView } from "@/components/ClubStatsRankingsView";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { useRankingsUIVersion } from "@/lib/fm-rankings-ui-prefs";
+import { useRankingsUIVersion, useRankingsDensity } from "@/lib/fm-rankings-ui-prefs";
 import { RankingsContextBar, type ContextChip } from "@/components/RankingsContextBar";
 
 type SeasonView = "total" | number;
@@ -144,6 +144,7 @@ function RankingsPage() {
   const [decayMode, setDecayMode] = useState<"with" | "without">("with");
   const [view, setView] = useState<"standard" | "players" | "competitions" | "clubs_stats">("standard");
   const [uiVersion, setUiVersion] = useRankingsUIVersion();
+  const [density, setDensity] = useRankingsDensity();
   const withDecay = useRankings();
   const noDecay = useRankingsNoDecay();
   const data = decayMode === "with" ? withDecay.data : noDecay.data;
@@ -777,6 +778,14 @@ function RankingsPage() {
               Sem decaimento
             </Button>
           </div>
+          <div className="flex rounded-lg border border-border p-1" title="Densidade da tabela">
+            <Button size="sm" variant={density === "comfy" ? "default" : "ghost"} onClick={() => setDensity("comfy")}>
+              Confortável
+            </Button>
+            <Button size="sm" variant={density === "compact" ? "default" : "ghost"} onClick={() => setDensity("compact")}>
+              Compacto
+            </Button>
+          </div>
           <Button size="sm" variant="outline" onClick={() => setUiVersion("v2")} title="Mudar para a UI Moderna">
             <Sparkles className="size-3.5" /> UI Moderna
           </Button>
@@ -1279,6 +1288,7 @@ function RankingsV2Header(props: {
                   </div>
                 )}
               </div>
+              <DensityRow />
               <div className="border-t border-border pt-2">
                 <Button size="sm" variant="ghost" className="w-full" onClick={props.onSwitchToV1}>
                   <LayoutDashboard className="size-3.5" /> UI Clássica
@@ -1327,3 +1337,16 @@ function RankingsV2Header(props: {
 }
 
 
+
+function DensityRow() {
+  const [density, setDensity] = useRankingsDensity();
+  return (
+    <div>
+      <Label className="text-xs">Densidade da tabela</Label>
+      <div className="flex rounded-lg border border-border p-1 mt-1">
+        <Button size="sm" variant={density === "comfy" ? "default" : "ghost"} className="flex-1" onClick={() => setDensity("comfy")}>Confortável</Button>
+        <Button size="sm" variant={density === "compact" ? "default" : "ghost"} className="flex-1" onClick={() => setDensity("compact")}>Compacto</Button>
+      </div>
+    </div>
+  );
+}

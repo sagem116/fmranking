@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import type { RankingEntry, BreakdownItem } from "@/lib/fm-rankings";
 import { useEntrySort } from "@/components/SortableTh";
 import { fmtPts } from "@/lib/fmt";
+import { useRankingsDensity } from "@/lib/fm-rankings-ui-prefs";
 
 type Kind = "clubes" | "treinadores" | "paises";
 
@@ -64,7 +65,8 @@ function extractClub(detail: string): string | null {
   return parts.length > 1 ? parts[parts.length - 1] : null;
 }
 
-const ROW_H = 44;
+const ROW_H_COMFY = 44;
+const ROW_H_COMPACT = 30;
 const VIEWPORT_H = 640;
 
 /** Rank table per year using the evolution map (memoised). */
@@ -93,12 +95,14 @@ function HeaderCell({
   active,
   dir = "desc",
   className = "",
+  pad = "p-3",
 }: {
   children: React.ReactNode;
   onClick?: () => void;
   active?: boolean;
   dir?: "asc" | "desc";
   className?: string;
+  pad?: string;
 }) {
   const inner = onClick ? (
     <button
@@ -117,7 +121,7 @@ function HeaderCell({
   ) : (
     children
   );
-  return <div className={`p-3 ${className}`}>{inner}</div>;
+  return <div className={`${pad} ${className}`}>{inner}</div>;
 }
 
 export function SeasonsRankTable({
@@ -135,6 +139,10 @@ export function SeasonsRankTable({
   enableSearch = true,
   coachByKey,
 }: Props) {
+  const [density] = useRankingsDensity();
+  const compact = density === "compact";
+  const ROW_H = compact ? ROW_H_COMPACT : ROW_H_COMFY;
+  const cellPad = compact ? "px-2 py-1" : "p-3";
   const extrasMap = useMemo(() => {
     const m: Record<string, Record<string, number>> = {};
     for (const ec of extraCols ?? []) m[ec.key] = ec.values;
@@ -217,7 +225,7 @@ export function SeasonsRankTable({
           </div>
         </div>
       )}
-      <div ref={parentRef} className="overflow-auto" style={{ maxHeight: VIEWPORT_H }}>
+      <div key={density} ref={parentRef} className="overflow-auto" style={{ maxHeight: VIEWPORT_H }}>
         <div style={{ display: "grid", gridTemplateColumns: cols, minWidth: "max-content" }}>
           {/* Header row */}
           <div
@@ -228,15 +236,16 @@ export function SeasonsRankTable({
             className="sticky top-0 z-20 bg-card/95 backdrop-blur border-b border-border text-muted-foreground text-xs uppercase grid"
             style={{ gridColumn: "1 / -1", gridTemplateColumns: cols }}
           >
-            <HeaderCell className="text-left">#</HeaderCell>
-            <HeaderCell className="text-left sticky left-0 bg-card/95 backdrop-blur z-10">{label}</HeaderCell>
-            {showNac && <HeaderCell className="text-left">Nac</HeaderCell>}
+            <HeaderCell className="text-left" pad={cellPad}>#</HeaderCell>
+            <HeaderCell className="text-left sticky left-0 bg-card/95 backdrop-blur z-10" pad={cellPad}>{label}</HeaderCell>
+            {showNac && <HeaderCell className="text-left" pad={cellPad}>Nac</HeaderCell>}
             {showTitles && (
               <HeaderCell
                 className="text-right"
                 onClick={() => setSortKey("titles")}
                 active={sortKey === "titles"}
                 dir={sortDir}
+                pad={cellPad}
               >
                 Tít.
               </HeaderCell>
@@ -248,6 +257,7 @@ export function SeasonsRankTable({
                 onClick={() => setSortKey(`extra:${ec.key}`)}
                 active={sortKey === `extra:${ec.key}`}
                 dir={sortDir}
+                pad={cellPad}
               >
                 {ec.label}
               </HeaderCell>
@@ -257,10 +267,11 @@ export function SeasonsRankTable({
               onClick={() => setSortKey("points")}
               active={sortKey === "points"}
               dir={sortDir}
+              pad={cellPad}
             >
               Total
             </HeaderCell>
-            <HeaderCell className="text-right" >Δ vs anterior</HeaderCell>
+            <HeaderCell className="text-right"  pad={cellPad}>Δ vs anterior</HeaderCell>
             {years.map((y) => (
               <HeaderCell
                 key={y}
@@ -268,6 +279,7 @@ export function SeasonsRankTable({
                 onClick={() => setSortKey(`year:${y}`)}
                 active={sortKey === `year:${y}`}
                 dir={sortDir}
+                pad={cellPad}
               >
                 {y}
               </HeaderCell>
@@ -296,19 +308,19 @@ export function SeasonsRankTable({
                     gridTemplateColumns: cols,
                   }}
                 >
-                  <div className={`p-3 font-bold ${i < 3 ? "text-gold" : "text-muted-foreground"}`}>{i + 1}</div>
-                  <div className="p-3 font-medium truncate sticky left-0 bg-background/95 backdrop-blur z-[1]">
+                  <div className={`${cellPad} font-bold ${i < 3 ? "text-gold" : "text-muted-foreground"}`}>{i + 1}</div>
+                  <div className={`${cellPad} font-medium truncate sticky left-0 bg-background/95 backdrop-blur z-[1]`}>
                     <Link to={to} params={{ name: e.name }} className="hover:text-primary hover:underline">
                       {e.name}
                     </Link>
                   </div>
                   {showNac && (
-                    <div className="p-3 text-muted-foreground text-xs truncate">
+                    <div className={`${cellPad} text-muted-foreground text-xs truncate`}>
                       {nacMap?.[e.name] ?? "—"}
                     </div>
                   )}
                   {showTitles && (
-                    <div className="p-3 text-right tabular-nums">
+                    <div className={`${cellPad} text-right tabular-nums`}>
                       {e.titles > 0 && titleItems.length > 0 ? (
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -362,7 +374,7 @@ export function SeasonsRankTable({
                       </span>
                     );
                     return (
-                      <div key={ec.key} className="p-3 text-right">
+                      <div key={ec.key} className={`${cellPad} text-right`}>
                         {tip && v ? (
                           <Tooltip>
                             <TooltipTrigger asChild>{inner}</TooltipTrigger>
@@ -372,17 +384,17 @@ export function SeasonsRankTable({
                       </div>
                     );
                   })}
-                  <div className="p-3 text-right font-semibold tabular-nums">
+                  <div className={`${cellPad} text-right font-semibold tabular-nums`}>
                     {fmtPts(mode === "raw" ? e.raw : e.weighted)}
                   </div>
-                  <div className="p-3 text-right">
+                  <div className={`${cellPad} text-right`}>
                     {d ? <DeltaCell ptsDelta={d.ptsDelta} rankDelta={d.rankDelta} /> : <span className="text-muted-foreground/40">—</span>}
                   </div>
                   {years.map((y) => {
                     const v = evo[y] ?? 0;
                     const yearItems = bdItems.filter((it) => it.season_year === y);
                     const cell = (
-                      <div className={`p-3 text-right tabular-nums ${v ? "" : "text-muted-foreground/30"}`}>
+                      <div className={`${cellPad} text-right tabular-nums ${v ? "" : "text-muted-foreground/30"}`}>
                         {v ? fmtPts(v) : "—"}
                       </div>
                     );
@@ -421,7 +433,7 @@ export function SeasonsRankTable({
                     return (
                       <Tooltip key={y}>
                         <TooltipTrigger asChild>
-                          <div className={`p-3 text-right tabular-nums cursor-help ${v ? "" : "text-muted-foreground/30"}`}>
+                          <div className={`${cellPad} text-right tabular-nums cursor-help ${v ? "" : "text-muted-foreground/30"}`}>
                             {fmtPts(v)}
                           </div>
                         </TooltipTrigger>
