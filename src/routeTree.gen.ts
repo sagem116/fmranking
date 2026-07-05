@@ -32,6 +32,7 @@ import { Route as DebugMapeamentoClubesRouteImport } from './routes/debug-mapeam
 import { Route as DebugJogadoresRouteImport } from './routes/debug-jogadores'
 import { Route as DebugContinentesRouteImport } from './routes/debug-continentes'
 import { Route as DebugContinentaisRouteImport } from './routes/debug-continentais'
+import { Route as DebugCompeticoesRouteImport } from './routes/debug-competicoes'
 import { Route as DebugClubesRouteImport } from './routes/debug-clubes'
 import { Route as ConquistasRouteImport } from './routes/conquistas'
 import { Route as ConfiguracaoRouteImport } from './routes/configuracao'
@@ -175,6 +176,11 @@ const DebugContinentesRoute = DebugContinentesRouteImport.update({
 const DebugContinentaisRoute = DebugContinentaisRouteImport.update({
   id: '/debug-continentais',
   path: '/debug-continentais',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DebugCompeticoesRoute = DebugCompeticoesRouteImport.update({
+  id: '/debug-competicoes',
+  path: '/debug-competicoes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DebugClubesRoute = DebugClubesRouteImport.update({
@@ -339,6 +345,7 @@ export interface FileRoutesByFullPath {
   '/configuracao': typeof ConfiguracaoRoute
   '/conquistas': typeof ConquistasRoute
   '/debug-clubes': typeof DebugClubesRoute
+  '/debug-competicoes': typeof DebugCompeticoesRoute
   '/debug-continentais': typeof DebugContinentaisRoute
   '/debug-continentes': typeof DebugContinentesRoute
   '/debug-jogadores': typeof DebugJogadoresRoute
@@ -392,6 +399,7 @@ export interface FileRoutesByTo {
   '/configuracao': typeof ConfiguracaoRoute
   '/conquistas': typeof ConquistasRoute
   '/debug-clubes': typeof DebugClubesRoute
+  '/debug-competicoes': typeof DebugCompeticoesRoute
   '/debug-continentais': typeof DebugContinentaisRoute
   '/debug-continentes': typeof DebugContinentesRoute
   '/debug-jogadores': typeof DebugJogadoresRoute
@@ -445,6 +453,7 @@ export interface FileRoutesById {
   '/configuracao': typeof ConfiguracaoRoute
   '/conquistas': typeof ConquistasRoute
   '/debug-clubes': typeof DebugClubesRoute
+  '/debug-competicoes': typeof DebugCompeticoesRoute
   '/debug-continentais': typeof DebugContinentaisRoute
   '/debug-continentes': typeof DebugContinentesRoute
   '/debug-jogadores': typeof DebugJogadoresRoute
@@ -501,6 +510,7 @@ export interface FileRouteTypes {
     | '/configuracao'
     | '/conquistas'
     | '/debug-clubes'
+    | '/debug-competicoes'
     | '/debug-continentais'
     | '/debug-continentes'
     | '/debug-jogadores'
@@ -554,6 +564,7 @@ export interface FileRouteTypes {
     | '/configuracao'
     | '/conquistas'
     | '/debug-clubes'
+    | '/debug-competicoes'
     | '/debug-continentais'
     | '/debug-continentes'
     | '/debug-jogadores'
@@ -606,6 +617,7 @@ export interface FileRouteTypes {
     | '/configuracao'
     | '/conquistas'
     | '/debug-clubes'
+    | '/debug-competicoes'
     | '/debug-continentais'
     | '/debug-continentes'
     | '/debug-jogadores'
@@ -661,6 +673,7 @@ export interface RootRouteChildren {
   ConfiguracaoRoute: typeof ConfiguracaoRoute
   ConquistasRoute: typeof ConquistasRoute
   DebugClubesRoute: typeof DebugClubesRoute
+  DebugCompeticoesRoute: typeof DebugCompeticoesRoute
   DebugContinentaisRoute: typeof DebugContinentaisRoute
   DebugContinentesRoute: typeof DebugContinentesRoute
   DebugJogadoresRoute: typeof DebugJogadoresRoute
@@ -863,6 +876,13 @@ declare module '@tanstack/react-router' {
       path: '/debug-continentais'
       fullPath: '/debug-continentais'
       preLoaderRoute: typeof DebugContinentaisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/debug-competicoes': {
+      id: '/debug-competicoes'
+      path: '/debug-competicoes'
+      fullPath: '/debug-competicoes'
+      preLoaderRoute: typeof DebugCompeticoesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/debug-clubes': {
@@ -1119,6 +1139,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConfiguracaoRoute: ConfiguracaoRoute,
   ConquistasRoute: ConquistasRoute,
   DebugClubesRoute: DebugClubesRoute,
+  DebugCompeticoesRoute: DebugCompeticoesRoute,
   DebugContinentaisRoute: DebugContinentaisRoute,
   DebugContinentesRoute: DebugContinentesRoute,
   DebugJogadoresRoute: DebugJogadoresRoute,

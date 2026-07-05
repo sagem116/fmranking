@@ -1,8 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo } from "react";
 import { Loader2, Bug, AlertTriangle, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useRankings } from "@/lib/useRankings";
+import { usePlayerStatsData } from "@/lib/usePlayerStatsData";
 import { buildPlayerKey, computeGoals, computeAssists, computePerformance } from "@/lib/fm-players";
 
 export const Route = createFileRoute("/debug-jogadores")({
@@ -12,6 +14,37 @@ export const Route = createFileRoute("/debug-jogadores")({
 
 function DebugJogadores() {
   const { data, isLoading } = useRankings();
+  const { data: psData } = usePlayerStatsData();
+  const stats = useMemo(() => {
+    if (!psData) return null;
+    const ps = psData.players;
+    const noClub = ps.filter((p) => !p.club || !p.club.trim());
+    const noNat = ps.filter((p) => !p.nationality || !p.nationality.trim());
+    const badVp = ps.filter((p) => p.vp < 0 || (p.vp !== 0 && p.vp < 100));
+    const badSal = ps.filter((p) => p.salary < 0);
+    // Duplicates: same IDU across the same season with different club/name
+    const bySeasonIdu = new Map<string, { names: Set<string>; clubs: Set<string> }>();
+    for (const p of ps) {
+      if (!p.idu) continue;
+      const k = `${p.season_year}|${p.idu}`;
+      let e = bySeasonIdu.get(k);
+      if (!e) { e = { names: new Set(), clubs: new Set() }; bySeasonIdu.set(k, e); }
+      e.names.add(p.player_name); if (p.club) e.clubs.add(p.club);
+    }
+    const duplicates: { key: string; names: string[]; clubs: string[] }[] = [];
+    for (const [key, v] of bySeasonIdu) if (v.names.size > 1 || v.clubs.size > 1) duplicates.push({ key, names: [...v.names], clubs: [...v.clubs] });
+    // Inconsistent: player with same name but different nationalities across seasons
+    const byName = new Map<string, Set<string>>();
+    for (const p of ps) {
+      if (!p.player_name || !p.nationality) continue;
+      let s = byName.get(p.player_name); if (!s) { s = new Set(); byName.set(p.player_name, s); }
+      s.add(p.nationality);
+    }
+    const inconsistent: { name: string; nats: string[] }[] = [];
+    for (const [name, s] of byName) if (s.size > 1) inconsistent.push({ name, nats: [...s] });
+    return { noClub, noNat, badVp, badSal, duplicates, inconsistent };
+  }, [psData]);
+
   if (isLoading || !data) {
     return <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="size-4 animate-spin" /> A carregar…</div>;
   }
