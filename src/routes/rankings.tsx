@@ -1337,3 +1337,16 @@ function RankingsV2Header(props: {
 }
 
 
+
+function DensityRow() {
+  const [density, setDensity] = useRankingsDensity();
+  return (
+    <div>
+      <Label className="text-xs">Densidade da tabela</Label>
+      <div className="flex rounded-lg border border-border p-1 mt-1">
+        <Button size="sm" variant={density === "comfy" ? "default" : "ghost"} className="flex-1" onClick={() => setDensity("comfy")}>Confortável</Button>
+        <Button size="sm" variant={density === "compact" ? "default" : "ghost"} className="flex-1" onClick={() => setDensity("compact")}>Compacto</Button>
+      </div>
+    </div>
+  );
+}
