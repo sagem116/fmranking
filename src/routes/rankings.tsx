@@ -20,7 +20,7 @@ import { SeasonFilter } from "@/components/SeasonFilter";
 import { PlayerRankingsView, CompetitionRankingsView } from "@/components/PlayerRankingsView";
 import { ClubStatsRankingsView } from "@/components/ClubStatsRankingsView";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { useRankingsUIVersion } from "@/lib/fm-rankings-ui-prefs";
+import { useRankingsUIVersion, useRankingsDensity } from "@/lib/fm-rankings-ui-prefs";
 import { RankingsContextBar, type ContextChip } from "@/components/RankingsContextBar";
 
 type SeasonView = "total" | number;
