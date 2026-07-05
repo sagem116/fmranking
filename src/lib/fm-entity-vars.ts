@@ -1,6 +1,6 @@
 // Variable catalogs for custom formulas / filters / rankings per entity type.
 
-export type EntityKind = "jogador" | "clube" | "competicao" | "pais";
+export type EntityKind = "jogador" | "clube" | "competicao" | "pais" | "treinador";
 
 export interface VarDef {
   key: string;        // UPPERCASE variable name used in formulas
@@ -67,12 +67,20 @@ export const COUNTRY_VARS: VarDef[] = [
   { key: "SALARIO_TOTAL", label: "Salário Total (jogadores)", group: "Financeiro" },
 ];
 
+export const COACH_VARS: VarDef[] = [
+  { key: "EPOCAS", label: "Épocas registadas", group: "Carreira" },
+  { key: "N_CLUBES", label: "Nº de Clubes", group: "Carreira" },
+  { key: "N_MODULOS", label: "Nº de Módulos", group: "Carreira" },
+  { key: "NACIONAL", label: "Trabalhou como selecionador?", group: "Carreira" },
+];
+
 export function varsForEntity(kind: EntityKind): VarDef[] {
   switch (kind) {
     case "jogador": return PLAYER_VARS;
     case "clube": return CLUB_VARS;
     case "competicao": return COMPETITION_VARS;
     case "pais": return COUNTRY_VARS;
+    case "treinador": return COACH_VARS;
   }
 }
 
@@ -81,4 +89,5 @@ export const ENTITY_LABEL: Record<EntityKind, string> = {
   clube: "Clubes",
   competicao: "Competições",
   pais: "Países",
+  treinador: "Treinadores",
 };
