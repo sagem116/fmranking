@@ -24,6 +24,15 @@ export interface PlayerStatRow {
   rm: number;
   rc: number;
   age: number;
+  // New metrics from importer v2 (may be absent on rows from the legacy importer)
+  xg?: number | null;
+  pass_pct?: number | null;
+  tackles_per90?: number | null;
+  fouls_per90?: number | null;
+  shot_pct?: number | null;
+  yellows?: number | null;
+  reds?: number | null;
+  avg_rating?: number | null;
 }
 
 export interface PlayerStatsParseResult {
