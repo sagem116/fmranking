@@ -390,8 +390,7 @@ function ClubListCard({ title, clubs }: { title: string; clubs: string[] }) {
     </Card>
   );
 }
-  );
-}
+
 
 function Stat({ label, value, tone = "default" }: { label: string; value: number; tone?: "default" | "ok" | "warn" }) {
   const color = tone === "warn" ? "text-warning" : tone === "ok" ? "text-success" : "text-foreground";
