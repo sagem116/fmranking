@@ -78,6 +78,9 @@ export interface CoachRow {
   name: string;
   nationality: string | null;
   club_name: string | null;
+  club_role?: string | null;
+  intl_role?: string | null;
+  country_name?: string | null;
 }
 
 export interface RankingEntry {
