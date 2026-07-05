@@ -144,6 +144,7 @@ function RankingsPage() {
   const [decayMode, setDecayMode] = useState<"with" | "without">("with");
   const [view, setView] = useState<"standard" | "players" | "competitions" | "clubs_stats">("standard");
   const [uiVersion, setUiVersion] = useRankingsUIVersion();
+  const [density, setDensity] = useRankingsDensity();
   const withDecay = useRankings();
   const noDecay = useRankingsNoDecay();
   const data = decayMode === "with" ? withDecay.data : noDecay.data;
