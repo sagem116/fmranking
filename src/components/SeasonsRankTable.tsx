@@ -374,17 +374,23 @@ export function SeasonsRankTable({
                   {extraCols?.map((ec) => {
                     const v = ec.values[e.name] ?? 0;
                     const tip = ec.tips?.[e.name];
-                    const inner = (
+                    const label = ec.labels?.[e.name];
+                    const alignCls = ec.align === "left" ? "text-left" : ec.align === "center" ? "text-center" : "text-right";
+                    const inner = label !== undefined ? (
+                      <span className={`truncate inline-block max-w-full align-bottom ${!label ? "text-muted-foreground/30" : ""} ${tip ? "underline decoration-dotted cursor-help" : ""}`}>
+                        {label || "—"}
+                      </span>
+                    ) : (
                       <span className={`tabular-nums ${v ? "" : "text-muted-foreground/30"} ${tip && v ? "underline decoration-dotted cursor-help" : ""}`}>
                         {v || "—"}
                       </span>
                     );
                     return (
-                      <div key={ec.key} className={`${cellPad} text-right`}>
-                        {tip && v ? (
+                      <div key={ec.key} className={`${cellPad} ${alignCls} min-w-0 truncate`}>
+                        {tip && (label !== undefined || v) ? (
                           <Tooltip>
                             <TooltipTrigger asChild>{inner}</TooltipTrigger>
-                            <TooltipContent className="max-w-xs text-xs whitespace-pre-line">{tip}</TooltipContent>
+                            <TooltipContent className="max-w-sm text-xs">{tip}</TooltipContent>
                           </Tooltip>
                         ) : inner}
                       </div>
