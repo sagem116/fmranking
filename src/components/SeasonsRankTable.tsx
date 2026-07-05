@@ -201,7 +201,7 @@ export function SeasonsRankTable({
     const base: string[] = ["3rem", "minmax(14rem,1fr)"];
     if (showNac) base.push("5rem");
     if (showTitles) base.push("4rem");
-    for (let i = 0; i < (extraCols?.length ?? 0); i++) base.push("6rem");
+    for (const ec of extraCols ?? []) base.push(ec.width ?? "6rem");
     base.push("6rem", "7rem");
     for (let i = 0; i < years.length; i++) base.push("5.5rem");
     return base.join(" ");
