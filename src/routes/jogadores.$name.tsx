@@ -7,6 +7,7 @@ import { useRankings } from "@/lib/useRankings";
 import { buildPlayerProfile } from "@/lib/fm-players";
 import { PlayerNewStatsSection } from "@/components/NewStatsSections";
 import { DynamicMetricChart } from "@/components/DynamicMetricChart";
+import { PlayerAchievementsSection } from "@/components/PlayerAchievementsSection";
 
 export const Route = createFileRoute("/jogadores/$name")({
   component: PlayerProfilePage,
