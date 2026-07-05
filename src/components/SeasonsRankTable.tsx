@@ -245,6 +245,7 @@ export function SeasonsRankTable({
                 onClick={() => setSortKey("titles")}
                 active={sortKey === "titles"}
                 dir={sortDir}
+                pad={cellPad}
               >
                 Tít.
               </HeaderCell>
