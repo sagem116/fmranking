@@ -19,6 +19,7 @@ import { fmtNum, fmtMoney } from "@/lib/fmt";
 import { loadReputations, loadClubAliases, reputationFor, onReputationChanged } from "@/lib/fm-club-reputation";
 
 type ColKey = "gls" | "ast" | "ca" | "cp" | "ra" | "rm" | "rc" | "vp" | "salary" | "age" | "reputation" | "n_players" | "games";
+interface PlayerDrillRow { id: string; name: string; games: number; gls: number; ast: number; }
 interface Row {
   club: string;
   country: string | null;
@@ -37,6 +38,7 @@ interface Row {
   salary: number;
   age: number;
   reputation: number | null;
+  players: PlayerDrillRow[];
 }
 
 const COMP_TABS: { value: CompType | "unified"; label: string }[] = [
