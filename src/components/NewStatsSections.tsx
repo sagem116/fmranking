@@ -120,12 +120,13 @@ export function PlayerNewStatsSection({ playerName }: { playerName: string }) {
   );
 }
 
-export function ClubNewStatsSection({ clubName }: { clubName: string }) {
+export function ClubNewStatsSection({ clubName, season }: { clubName: string; season?: number | null }) {
   const { data, isLoading } = usePlayerStatsData();
   const agg = useMemo(() => {
     if (!data) return null;
     const target = norm(clubName);
-    const rows = data.players.filter((r) => norm(r.club) === target);
+    const all = data.players.filter((r) => norm(r.club) === target);
+    const rows = season == null ? all : all.filter((r) => r.season_year === season);
     if (!rows.length) return null;
     const byCompetition = new Map<string, typeof rows>();
     for (const r of rows) {
@@ -176,7 +177,7 @@ export function ClubNewStatsSection({ clubName }: { clubName: string }) {
       .map((rs) => buildRow(rs[0].season_year, rs[0].comp_type, rs[0].competition, rs))
       .sort((a, b) => Number(b.year) - Number(a.year) || a.competition.localeCompare(b.competition, "pt-PT"));
     return [...rowsByCompetition, buildRow("total", "total", "Total", rows)];
-  }, [data, clubName]);
+  }, [data, clubName, season]);
 
   if (isLoading || !agg) return null;
 
