@@ -1,4 +1,5 @@
 import { useMemo, useState, useSyncExternalStore } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -15,6 +16,7 @@ import type { CompType, PlayerStatRow } from "@/lib/fm-player-stats-db";
 import { continentOf, CONTINENTS } from "@/lib/fm-continents";
 import { fmtNum, fmtMoney } from "@/lib/fmt";
 import { loadReputations, loadClubAliases, reputationFor, onReputationChanged } from "@/lib/fm-club-reputation";
+import { loadCompetitionReputationRows } from "@/lib/fm-competition-reputation";
 import { CountryLink } from "@/components/CountryLink";
 import { resolveClub } from "@/lib/fm-club-map";
 
