@@ -222,11 +222,14 @@ function RankingEditor({
 
 function RankingResults({ ranking, onClose }: { ranking: CustomRanking; onClose: () => void }) {
   const { data, isLoading } = usePlayerStatsData();
+  const { data: rankData } = useRankings();
   const [formulas] = useCustomFormulas();
 
   const rows = useMemo(() => {
     if (!data) return [];
-    const all = buildRows(ranking.entity, data.players);
+    const all = ranking.entity === "treinador"
+      ? buildCoachRowsFrom(rankData?.data.coaches ?? [], rankData?.ranks.coaches)
+      : buildRows(ranking.entity, data.players);
     const filtered = all.filter((row) => {
       for (const f of ranking.filters) {
         const merged = { ...row.ctx, ...row.meta } as Record<string, number | string | null | undefined>;
@@ -249,7 +252,7 @@ function RankingResults({ ranking, onClose }: { ranking: CustomRanking; onClose:
     const sorted = [...filtered].sort((a, b) => (getVal(a) - getVal(b)) * sign);
     const limited = ranking.limit && ranking.limit > 0 ? sorted.slice(0, ranking.limit) : sorted;
     return limited.map((r) => ({ ...r, _value: getVal(r) }));
-  }, [data, ranking, formulas]);
+  }, [data, ranking, formulas, rankData]);
 
   const orderLabel =
     ranking.orderBy.startsWith("FORMULA:")
