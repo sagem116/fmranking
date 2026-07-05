@@ -66,6 +66,8 @@ function CoachProfilePage() {
         <Stat label="Clubes" value={profile.clubs.length} />
       </div>
 
+      <CoachAttributesSection coachName={profile.name} />
+
       <Card>
         <CardHeader><CardTitle className="text-base">Evolução histórica bruta</CardTitle></CardHeader>
         <CardContent><EvolutionChart data={profile.chart} showModeToggle={false} mode="raw" /></CardContent>
