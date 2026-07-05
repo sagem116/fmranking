@@ -133,6 +133,7 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
       sumCA: number; sumCP: number; sumRA: number; sumRM: number; sumRC: number;
       sumVP: number; sumSalary: number; sumAge: number; wSum: number;
       sumVPRaw: number; sumSalaryRaw: number;
+      playerAgg: Map<string, { name: string; games: number; gls: number; ast: number }>;
     };
     const map = new Map<string, Agg>();
     const filtered: PlayerStatRow[] = [];
