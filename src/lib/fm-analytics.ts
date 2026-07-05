@@ -285,16 +285,17 @@ export function clubRankings(data: AnalyticsData, seasonSet: Set<number>): { gro
       title: "Maior % de remates convertidos",
       fmt: "pct",
       linkKind: "club",
-      rows: toRows(
-        topN(players.reduce((map, p) => {
-          if (!p.club) return map; if (p.shot_pct == null) return map;
-          const cur = map.get(p.club) ?? { club: p.club, sum: 0, n: 0 };
+      rows: (() => {
+        const acc = new Map<string, { club: string; sum: number; n: number }>();
+        for (const p of players) {
+          if (!p.club || p.shot_pct == null) continue;
+          const cur = acc.get(p.club) ?? { club: p.club, sum: 0, n: 0 };
           cur.sum += N(p.shot_pct); cur.n++;
-          map.set(p.club, cur); return map;
-        }, new Map<string, { club: string; sum: number; n: number }>()).values() as unknown as { club: string; sum: number; n: number }[],
-        (r) => r.n > 0 ? r.sum / r.n : 0),
-        (r) => ({ name: r.club, value: r.n > 0 ? r.sum / r.n : 0 }),
-      ),
+          acc.set(p.club, cur);
+        }
+        const list = [...acc.values()].filter((r) => r.n > 0);
+        return toRows(topN(list, (r) => r.sum / r.n), (r) => ({ name: r.club, value: r.sum / r.n }));
+      })(),
     },
     {
       id: "clubs-ast",
