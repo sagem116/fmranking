@@ -271,6 +271,14 @@ export function CompetitionNewStatsSection({ competition }: { competition: strin
               <th className="text-right p-3">RM</th>
               <th className="text-right p-3">RC</th>
               <th className="text-right p-3">Idade</th>
+              <th className="text-right p-3">xG</th>
+              <th className="text-right p-3">% Passe</th>
+              <th className="text-right p-3">Des/90</th>
+              <th className="text-right p-3">Fnt/90</th>
+              <th className="text-right p-3">% Rem.</th>
+              <th className="text-right p-3">Amr</th>
+              <th className="text-right p-3">Ver</th>
+              <th className="text-right p-3">Cl Med</th>
             </tr>
           </thead>
           <tbody>
@@ -286,6 +294,14 @@ export function CompetitionNewStatsSection({ competition }: { competition: strin
                 <td className="p-3 text-right tabular-nums">{fmtNum(s.rm_avg, 2)}</td>
                 <td className="p-3 text-right tabular-nums">{fmtNum(s.rc_avg, 2)}</td>
                 <td className="p-3 text-right tabular-nums">{fmtNum(s.age_avg, 2)}</td>
+                <td className="p-3 text-right tabular-nums">{s.xg_avg == null ? "—" : fmtNum(s.xg_avg, 2)}</td>
+                <td className="p-3 text-right tabular-nums">{s.pass_pct_avg == null ? "—" : fmtNum(s.pass_pct_avg, 2)}</td>
+                <td className="p-3 text-right tabular-nums">{s.tackles_per90_avg == null ? "—" : fmtNum(s.tackles_per90_avg, 2)}</td>
+                <td className="p-3 text-right tabular-nums">{s.fouls_per90_avg == null ? "—" : fmtNum(s.fouls_per90_avg, 2)}</td>
+                <td className="p-3 text-right tabular-nums">{s.shot_pct_avg == null ? "—" : fmtNum(s.shot_pct_avg, 2)}</td>
+                <td className="p-3 text-right tabular-nums">{s.yellows_avg == null ? "—" : fmtNum(s.yellows_avg, 2)}</td>
+                <td className="p-3 text-right tabular-nums">{s.reds_avg == null ? "—" : fmtNum(s.reds_avg, 2)}</td>
+                <td className="p-3 text-right tabular-nums">{s.avg_rating_avg == null ? "—" : fmtNum(s.avg_rating_avg, 2)}</td>
               </tr>
             ))}
           </tbody>
