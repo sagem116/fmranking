@@ -373,17 +373,17 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
             <tbody>
               {pageRows.map((r, i) => (
                 <tr key={r.club} className={`border-t border-border/50 hover:bg-muted/30 ${selected.has(r.club) ? "bg-primary/5" : ""}`}>
-                  <td className="px-2 py-2">
+                  <td className={`${density === "compact" ? "px-2 py-1" : "px-2 py-2"}`}>
                     <Checkbox checked={selected.has(r.club)} onCheckedChange={() => toggleSelected(r.club)} aria-label={`Selecionar ${r.club}`} />
                   </td>
-                  <td className="px-3 py-2 text-muted-foreground tabular-nums">{page * PAGE_SIZE + i + 1}</td>
-                  <td className="px-3 py-2 font-medium">
+                  <td className={`${cellPad} text-muted-foreground tabular-nums`}>{page * PAGE_SIZE + i + 1}</td>
+                  <td className={`${cellPad} font-medium`}>
                     <Link to="/clubes/$name" params={{ name: r.club }} className="hover:text-primary hover:underline">{r.club}</Link>
                   </td>
-                  <td className="px-3 py-2 text-muted-foreground">
+                  <td className={`${cellPad} text-muted-foreground`}>
                     {(compFilter === "continental" || compFilter === "international") ? (r.continent ?? "—") : (r.country ?? "—")}
                   </td>
-                  <td className="px-3 py-2 text-muted-foreground">
+                  <td className={`${cellPad} text-muted-foreground`}>
                     {r.competitions.length === 0 ? (
                       "—"
                     ) : r.competitions.length === 1 ? (
@@ -392,19 +392,34 @@ export function ClubStatsRankingsView({ mode, withDecay }: { mode: "weighted" | 
                       <span title={r.competitions.join(", ")}>{r.competitions.length} competições</span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-right tabular-nums">{r.n_players}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{r.games}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.gls, 2)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.ast, 2)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.ca, 2)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.cp, 2)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.ra, 2)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.rm, 2)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.rc, 2)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(r.vp)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(r.salary)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.age, 2)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums font-semibold">{r.reputation == null ? "—" : fmtNum(r.reputation, 2)}</td>
+                  <td className={`${cellPad} text-right tabular-nums`}>
+                    <DrillCell<PlayerDrillRow>
+                      label={r.n_players}
+                      title={`Jogadores de ${r.club}`}
+                      rows={r.players}
+                      emptyMessage="Sem jogadores importados."
+                      columns={[
+                        { key: "name", label: "Jogador", align: "left", render: (p) => (
+                          <Link to="/jogadores/$name" params={{ name: p.name }} className="hover:text-primary hover:underline">{p.name}</Link>
+                        ) },
+                        { key: "games", label: "Jogos", align: "right", value: (p) => p.games },
+                        { key: "gls", label: "Golos", align: "right", value: (p) => fmtNum(p.gls, 2) },
+                        { key: "ast", label: "Assist.", align: "right", value: (p) => fmtNum(p.ast, 2) },
+                      ]}
+                    />
+                  </td>
+                  <td className={`${cellPad} text-right tabular-nums`}>{r.games}</td>
+                  <td className={`${cellPad} text-right tabular-nums`}>{fmtNum(r.gls, 2)}</td>
+                  <td className={`${cellPad} text-right tabular-nums`}>{fmtNum(r.ast, 2)}</td>
+                  <td className={`${cellPad} text-right tabular-nums`}>{fmtNum(r.ca, 2)}</td>
+                  <td className={`${cellPad} text-right tabular-nums`}>{fmtNum(r.cp, 2)}</td>
+                  <td className={`${cellPad} text-right tabular-nums`}>{fmtNum(r.ra, 2)}</td>
+                  <td className={`${cellPad} text-right tabular-nums`}>{fmtNum(r.rm, 2)}</td>
+                  <td className={`${cellPad} text-right tabular-nums`}>{fmtNum(r.rc, 2)}</td>
+                  <td className={`${cellPad} text-right tabular-nums`}>{fmtMoney(r.vp)}</td>
+                  <td className={`${cellPad} text-right tabular-nums`}>{fmtMoney(r.salary)}</td>
+                  <td className={`${cellPad} text-right tabular-nums`}>{fmtNum(r.age, 2)}</td>
+                  <td className={`${cellPad} text-right tabular-nums font-semibold`}>{r.reputation == null ? "—" : fmtNum(r.reputation, 2)}</td>
                 </tr>
               ))}
               {pageRows.length === 0 && (<tr><td colSpan={18} className="px-3 py-8 text-center text-muted-foreground">Sem resultados.</td></tr>)}
