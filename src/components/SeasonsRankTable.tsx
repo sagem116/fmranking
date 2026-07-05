@@ -242,8 +242,7 @@ export function SeasonsRankTable({
             {showTitles && (
               <HeaderCell
                 className="text-right"
-                onClick={() =  pad={cellPad}
-> setSortKey("titles")}
+                onClick={() => setSortKey("titles")}
                 active={sortKey === "titles"}
                 dir={sortDir}
               >
@@ -254,8 +253,7 @@ export function SeasonsRankTable({
               <HeaderCell
                 key={ec.key}
                 className="text-right"
-                onClick={() =  pad={cellPad}
-> setSortKey(`extra:${ec.key}`)}
+                onClick={() => setSortKey(`extra:${ec.key}`)}
                 active={sortKey === `extra:${ec.key}`}
                 dir={sortDir}
               >
@@ -264,8 +262,7 @@ export function SeasonsRankTable({
             ))}
             <HeaderCell
               className="text-right"
-              onClick={() =  pad={cellPad}
-> setSortKey("points")}
+              onClick={() => setSortKey("points")}
               active={sortKey === "points"}
               dir={sortDir}
             >
@@ -276,8 +273,7 @@ export function SeasonsRankTable({
               <HeaderCell
                 key={y}
                 className="text-right font-medium tabular-nums"
-                onClick={() =  pad={cellPad}
-> setSortKey(`year:${y}`)}
+                onClick={() => setSortKey(`year:${y}`)}
                 active={sortKey === `year:${y}`}
                 dir={sortDir}
               >
