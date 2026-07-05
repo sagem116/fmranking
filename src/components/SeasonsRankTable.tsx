@@ -259,7 +259,7 @@ export function SeasonsRankTable({
             {extraCols?.map((ec) => (
               <HeaderCell
                 key={ec.key}
-                className="text-right"
+                className={ec.align === "left" ? "text-left" : ec.align === "center" ? "text-center" : "text-right"}
                 onClick={() => setSortKey(`extra:${ec.key}`)}
                 active={sortKey === `extra:${ec.key}`}
                 dir={sortDir}
