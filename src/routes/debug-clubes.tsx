@@ -270,7 +270,7 @@ function DebugClubes() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <AlertTriangle className="size-4 text-amber-500" /> >1 treinador na mesma época ({derived.multiCoachRows.length})
+            <AlertTriangle className="size-4 text-amber-500" /> Mais que um treinador na mesma época ({derived.multiCoachRows.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
