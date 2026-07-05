@@ -77,3 +77,21 @@ export function onCompetitionReputationChanged(cb: () => void): () => void {
   window.addEventListener(EVT, handler);
   return () => window.removeEventListener(EVT, handler);
 }
+
+// ---- Full per-season rows (with country/continent) ----------------------
+export interface CompReputationSeasonRow {
+  competition: string;
+  season_year: number | null;
+  reputation: number;
+  country: string | null;
+  continent: string | null;
+}
+
+export async function loadCompetitionReputationRows(): Promise<CompReputationSeasonRow[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
+    .from("competition_reputation")
+    .select("competition, season_year, reputation, country, continent");
+  if (error) return [];
+  return (data ?? []) as CompReputationSeasonRow[];
+}
