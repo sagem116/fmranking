@@ -754,7 +754,6 @@ export function validate(comp: ParsedCompetitionsFile, players: ParsedPlayersFil
     },
   };
 
-  const clubCountry = new Map(comp.clubCountry.map((c) => [c.club, c.country]));
   const clubsInMap = new Set(comp.clubCountry.map((c) => c.club));
 
   for (const c of comp.clubCountry) {
@@ -797,6 +796,3 @@ export function validate(comp: ParsedCompetitionsFile, players: ParsedPlayersFil
   return report;
 }
 
-// Suppress unused
-void clubCountryToMap;
-function clubCountryToMap(_: ClubCountryRow[]): Map<string, string | null> { return new Map(); }
