@@ -487,6 +487,7 @@ export function CompetitionRankingsView({ mode, withDecay }: { mode: "weighted" 
                 <Th k="rc" label="RC" />
                 <Th k="age" label="Idade" />
                 <Th k="reputation" label="Reputação" />
+                <Th k="reputation_clubs_avg" label="Reputação Média dos Clubes" />
               </tr>
             </thead>
             <tbody>
