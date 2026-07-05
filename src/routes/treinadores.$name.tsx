@@ -8,6 +8,7 @@ import { buildCoachProfile } from "@/lib/fm-profiles";
 import { EvolutionChart, MODULE_LABEL } from "@/components/EvolutionChart";
 import { DesafiosProfileCard } from "@/components/DesafiosProfileCard";
 import { RankingEvolutionSection } from "@/components/RankingEvolutionSection";
+import { CoachAttributesSection } from "@/components/CoachAttributesSection";
 import { fmtPts } from "@/lib/fmt";
 
 export const Route = createFileRoute("/treinadores/$name")({
