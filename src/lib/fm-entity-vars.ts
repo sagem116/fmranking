@@ -68,6 +68,9 @@ export const COUNTRY_VARS: VarDef[] = [
 ];
 
 export const COACH_VARS: VarDef[] = [
+  { key: "PONTOS_PONDERADOS", label: "Pontos Ponderados", group: "Ranking" },
+  { key: "PONTOS", label: "Pontos (raw)", group: "Ranking" },
+  { key: "TITULOS", label: "Títulos", group: "Ranking" },
   { key: "EPOCAS", label: "Épocas registadas", group: "Carreira" },
   { key: "N_CLUBES", label: "Nº de Clubes", group: "Carreira" },
   { key: "N_MODULOS", label: "Nº de Módulos", group: "Carreira" },
