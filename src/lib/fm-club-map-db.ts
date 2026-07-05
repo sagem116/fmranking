@@ -30,8 +30,8 @@ export async function fetchClubMapSources(): Promise<ClubMapSourceRow[]> {
     fetchAllRows<{ id: string; name: string }>("countries", "id,name"),
     fetchAllRows<{
       season_id: string; module: string; division_num: number | null;
-      division_label: string | null; club_name: string;
-    }>("standings", "season_id,module,division_num,division_label,club_name"),
+      division_label: string | null; competition: string | null; club_name: string;
+    }>("standings", "season_id,module,division_num,division_label,competition,club_name"),
   ]);
 
   const seasonMap = new Map(seasons.map((s) => [s.id, s.year]));
@@ -41,7 +41,8 @@ export async function fetchClubMapSources(): Promise<ClubMapSourceRow[]> {
     clubCountry[c.name] = c.country_id ? normalizeCountry(countryById.get(c.country_id) ?? null) : null;
   }
 
-  // National-league country inference from dominant country per league label.
+  // National-league country inference from dominant country per league label
+  // (used only as a fallback for clubs missing from the Clube Pais SSOT).
   const leagueCountryCount = new Map<string, Map<string, number>>();
   for (const s of standings) {
     if (s.module !== "national" || !s.division_label) continue;
@@ -63,7 +64,10 @@ export async function fetchClubMapSources(): Promise<ClubMapSourceRow[]> {
     if (s.module !== "superleague" && s.module !== "national") continue;
     const season_year = seasonMap.get(s.season_id) ?? 0;
     if (!season_year) continue;
-    const competition = s.division_label ?? (s.module === "superleague" && s.division_num != null ? `D${s.division_num}` : "");
+    // Prefer the new "Competição" column from Excel; fall back to division_label / D<n>.
+    const competition = s.competition
+      ?? s.division_label
+      ?? (s.module === "superleague" && s.division_num != null ? `D${s.division_num}` : "");
     if (!competition) continue;
     const country =
       clubCountry[s.club_name] ??
