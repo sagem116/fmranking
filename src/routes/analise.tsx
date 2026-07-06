@@ -220,12 +220,14 @@ function AnalisePage() {
       </div>
 
       <Tabs defaultValue="clubes" className="space-y-4">
-        <TabsList className="flex flex-wrap h-auto">
+        <TabsList className="flex flex-wrap h-auto gap-1">
+          <span className="hidden md:inline text-[10px] uppercase tracking-wider text-muted-foreground/70 px-1 self-center">Entidades</span>
           <TabsTrigger value="clubes">Clubes</TabsTrigger>
           <TabsTrigger value="competicoes">Competições</TabsTrigger>
           <TabsTrigger value="jogadores">Jogadores</TabsTrigger>
           <TabsTrigger value="treinadores">Treinadores</TabsTrigger>
           <TabsTrigger value="paises">Países</TabsTrigger>
+          <span className="hidden md:inline text-[10px] uppercase tracking-wider text-muted-foreground/70 px-1 self-center ml-2">Análise</span>
           <TabsTrigger value="evolucao"><LineIcon className="size-3.5 mr-1" />Evolução</TabsTrigger>
           <TabsTrigger value="records"><Trophy className="size-3.5 mr-1" />Records</TabsTrigger>
           <TabsTrigger value="curiosidades"><Sparkles className="size-3.5 mr-1" />Curiosidades</TabsTrigger>
