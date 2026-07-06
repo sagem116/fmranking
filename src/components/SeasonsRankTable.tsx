@@ -400,8 +400,8 @@ export function SeasonsRankTable({
                   <div className={`${cellPad} text-right font-semibold tabular-nums`}>
                     {fmtPts(mode === "raw" ? e.raw : e.weighted)}
                   </div>
-                  <div className={`${cellPad} text-right`}>
-                    {d ? <DeltaCell ptsDelta={d.ptsDelta} rankDelta={d.rankDelta} /> : <span className="text-muted-foreground/40">—</span>}
+                  <div className={`${cellPad} text-right font-semibold tabular-nums`}>
+                    {fmtPts(mode === "raw" ? e.raw : e.weighted)}
                   </div>
                   {years.map((y) => {
                     const v = evo[y] ?? 0;
