@@ -299,8 +299,8 @@ export function SeasonsRankTable({
             {items.map((vi) => {
               const e = sorted[vi.index];
               const i = vi.index;
-              const evo = evolution[e.name] ?? {};
-              const d = deltas[e.name];
+                const evo = evolution[e.name] ?? {};
+                const dByYear = perYearDeltas[e.name] ?? {};
               const bdItems = breakdown?.[e.name] ?? [];
               const titleItems = bdItems.filter(
                 (it) => it.source === "champion-bonus" || it.source === "continental-win",
