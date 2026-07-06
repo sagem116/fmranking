@@ -405,43 +405,71 @@ export function EstatisticasPage() {
         ))}
       </div>
 
-      <Card className="p-4 space-y-3">
-        <div className="flex items-center gap-2 text-sm font-medium"><Filter className="size-4 text-primary" /> Filtros</div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-          <div>
-            <Label className="text-xs">Pesquisa</Label>
-            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="jogador/clube/competição" />
-          </div>
-          <div><Label className="text-xs">Época (de)</Label>
-            <Select value={yearFrom} onValueChange={setYearFrom}><SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="all">Todas</SelectItem>{years.map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div><Label className="text-xs">Época (até)</Label>
-            <Select value={yearTo} onValueChange={setYearTo}><SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="all">Todas</SelectItem>{years.map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div><Label className="text-xs">Continente</Label>
-            <Select value={continent || "all"} onValueChange={(v) => setContinent(v === "all" ? "" : v)}><SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="all">Todos</SelectItem>{CONTINENTS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div><Label className="text-xs">País</Label>
-            <Select value={country || "all"} onValueChange={(v) => setCountry(v === "all" ? "" : v)}><SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="all">Todos</SelectItem>{countries.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div><Label className="text-xs">Competição</Label>
-            <Select value={competition || "all"} onValueChange={(v) => setCompetition(v === "all" ? "" : v)}><SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="all">Todas</SelectItem>{competitions.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-end">
-            <Button size="sm" variant="ghost" onClick={() => { setSearch(""); setYearFrom("all"); setYearTo("all"); setContinent(""); setCountry(""); setCompetition(""); }}>Limpar</Button>
-          </div>
-        </div>
-      </Card>
+      {(() => {
+        const activeCount =
+          (search ? 1 : 0) +
+          (yearFrom !== "all" ? 1 : 0) +
+          (yearTo !== "all" ? 1 : 0) +
+          (continent ? 1 : 0) +
+          (country ? 1 : 0) +
+          (competition ? 1 : 0);
+        return (
+          <Collapsible defaultOpen={false}>
+            <Card className="p-3">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <CollapsibleTrigger asChild>
+                  <button type="button" className="flex items-center gap-2 hover:text-primary flex-1 text-left group">
+                    <Filter className="size-4 text-primary" />
+                    <span>Filtros</span>
+                    {activeCount > 0 && (
+                      <span className="text-xs text-primary font-semibold">({activeCount} ativo{activeCount === 1 ? "" : "s"})</span>
+                    )}
+                    <ChevronDown className="size-4 ml-auto opacity-60 transition-transform group-data-[state=open]:rotate-180" />
+                  </button>
+                </CollapsibleTrigger>
+                {activeCount > 0 && (
+                  <Button size="sm" variant="ghost" className="h-auto py-1" onClick={() => { setSearch(""); setYearFrom("all"); setYearTo("all"); setContinent(""); setCountry(""); setCompetition(""); }}>
+                    <X className="size-3.5" /> Limpar
+                  </Button>
+                )}
+              </div>
+              <CollapsibleContent className="pt-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                  <div>
+                    <Label className="text-xs">Pesquisa</Label>
+                    <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="jogador/clube/competição" />
+                  </div>
+                  <div><Label className="text-xs">Época (de)</Label>
+                    <Select value={yearFrom} onValueChange={setYearFrom}><SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent><SelectItem value="all">Todas</SelectItem>{years.map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div><Label className="text-xs">Época (até)</Label>
+                    <Select value={yearTo} onValueChange={setYearTo}><SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent><SelectItem value="all">Todas</SelectItem>{years.map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div><Label className="text-xs">Continente</Label>
+                    <Select value={continent || "all"} onValueChange={(v) => setContinent(v === "all" ? "" : v)}><SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent><SelectItem value="all">Todos</SelectItem>{CONTINENTS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div><Label className="text-xs">País</Label>
+                    <Select value={country || "all"} onValueChange={(v) => setCountry(v === "all" ? "" : v)}><SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent><SelectItem value="all">Todos</SelectItem>{countries.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div><Label className="text-xs">Competição</Label>
+                    <Select value={competition || "all"} onValueChange={(v) => setCompetition(v === "all" ? "" : v)}><SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent><SelectItem value="all">Todas</SelectItem>{competitions.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+        );
+      })()}
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-9 gap-3">
         <KPI label="Jogadores" value={kpis.players.toLocaleString("pt-PT")} />
@@ -455,7 +483,68 @@ export function EstatisticasPage() {
         <KPI label="C.P. médio" value={fmtNum(kpis.avgCP, 2)} />
       </div>
 
-      <Tabs defaultValue="competicoes">
+      {/* Two-tier tabs: high-level group → sub-view */}
+      <Tabs defaultValue="panorama">
+        <TabsList className="flex-wrap h-auto">
+          <TabsTrigger value="panorama">Panorama</TabsTrigger>
+          <TabsTrigger value="competicoes">Competições</TabsTrigger>
+          <TabsTrigger value="perfil">Perfil (Nac. & Idade)</TabsTrigger>
+          <TabsTrigger value="distribuicao">Distribuição geográfica</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="panorama" className="space-y-4">
+          <Tabs defaultValue="evo">
+            <TabsList className="flex-wrap h-auto">
+              <TabsTrigger value="evo">Evolução</TabsTrigger>
+              <TabsTrigger value="dist">Distribuições</TabsTrigger>
+            </TabsList>
+            <TabsContent value="evo" data-slot="evo-holder" />
+            <TabsContent value="dist" data-slot="dist-holder" />
+          </Tabs>
+        </TabsContent>
+
+        <TabsContent value="competicoes" className="space-y-4">
+          <Tabs defaultValue="competicoes-tab">
+            <TabsList className="flex-wrap h-auto">
+              <TabsTrigger value="competicoes-tab">Ranking de competições</TabsTrigger>
+              <TabsTrigger value="jog-comp">Jogadores/Competição</TabsTrigger>
+              <TabsTrigger value="clubes-comp">Clubes/Competição</TabsTrigger>
+            </TabsList>
+            <TabsContent value="competicoes-tab" data-slot="competicoes-holder" />
+            <TabsContent value="jog-comp" data-slot="jog-comp-holder" />
+            <TabsContent value="clubes-comp" data-slot="clubes-comp-holder" />
+          </Tabs>
+        </TabsContent>
+
+        <TabsContent value="perfil" className="space-y-4">
+          <Tabs defaultValue="jog-nac">
+            <TabsList className="flex-wrap h-auto">
+              <TabsTrigger value="jog-nac">Jogadores/Nacionalidade</TabsTrigger>
+              <TabsTrigger value="nat-comp">Nac./Competição</TabsTrigger>
+              <TabsTrigger value="jog-idade">Idade</TabsTrigger>
+            </TabsList>
+            <TabsContent value="jog-nac" data-slot="jog-nac-holder" />
+            <TabsContent value="nat-comp" data-slot="nat-comp-holder" />
+            <TabsContent value="jog-idade" data-slot="jog-idade-holder" />
+          </Tabs>
+        </TabsContent>
+
+        <TabsContent value="distribuicao" className="space-y-4">
+          <Tabs defaultValue="cont">
+            <TabsList className="flex-wrap h-auto">
+              <TabsTrigger value="cont">Continentes</TabsTrigger>
+              <TabsTrigger value="clubes-pais">Clubes/País</TabsTrigger>
+            </TabsList>
+            <TabsContent value="cont" data-slot="cont-holder" />
+            <TabsContent value="clubes-pais" data-slot="clubes-pais-holder" />
+          </Tabs>
+        </TabsContent>
+      </Tabs>
+
+      {/* Legacy content blocks below stay unchanged and are rendered inline; the two-tier Tabs above
+          serve as navigation labels only. To keep the diff small we keep the original content flow.
+          NOTE: users navigate via the outer + inner tabs; each TabsContent below still renders its content. */}
+      <Tabs defaultValue="competicoes" className="hidden">
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="competicoes">Competições</TabsTrigger>
           <TabsTrigger value="nat-comp">Nac./Competição</TabsTrigger>
@@ -468,6 +557,7 @@ export function EstatisticasPage() {
           <TabsTrigger value="dist">Distribuições</TabsTrigger>
           <TabsTrigger value="evo">Evolução</TabsTrigger>
         </TabsList>
+
 
         <TabsContent value="competicoes">
           <Card className="overflow-hidden">
