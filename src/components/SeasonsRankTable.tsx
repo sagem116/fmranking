@@ -175,35 +175,36 @@ export function SeasonsRankTable({
 
   const ranksByYear = useMemo(() => computeRanksByYear(evolution, years), [evolution, years]);
 
-  /** Δ vs previous available season for each entity. */
-  const deltas = useMemo(() => {
-    const out: Record<string, { ptsDelta: number; rankDelta: number | null; lastYear: number; prevYear: number } | null> = {};
+  /** For each entity+year, Δ (rank + pts) vs the previous year *for that entity* with data. */
+  const perYearDeltas = useMemo(() => {
+    const out: Record<string, Record<number, { ptsDelta: number; rankDelta: number | null } | null>> = {};
     for (const e of sorted) {
       const evo = evolution[e.name] ?? {};
       const yearsWithData = years.filter((y) => (evo[y] ?? 0) > 0);
-      if (yearsWithData.length < 2) {
-        out[e.name] = null;
-        continue;
+      const perYear: Record<number, { ptsDelta: number; rankDelta: number | null } | null> = {};
+      for (let idx = 0; idx < yearsWithData.length; idx++) {
+        const y = yearsWithData[idx];
+        if (idx === 0) { perYear[y] = null; continue; }
+        const prev = yearsWithData[idx - 1];
+        const ptsDelta = (evo[y] ?? 0) - (evo[prev] ?? 0);
+        const rY = ranksByYear[y]?.[e.name] ?? null;
+        const rP = ranksByYear[prev]?.[e.name] ?? null;
+        const rankDelta = rY !== null && rP !== null ? rP - rY : null;
+        perYear[y] = { ptsDelta, rankDelta };
       }
-      const lastYear = yearsWithData[yearsWithData.length - 1];
-      const prevYear = yearsWithData[yearsWithData.length - 2];
-      const ptsDelta = (evo[lastYear] ?? 0) - (evo[prevYear] ?? 0);
-      const rLast = ranksByYear[lastYear]?.[e.name] ?? null;
-      const rPrev = ranksByYear[prevYear]?.[e.name] ?? null;
-      const rankDelta = rLast !== null && rPrev !== null ? rPrev - rLast : null;
-      out[e.name] = { ptsDelta, rankDelta, lastYear, prevYear };
+      out[e.name] = perYear;
     }
     return out;
   }, [sorted, evolution, years, ranksByYear]);
 
-  // Grid template: # | Name | (Nac) | (Tít.) | (extras...) | Total | Δ | year × N
+  // Grid template: # | Name | (Nac) | (Tít.) | (extras...) | Total | year × N
   const cols = useMemo(() => {
     const base: string[] = ["3rem", "minmax(14rem,1fr)"];
     if (showNac) base.push("5rem");
     if (showTitles) base.push("4rem");
     for (const ec of extraCols ?? []) base.push(ec.width ?? "6rem");
-    base.push("6rem", "7rem");
-    for (let i = 0; i < years.length; i++) base.push("5.5rem");
+    base.push("6rem");
+    for (let i = 0; i < years.length; i++) base.push("6.5rem");
     return base.join(" ");
   }, [showNac, showTitles, extraCols, years.length]);
 
