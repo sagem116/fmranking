@@ -775,12 +775,8 @@ function RankingsPage() {
   }), [desafioResults]);
   const withDesafios = (cols: ExtraCol[] | undefined, subject: "clubs" | "coaches" | "countries"): ExtraCol[] | undefined => {
     const d = desafioCols[subject];
-    let out = cols;
-    if (subject === "clubs" && dominioClubCol) {
-      out = out ? [dominioClubCol, ...out] : [dominioClubCol];
-    }
-    if (!d) return out;
-    return out ? [...out, d] : [d];
+    if (!d) return cols;
+    return cols ? [...cols, d] : [d];
   };
 
 

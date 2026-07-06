@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ArrowDown, ChevronsUpDown, TrendingDown, TrendingUp, Minus, Search } from "lucide-react";
+import { ArrowDown, ChevronsUpDown, Search } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -71,8 +71,8 @@ function extractClub(detail: string): string | null {
   return parts.length > 1 ? parts[parts.length - 1] : null;
 }
 
-const ROW_H_COMFY = 44;
-const ROW_H_COMPACT = 30;
+const ROW_H_COMFY = 52;
+const ROW_H_COMPACT = 38;
 const VIEWPORT_H = 640;
 
 /** Rank table per year using the evolution map (memoised). */
@@ -175,35 +175,36 @@ export function SeasonsRankTable({
 
   const ranksByYear = useMemo(() => computeRanksByYear(evolution, years), [evolution, years]);
 
-  /** Δ vs previous available season for each entity. */
-  const deltas = useMemo(() => {
-    const out: Record<string, { ptsDelta: number; rankDelta: number | null; lastYear: number; prevYear: number } | null> = {};
+  /** For each entity+year, Δ (rank + pts) vs the previous year *for that entity* with data. */
+  const perYearDeltas = useMemo(() => {
+    const out: Record<string, Record<number, { ptsDelta: number; rankDelta: number | null } | null>> = {};
     for (const e of sorted) {
       const evo = evolution[e.name] ?? {};
       const yearsWithData = years.filter((y) => (evo[y] ?? 0) > 0);
-      if (yearsWithData.length < 2) {
-        out[e.name] = null;
-        continue;
+      const perYear: Record<number, { ptsDelta: number; rankDelta: number | null } | null> = {};
+      for (let idx = 0; idx < yearsWithData.length; idx++) {
+        const y = yearsWithData[idx];
+        if (idx === 0) { perYear[y] = null; continue; }
+        const prev = yearsWithData[idx - 1];
+        const ptsDelta = (evo[y] ?? 0) - (evo[prev] ?? 0);
+        const rY = ranksByYear[y]?.[e.name] ?? null;
+        const rP = ranksByYear[prev]?.[e.name] ?? null;
+        const rankDelta = rY !== null && rP !== null ? rP - rY : null;
+        perYear[y] = { ptsDelta, rankDelta };
       }
-      const lastYear = yearsWithData[yearsWithData.length - 1];
-      const prevYear = yearsWithData[yearsWithData.length - 2];
-      const ptsDelta = (evo[lastYear] ?? 0) - (evo[prevYear] ?? 0);
-      const rLast = ranksByYear[lastYear]?.[e.name] ?? null;
-      const rPrev = ranksByYear[prevYear]?.[e.name] ?? null;
-      const rankDelta = rLast !== null && rPrev !== null ? rPrev - rLast : null;
-      out[e.name] = { ptsDelta, rankDelta, lastYear, prevYear };
+      out[e.name] = perYear;
     }
     return out;
   }, [sorted, evolution, years, ranksByYear]);
 
-  // Grid template: # | Name | (Nac) | (Tít.) | (extras...) | Total | Δ | year × N
+  // Grid template: # | Name | (Nac) | (Tít.) | (extras...) | Total | year × N
   const cols = useMemo(() => {
     const base: string[] = ["3rem", "minmax(14rem,1fr)"];
     if (showNac) base.push("5rem");
     if (showTitles) base.push("4rem");
     for (const ec of extraCols ?? []) base.push(ec.width ?? "6rem");
-    base.push("6rem", "7rem");
-    for (let i = 0; i < years.length; i++) base.push("5.5rem");
+    base.push("6rem");
+    for (let i = 0; i < years.length; i++) base.push("6.5rem");
     return base.join(" ");
   }, [showNac, showTitles, extraCols, years.length]);
 
@@ -277,7 +278,7 @@ export function SeasonsRankTable({
             >
               Total
             </HeaderCell>
-            <HeaderCell className="text-right"  pad={cellPad}>Δ vs anterior</HeaderCell>
+            
             {years.map((y) => (
               <HeaderCell
                 key={y}
@@ -298,8 +299,8 @@ export function SeasonsRankTable({
             {items.map((vi) => {
               const e = sorted[vi.index];
               const i = vi.index;
-              const evo = evolution[e.name] ?? {};
-              const d = deltas[e.name];
+                const evo = evolution[e.name] ?? {};
+                const dByYear = perYearDeltas[e.name] ?? {};
               const bdItems = breakdown?.[e.name] ?? [];
               const titleItems = bdItems.filter(
                 (it) => it.source === "champion-bonus" || it.source === "continental-win",
@@ -399,18 +400,17 @@ export function SeasonsRankTable({
                   <div className={`${cellPad} text-right font-semibold tabular-nums`}>
                     {fmtPts(mode === "raw" ? e.raw : e.weighted)}
                   </div>
-                  <div className={`${cellPad} text-right`}>
-                    {d ? <DeltaCell ptsDelta={d.ptsDelta} rankDelta={d.rankDelta} /> : <span className="text-muted-foreground/40">—</span>}
-                  </div>
                   {years.map((y) => {
                     const v = evo[y] ?? 0;
                     const yearItems = bdItems.filter((it) => it.season_year === y);
-                    const cell = (
-                      <div className={`${cellPad} text-right tabular-nums ${v ? "" : "text-muted-foreground/30"}`}>
-                        {v ? fmtPts(v) : "—"}
+                    const dY = dByYear[y] ?? null;
+                    const inner = (
+                      <div className={`${cellPad} text-right tabular-nums leading-tight ${v ? "" : "text-muted-foreground/30"}`}>
+                        <div>{v ? fmtPts(v) : "—"}</div>
+                        {v && dY ? <MiniDelta ptsDelta={dY.ptsDelta} rankDelta={dY.rankDelta} /> : null}
                       </div>
                     );
-                    if (!v || yearItems.length === 0) return <div key={y}>{cell}</div>;
+                    if (!v || yearItems.length === 0) return <div key={y}>{inner}</div>;
                     // Build lines: aggregate raw/weighted points per club/division.
                     type Line = { text: string; comp: string; raw: number; weighted: number; mult?: { compW: number; divW: number; decay: number } };
                     const groups = new Map<string, Line>();
@@ -445,8 +445,9 @@ export function SeasonsRankTable({
                     return (
                       <Tooltip key={y}>
                         <TooltipTrigger asChild>
-                          <div className={`${cellPad} text-right tabular-nums cursor-help ${v ? "" : "text-muted-foreground/30"}`}>
-                            {fmtPts(v)}
+                          <div className={`${cellPad} text-right tabular-nums cursor-help leading-tight ${v ? "" : "text-muted-foreground/30"}`}>
+                            <div>{fmtPts(v)}</div>
+                            {dY ? <MiniDelta ptsDelta={dY.ptsDelta} rankDelta={dY.rankDelta} /> : null}
                           </div>
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
@@ -467,6 +468,14 @@ export function SeasonsRankTable({
                                 )}
                               </div>
                             ))}
+                            {dY && (
+                              <div className="text-muted-foreground/80 text-[10px] pt-1 border-t border-border/40">
+                                Δ vs época anterior: {dY.ptsDelta > 0 ? "+" : ""}{fmtPts(dY.ptsDelta)} pts
+                                {dY.rankDelta !== null && dY.rankDelta !== 0 && (
+                                  <> · posição {dY.rankDelta > 0 ? "▲" : "▼"}{Math.abs(dY.rankDelta)}</>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </TooltipContent>
                       </Tooltip>
@@ -482,20 +491,18 @@ export function SeasonsRankTable({
   );
 }
 
-function DeltaCell({ ptsDelta, rankDelta }: { ptsDelta: number; rankDelta: number | null }) {
+function MiniDelta({ ptsDelta, rankDelta }: { ptsDelta: number; rankDelta: number | null }) {
   const up = ptsDelta > 0;
-  const flat = Math.abs(ptsDelta) < 0.5;
-  const color = flat ? "text-muted-foreground" : up ? "text-emerald-500" : "text-rose-500";
-  const Icon = flat ? Minus : up ? TrendingUp : TrendingDown;
+  const flat = Math.abs(ptsDelta) < 0.05;
+  const color = flat ? "text-muted-foreground/60" : up ? "text-emerald-500" : "text-rose-500";
   const sign = up ? "+" : "";
   return (
-    <span className={`inline-flex items-center gap-1 tabular-nums ${color}`}>
-      <Icon className="size-3" />
-      {sign}
-      {fmtPts(ptsDelta)}
+    <div className={`text-[10px] leading-tight ${color}`}>
+      {sign}{fmtPts(ptsDelta)}
       {rankDelta !== null && rankDelta !== 0 && (
-        <span className="text-[11px] opacity-80">({rankDelta > 0 ? "▲" : "▼"}{Math.abs(rankDelta)})</span>
+        <span className="ml-1 opacity-90">{rankDelta > 0 ? "▲" : "▼"}{Math.abs(rankDelta)}</span>
       )}
-    </span>
+    </div>
   );
 }
+
