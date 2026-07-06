@@ -1,199 +1,84 @@
-## Visão geral
+# Plano de Reorganização Global — Bloco 3
 
-Sete sistemas que estendem a aplicação sem mexer nos dados importados via Excel. Toda a personalização vive em `localStorage` (mesma estratégia já usada para pesos, reputações, etc.) e é reaproveitada pelos rankings, perfis, exportações e nova página de Insights.
-
-Princípios transversais:
-- Reutilizar `useRankings`, `usePlayerStatsData`, `useClubReputation`, `useCompetitionReputation` — não duplicar lógica de cálculo.
-- Tudo é reversível: editar, duplicar, eliminar em qualquer item criado pelo utilizador.
-- Versionado por `schemaVersion` em cada chave de `localStorage` para o backup JSON aceitar versões antigas.
+Trabalho em **fases**, começando pelo módulo **Rankings**. Cada fase é confirmada antes de avançar para a próxima. Toda a lógica de pontos, pesos, desafios e importação é preservada — o foco é UX, consistência e novas features específicas.
 
 ---
 
-## 1. Rankings Personalizados
+## Princípios transversais (aplicados a todas as páginas)
 
-Nova rota `/rankings-personalizados` (item lateral) com lista de rankings criados + botão "Novo Ranking".
-
-Editor em modal/diálogo com:
-- Entidade: Jogadores / Clubes / Competições / Países.
-- Nome + descrição opcional.
-- Filtros: reaproveita os mesmos controlos já existentes (idade, país, continente, competição, clube, intervalos numéricos para VP/Salário/CA/CP/RA/RM/RC/Idade, nacionalidade, etc.) num componente partilhado `EntityFilterPanel`.
-- Ordenação: dropdown com todas as métricas disponíveis para a entidade (incluindo fórmulas personalizadas — ver §2) + crescente/decrescente.
-- Pré-visualização ao vivo da tabela enquanto edita.
-
-Persistência em `localStorage` chave `fm:custom-rankings`. Cada item:
-```
-{ id, name, description?, entity, filters, sortBy, sortDir, createdAt, updatedAt }
-```
-
-Ações por linha: aplicar / editar / duplicar / eliminar.
+1. **Entidades clicáveis** — jogador, treinador, clube, país, competição, continente ligam sempre ao respetivo perfil. Auditar tabelas e cards que ainda mostram texto puro.
+2. **Tabelas configuráveis** — colunas com resize + toggle mostrar/esconder, persistido em `localStorage` por tabela (nova hook `useTableColumnPrefs`).
+3. **Sidebar em 3 grandes categorias** — `Import`, `Rankings`, `Scores`. Rankings/Scores expandem para submenus. Reorganizar `AppShell.tsx` mantendo o customize dialog.
+4. **Barra de pesquisa global** — já existe (`GlobalSearch`); rever para incluir competições e continentes com autofill instantâneo.
+5. **Performance de importação/pesquisa** — pré-indexar jogadores por nome (Map em memória + índice IDU), lazy-load das tabs pesadas.
 
 ---
 
-## 2. Fórmulas Personalizadas
+## FASE 1 — Módulo Rankings (arranque)
 
-Nova rota `/formulas-personalizadas`. Editor:
-- Nome, entidade alvo, casas decimais, fórmula como expressão de texto.
-- Validação: parser próprio (sem `eval`) usando `expr-eval` ou implementação manual com tokens + AST simples. Variáveis disponíveis dependem da entidade (ex: jogador → CA, CP, GLS, AST, IDADE, VP, SALARIO, REPUTACAO, etc.). Em caso de variável desconhecida ou sintaxe inválida → mostra erro vermelho e não permite gravar.
-- Pré-visualização: calcula em 5 entidades de exemplo enquanto edita.
+### 1.1 Página `Rankings Mundiais` (`src/routes/rankings.tsx`)
+- Manter toda a lógica de cálculo (`useRankings`, pesos, desafios).
+- **Reorganizar layout**: header compacto com filtros primários (época, entidade, país), painel lateral colapsável para filtros avançados, área principal só com a tabela + tabs.
+- **Remover coluna Domínio** da tabela (a página `/dominio` mantém-se).
+- **Nova coluna Δ por época**: em vez de uma coluna única "Δ vs anterior", cada célula de época mostra a variação de posição (▲3 / ▼2) e de pontos vs época anterior (ou vs época anterior no filtro ativo). Implementar em `SeasonsRankTable.tsx` via prop `showDelta`.
+- **Filtros avançados melhorados**: agrupar por secções (Época, Geografia, Competição, Métrica), com chips ativos visíveis no topo.
 
-Persistência em `fm:custom-formulas`. Item: `{ id, name, entity, expr, decimals, ast, createdAt }`.
+### 1.2 Página `Histórico de Rankings` (`src/routes/ranking-historico.tsx`)
+- Reorganizar com o **mesmo formato de tabs/tabelas/toggles** da página Rankings Mundiais.
+- Mostrar a posição global (pontos acumulados) de cada entidade em cada época — não a posição isolada dessa época.
 
-Disponibilização automática:
-- Helper `evaluateFormula(formula, entityData)` exposto para Rankings Personalizados (§1) como métrica de ordenação.
-- Coluna extra opcional nas tabelas dos rankings padrão (botão "Colunas" no header → escolhe quais fórmulas mostrar).
-- Coluna nos perfis quando há fórmulas para essa entidade.
-- Incluído em export Excel/PDF e na exportação de qualquer ranking personalizado.
+### 1.3 Página `Hall of Fame` (`src/routes/hall-of-fame.tsx`)
+- Uniformizar todas as tabelas ao mesmo componente base (`SeasonsRankTable`/wrapper).
+- Simplificar navegação entre categorias.
 
----
+### 1.4 Página `Análise Estatística` + `Estatísticas Agregadas` (`src/routes/analise.tsx`, `estatisticas.tsx`)
+- Manter toda a informação, remodelar visualização: cards de destaques no topo, gráficos principais em grid, tabelas detalhadas em accordions.
 
-## 3. Insights Automáticos
+### 1.5 Página `Domínio` (`src/routes/dominio.tsx`)
+- Manter clubes + treinadores (já feito).
+- **Adicionar Países e Jogadores** com a mesma lógica de janelas de N épocas.
 
-Nova rota `/insights`. Após cada importação, snapshot dos agregados é guardado em `fm:insights-snapshots` (mantém últimos 10):
-```
-{ importedAt, label, aggregates: { competitions, countries, clubs, players, world } }
-```
-
-Geração de insights compara último snapshot vs anterior:
-- Liga A ultrapassou Liga B em VP total / reputação / salário médio.
-- Variação % por competição (subiu/desceu).
-- Mudanças de líder em métricas-chave (golos, assistências, CA, VP).
-- Entradas/saídas do Top 100 mundial de clubes.
-- Variação da média de idade global, total de jogadores, nacionalidade dominante.
-
-Cada insight: `{ title, valuePrev, valueCurr, deltaAbs, deltaPct, severity }`. Ordenados por severidade calculada (variação % * peso da métrica).
-
-UI com cards agrupados por categoria (Competições, Clubes, Jogadores, Mundo) + filtro por severidade.
+### 1.6 Página `Treinador por País`
+- Integrar como **tab dentro de Rankings Mundiais** em vez de página autónoma, mantendo todas as funcionalidades.
 
 ---
 
-## 4. Drill-Down Universal
-
-Componente partilhado `DrillCell` que torna clicável qualquer célula agregada e abre o `DrillDialog` (já existe em `EstatisticasPage`) com lista filtrada.
-
-Aplicação:
-- Tabelas de Estatísticas (já têm drill, generalizar).
-- Tabela de Países / Clubes em rankings (clicar no nº de jogadores ou nº de clubes).
-- Coluna "Jogadores" / "Clubes" / "Pontos" / "VP Total" em qualquer agregação.
-- Card de país → "1.623 jogadores" clicável.
-- Card de continente → lista de clubes.
-
-Cada `DrillCell` recebe `{ predicate, columns, title }` e usa os dados já em memória — zero round-trip ao backend.
+## FASE 2 — Configuração
+- Reorganizar `src/routes/configuracao.tsx` com sidebar interna (Pesos globais, Pesos por competição, Pesos por fase, Perfis).
+- **Remover** secções: "Competições continentais que contam para Triplete / Dobradinha Internacional / Quadruple / Club World Cup" (passa a ser feito via Desafios).
+- **Refactor Pesos por fase eliminatória** para percentagens: `final = 50%`, `meias = 22%`, etc. — percentagens aplicadas sobre os pontos do vencedor. Migração dos perfis existentes.
+- **Perfis**: reorganizar como uma **tab** dentro da nova página de perfil da app.
+- Manter export/import JSON e backup global.
 
 ---
 
-## 5. Filtros Guardados
-
-Persistência `fm:saved-filters`. Cada item: `{ id, name, description?, entity, filters }`.
-
-UI: pequeno botão "Filtros guardados" ao lado do painel de filtros em qualquer página com filtros (Rankings padrão, Rankings Personalizados, Estatísticas). Permite:
-- Aplicar (carrega os valores nos filtros atuais).
-- Guardar atual (snapshot do estado dos filtros).
-- Editar, duplicar, eliminar.
-
-Modelo é o mesmo independentemente da página — só muda a entidade.
+## FASE 3 — Desafios & Dashboard
+- `Desafios`: sem alterações lógicas.
+- `Dashboard de Desafios`: reorganizar filtros e cards para leitura rápida.
 
 ---
 
-## 6. Evolução do Ranking
-
-Novo componente `RankingEvolutionSection` em todos os perfis (clube, jogador, competição, país).
-
-Calcula posição da entidade em cada época usando `applySeasonView` com `seasonScope="only"` e selecionando o ranking apropriado consoante a entidade. Resultado:
-- Tabela com Época / Posição / Variação vs ano anterior (↑↓ + número).
-- Melhor / pior posição histórica.
-- Nº épocas analisadas.
-- Gráfico de linhas com Y invertido (1.º no topo).
-
-Controlos por cima do gráfico:
-- Categoria: Unificado / SuperLeague / Nacional / Continental / Internacional.
-- Modo: Ponderado / Bruto.
-- Decaimento: Com / Sem.
-
-Estado controlado e persistido por entidade em `fm:evolution-prefs`.
-
-Para jogadores (sem ranking direto), usa posição em "Jogadores" da página Rankings com a mesma métrica de pontos ponderada já existente.
+## FASE 4 — Import (revisitar)
+- Confirmar: remoção individual ✅, log com data+época+ficheiro ✅.
+- **Adicionar por import**: página resumo com estatísticas (nº entidades novas/atualizadas, avisos), barra de pesquisa por nome/data/época.
+- Avisos não bloqueantes (toast + coluna "avisos" no histórico).
 
 ---
 
-## 7. Exportação / Importação Global JSON (atualização)
-
-Reescrever `fm-global-backup.ts` para listar TODAS as chaves `fm:*` em `localStorage` que sejam de configuração — e ignorar chaves que armazenem dados importados.
-
-Estrutura do JSON:
-```
-{
-  schemaVersion: 2,
-  exportedAt: "...",
-  app: "FM World Rankings",
-  buckets: {
-    "ranking-weights": { ... },
-    "weight-suggestions": { ... },
-    "competition-reputation-manual": { ... },
-    "custom-rankings": [...],
-    "custom-formulas": [...],
-    "saved-filters": [...],
-    "evolution-prefs": {...},
-    "ui-prefs": { theme, rankings-ui-version, ... },
-    "club-reputation-aliases": {...},
-    "country-aliases": {...},
-    "continent-overrides": {...}
-  }
-}
-```
-
-Exclui explicitamente qualquer chave em allowlist negativa (dados importados, snapshots de insights, cache).
-
-Importação: faz merge bucket-a-bucket; se `schemaVersion` for inferior, aplica migrações declaradas em `BACKUP_MIGRATIONS`. Mostra resumo (X rankings, Y fórmulas, Z filtros restaurados) antes de gravar.
-
-Botões já existentes em `/configuracao` passam a usar a nova versão.
+## FASE 5 — Manter sem alterações
+- Insights, páginas Debug, Fórmulas personalizadas, Filtros guardados, Sugestão de Pesos.
 
 ---
 
-## Detalhes técnicos
-
-**Localização de ficheiros novos**
-```text
-src/lib/
-  fm-custom-rankings.ts       store + tipos
-  fm-custom-formulas.ts       parser/AST + store
-  fm-formula-evaluator.ts     runtime de avaliação
-  fm-insights.ts              snapshots + cálculo de insights
-  fm-saved-filters.ts         store
-  fm-ranking-evolution.ts     cálculo da posição por época
-  fm-global-backup.ts         (reescrito)
-
-src/components/
-  EntityFilterPanel.tsx       filtros partilhados
-  DrillCell.tsx               célula clicável -> DrillDialog
-  CustomRankingEditor.tsx     diálogo de criação/edição
-  FormulaEditor.tsx           editor com validação ao vivo
-  FormulaColumnPicker.tsx     selector de colunas extra
-  SavedFiltersMenu.tsx        popover guardar/aplicar
-  RankingEvolutionSection.tsx perfis
-
-src/routes/
-  rankings-personalizados.tsx
-  rankings-personalizados.$id.tsx (executor)
-  formulas-personalizadas.tsx
-  insights.tsx
-```
-
-**Parser de fórmulas**: tokens (números, identificadores, operadores `+ - * / ( ) ,`), parser Pratt para precedência. Sem `Function`/`eval`. Funções permitidas: `min, max, abs, round, floor, ceil`. Variáveis resolvidas via dicionário fornecido pelo runtime (chaves em UPPERCASE sem acentos).
-
-**Sem alterações ao backend**: nada é persistido em Supabase. Tudo em `localStorage` versionado.
-
-**Compatibilidade do backup**: `schemaVersion` no topo, leitor aceita v1 (chaves achatadas atuais) e v2 (estrutura por buckets) — converte v1→v2 em memória.
+## Dúvida sobre IDs internos
+Recomendo **não** criar IDs internos: o IDU do FM é estável e único, e adicionar um segundo ID complica joins e imports. Uso o IDU como chave primária para jogadores/treinadores. Confirmar.
 
 ---
 
-## Ordem de entrega sugerida
+## Ordem de execução proposta
+1. **Fase 1.1 (Rankings Mundiais reorganizado + Δ por época + remoção Domínio)** — arranco por aqui.
+2. Confirmação → 1.2 Histórico.
+3. Confirmação → 1.3 Hall of Fame.
+4. …e assim sucessivamente.
 
-1. Parser de fórmulas + store (§2) — base para §1 e colunas extras.
-2. EntityFilterPanel partilhado + Rankings Personalizados (§1).
-3. Filtros Guardados (§5) — usa o mesmo painel.
-4. Drill-Down Universal (§4) — wrap de componentes existentes.
-5. Evolução do Ranking (§6).
-6. Insights (§3) — depende de hook de pós-importação.
-7. Backup JSON v2 (§7) — incorpora tudo o que ficou acima.
-
-Cada bloco fica funcional isoladamente e adiciona-se ao menu lateral à medida que entra.
+Confirmas o arranque pela **Fase 1.1**?
