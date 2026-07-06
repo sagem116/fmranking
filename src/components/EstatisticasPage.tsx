@@ -541,22 +541,37 @@ export function EstatisticasPage() {
         </TabsContent>
       </Tabs>
 
-      {/* Legacy content blocks below stay unchanged and are rendered inline; the two-tier Tabs above
-          serve as navigation labels only. To keep the diff small we keep the original content flow.
-          NOTE: users navigate via the outer + inner tabs; each TabsContent below still renders its content. */}
-      <Tabs defaultValue="competicoes" className="hidden">
-        <TabsList className="flex-wrap h-auto">
-          <TabsTrigger value="competicoes">Competições</TabsTrigger>
-          <TabsTrigger value="nat-comp">Nac./Competição</TabsTrigger>
-          <TabsTrigger value="jog-nac">Jog./Nacionalidade</TabsTrigger>
-          <TabsTrigger value="jog-idade">Jog./Idade</TabsTrigger>
-          <TabsTrigger value="clubes-pais">Clubes/País</TabsTrigger>
-          <TabsTrigger value="clubes-comp">Clubes/Competição</TabsTrigger>
-          <TabsTrigger value="jog-comp">Jog./Competição</TabsTrigger>
-          <TabsTrigger value="cont">Continentes</TabsTrigger>
-          <TabsTrigger value="dist">Distribuições</TabsTrigger>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-9 gap-3">
+        <KPI label="Jogadores" value={kpis.players.toLocaleString("pt-PT")} />
+        <KPI label="Clubes" value={kpis.clubs.toLocaleString("pt-PT")} />
+        <KPI label="Competições" value={kpis.competitions.toLocaleString("pt-PT")} />
+        <KPI label="Países" value={kpis.countries.toLocaleString("pt-PT")} />
+        <KPI label="V.M. total" value={fmtMoney(kpis.totalVP)} />
+        <KPI label="Salários total" value={fmtMoney(kpis.totalSal)} />
+        <KPI label="Idade média" value={fmtNum(kpis.avgAge, 2)} />
+        <KPI label="C.A. médio" value={fmtNum(kpis.avgCA, 2)} />
+        <KPI label="C.P. médio" value={fmtNum(kpis.avgCP, 2)} />
+      </div>
+
+      {/* Tabs re-ordered by theme (Panorama → Competições → Perfil → Distribuição). */}
+      <Tabs defaultValue="evo">
+        <TabsList className="flex-wrap h-auto gap-1">
+          <span className="hidden md:inline text-[10px] uppercase tracking-wider text-muted-foreground/70 px-1 self-center">Panorama</span>
           <TabsTrigger value="evo">Evolução</TabsTrigger>
+          <TabsTrigger value="dist">Distribuições</TabsTrigger>
+          <span className="hidden md:inline text-[10px] uppercase tracking-wider text-muted-foreground/70 px-1 self-center ml-2">Competições</span>
+          <TabsTrigger value="competicoes">Ranking</TabsTrigger>
+          <TabsTrigger value="jog-comp">Jog./Comp.</TabsTrigger>
+          <TabsTrigger value="clubes-comp">Clubes/Comp.</TabsTrigger>
+          <span className="hidden md:inline text-[10px] uppercase tracking-wider text-muted-foreground/70 px-1 self-center ml-2">Perfil</span>
+          <TabsTrigger value="jog-nac">Jog./Nac.</TabsTrigger>
+          <TabsTrigger value="nat-comp">Nac./Comp.</TabsTrigger>
+          <TabsTrigger value="jog-idade">Idade</TabsTrigger>
+          <span className="hidden md:inline text-[10px] uppercase tracking-wider text-muted-foreground/70 px-1 self-center ml-2">Geografia</span>
+          <TabsTrigger value="cont">Continentes</TabsTrigger>
+          <TabsTrigger value="clubes-pais">Clubes/País</TabsTrigger>
         </TabsList>
+
 
 
         <TabsContent value="competicoes">
