@@ -491,20 +491,18 @@ export function SeasonsRankTable({
   );
 }
 
-function DeltaCell({ ptsDelta, rankDelta }: { ptsDelta: number; rankDelta: number | null }) {
+function MiniDelta({ ptsDelta, rankDelta }: { ptsDelta: number; rankDelta: number | null }) {
   const up = ptsDelta > 0;
-  const flat = Math.abs(ptsDelta) < 0.5;
-  const color = flat ? "text-muted-foreground" : up ? "text-emerald-500" : "text-rose-500";
-  const Icon = flat ? Minus : up ? TrendingUp : TrendingDown;
+  const flat = Math.abs(ptsDelta) < 0.05;
+  const color = flat ? "text-muted-foreground/60" : up ? "text-emerald-500" : "text-rose-500";
   const sign = up ? "+" : "";
   return (
-    <span className={`inline-flex items-center gap-1 tabular-nums ${color}`}>
-      <Icon className="size-3" />
-      {sign}
-      {fmtPts(ptsDelta)}
+    <div className={`text-[10px] leading-tight ${color}`}>
+      {sign}{fmtPts(ptsDelta)}
       {rankDelta !== null && rankDelta !== 0 && (
-        <span className="text-[11px] opacity-80">({rankDelta > 0 ? "▲" : "▼"}{Math.abs(rankDelta)})</span>
+        <span className="ml-1 opacity-90">{rankDelta > 0 ? "▲" : "▼"}{Math.abs(rankDelta)}</span>
       )}
-    </span>
+    </div>
   );
 }
+
