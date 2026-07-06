@@ -278,7 +278,7 @@ export function SeasonsRankTable({
             >
               Total
             </HeaderCell>
-            <HeaderCell className="text-right"  pad={cellPad}>Δ vs anterior</HeaderCell>
+            
             {years.map((y) => (
               <HeaderCell
                 key={y}
