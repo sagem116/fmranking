@@ -2,12 +2,31 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Loader2, Crown, Shield, Users, Globe2, Trophy, Goal, Handshake, Star } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRankings } from "@/lib/useRankings";
 import { rankBy, type RankingEntry, type BreakdownItem } from "@/lib/fm-rankings";
 import { computeGoals, computeAssists, listPlayerYears, type PlayerStatRow } from "@/lib/fm-players";
 import { SeasonFilter } from "@/components/SeasonFilter";
 import { fmtPts, fmtNum, fmtMoney } from "@/lib/fmt";
 import { usePlayerStatsData } from "@/lib/usePlayerStatsData";
+
+// ---------------------------------------------------------------------------
+// Route
+// ---------------------------------------------------------------------------
+
+export const Route = createFileRoute("/hall-of-fame")({
+  head: () => ({
+    meta: [
+      { title: "Hall of Fame — FM World Rankings" },
+      { name: "description", content: "Os maiores clubes, treinadores, países e jogadores da história." },
+    ],
+  }),
+  component: HallOfFame,
+});
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
 function yearRanking(
   evo: Record<string, Record<number, number>>,
@@ -26,112 +45,110 @@ function yearRanking(
   return out.sort((a, b) => b.weighted - a.weighted);
 }
 
-export const Route = createFileRoute("/hall-of-fame")({
-  head: () => ({
-    meta: [
-      { title: "Hall of Fame — FM World Rankings" },
-      { name: "description", content: "Os maiores clubes, treinadores e países da história." },
-    ],
-  }),
-  component: HallOfFame,
-});
+// ---------------------------------------------------------------------------
+// Unified Podium — same visual format for every table on this page.
+// ---------------------------------------------------------------------------
 
-function Podium({ title, icon: Icon, entries, to }: {
+type LinkKind = "clubes" | "treinadores" | "paises" | "jogadores" | "none";
+
+interface PodiumRow {
+  name: string;
+  value: number;
+  /** Optional secondary metric (e.g. titles). */
+  badge?: number;
+}
+
+interface UnifiedPodiumProps {
   title: string;
   icon: typeof Shield;
-  entries: RankingEntry[];
-  to: "/clubes/$name" | "/treinadores/$name" | "/paises/$name";
-}) {
+  rows: PodiumRow[];
+  linkKind: LinkKind;
+  fmt: (v: number) => string;
+  badgeIcon?: typeof Crown;
+  badgeLabel?: string;
+  emptyText?: string;
+  /** Show hero cards for top-3. Defaults true. */
+  hero?: boolean;
+  /** Total rows to show (top-N). Defaults 10. */
+  size?: number;
+}
+
+function LinkOrSpan({ kind, name, children, className }: { kind: LinkKind; name: string; children: React.ReactNode; className?: string }) {
+  if (kind === "clubes") return <Link to="/clubes/$name" params={{ name }} className={className}>{children}</Link>;
+  if (kind === "treinadores") return <Link to="/treinadores/$name" params={{ name }} className={className}>{children}</Link>;
+  if (kind === "paises") return <Link to="/paises/$name" params={{ name }} className={className}>{children}</Link>;
+  if (kind === "jogadores") return <Link to="/jogadores/$name" params={{ name }} className={className}>{children}</Link>;
+  return <span className={className}>{children}</span>;
+}
+
+function UnifiedPodium({ title, icon: Icon, rows, linkKind, fmt, badgeIcon: BadgeIcon = Crown, emptyText, hero = true, size = 10 }: UnifiedPodiumProps) {
   const medals = ["text-gold", "text-muted-foreground", "text-amber-700"];
   const heroBgs = [
     "bg-gradient-to-br from-gold/25 via-gold/10 to-transparent border-gold/40",
     "bg-gradient-to-br from-muted-foreground/20 via-muted-foreground/5 to-transparent border-muted-foreground/30",
     "bg-gradient-to-br from-amber-700/20 via-amber-700/5 to-transparent border-amber-700/30",
   ];
-  const top3 = entries.slice(0, 3);
-  const rest = entries.slice(3, 10);
+  const top3 = hero ? rows.slice(0, 3) : [];
+  const rest = hero ? rows.slice(3, size) : rows.slice(0, size);
+  const linkCls = "hover:text-primary hover:underline";
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2"><Icon className="size-5 text-primary" /> {title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {top3.length > 0 && (
+        {rows.length === 0 && (
+          <p className="text-sm text-muted-foreground py-4 text-center">{emptyText ?? "Sem dados."}</p>
+        )}
+        {hero && top3.length > 0 && (
           <div className="grid grid-cols-3 gap-2">
             {top3.map((e, i) => (
-              <Link
-                key={e.name}
-                to={to}
-                params={{ name: e.name }}
-                className={`rounded-xl border p-3 text-center transition-colors ${heroBgs[i]} hover:brightness-110`}
+              <LinkOrSpan
+                key={e.name + i}
+                kind={linkKind}
+                name={e.name}
+                className={`rounded-xl border p-3 text-center transition-colors ${heroBgs[i]} hover:brightness-110 block`}
               >
                 <div className={`text-2xl font-bold ${medals[i]}`}>{i + 1}º</div>
                 <div className="mt-1 font-display font-bold text-sm truncate" title={e.name}>{e.name}</div>
-                <div className="text-xs text-muted-foreground tabular-nums mt-1">{fmtPts(e.weighted)}</div>
-                {e.titles > 0 && (
-                  <div className="text-[10px] text-gold flex items-center justify-center gap-1 mt-1"><Crown className="size-2.5" /> {e.titles}</div>
+                <div className="text-xs text-muted-foreground tabular-nums mt-1">{fmt(e.value)}</div>
+                {e.badge !== undefined && e.badge > 0 && (
+                  <div className="text-[10px] text-gold flex items-center justify-center gap-1 mt-1"><BadgeIcon className="size-2.5" /> {e.badge}</div>
                 )}
-              </Link>
+              </LinkOrSpan>
             ))}
           </div>
         )}
-        <div className="space-y-1">
-          {rest.map((e, idx) => {
-            const i = idx + 3;
-            return (
-              <Link
-                key={e.name}
-                to={to}
-                params={{ name: e.name }}
-                className="flex items-center gap-3 rounded-lg px-3 py-1.5 hover:bg-muted/60 transition-colors"
-              >
-                <span className="w-5 text-center font-bold text-muted-foreground text-xs">{i + 1}</span>
-                <span className="flex-1 font-medium truncate text-sm">{e.name}</span>
-                {e.titles > 0 && (
-                  <span className="text-xs text-gold flex items-center gap-1"><Crown className="size-3" /> {e.titles}</span>
-                )}
-                <span className="text-sm font-semibold tabular-nums">{fmtPts(e.weighted)}</span>
-              </Link>
-            );
-          })}
-        </div>
+        {rest.length > 0 && (
+          <div className="space-y-0.5">
+            {rest.map((e, idx) => {
+              const i = hero ? idx + 3 : idx;
+              return (
+                <LinkOrSpan
+                  key={e.name + i}
+                  kind={linkKind}
+                  name={e.name}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-1.5 hover:bg-muted/60 transition-colors ${linkCls}`}
+                >
+                  <span className={`w-6 text-center font-bold text-xs ${i < 3 ? medals[i] : "text-muted-foreground"}`}>{i + 1}</span>
+                  <span className="flex-1 font-medium truncate text-sm">{e.name}</span>
+                  {e.badge !== undefined && e.badge > 0 && (
+                    <span className="text-xs text-gold flex items-center gap-1"><BadgeIcon className="size-3" /> {e.badge}</span>
+                  )}
+                  <span className="text-sm font-semibold tabular-nums">{fmt(e.value)}</span>
+                </LinkOrSpan>
+              );
+            })}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
 }
 
-function PlayerPodium({ title, icon: Icon, rows, unit }: {
-  title: string;
-  icon: typeof Goal;
-  rows: PlayerStatRow[];
-  unit: string;
-}) {
-  const medals = ["text-gold", "text-muted-foreground", "text-amber-700"];
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base flex items-center gap-2"><Icon className="size-5 text-primary" /> {title}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {rows.length === 0 && (
-          <p className="text-sm text-muted-foreground">Sem dados de jogadores.</p>
-        )}
-        {rows.slice(0, 10).map((r, i) => (
-          <Link
-            to="/jogadores/$name"
-            params={{ name: r.name }}
-            key={r.name + i}
-            className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted/60 transition-colors"
-          >
-            <span className={`w-6 text-center font-bold ${i < 3 ? medals[i] : "text-muted-foreground"}`}>{i + 1}</span>
-            <span className="flex-1 font-medium truncate">{r.name}</span>
-            <span className="text-sm font-semibold tabular-nums">{r.total.toLocaleString("pt-PT")} {unit}</span>
-          </Link>
-        ))}
-      </CardContent>
-    </Card>
-  );
-}
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
 
 function HallOfFame() {
   const { data, isLoading } = useRankings();
@@ -164,7 +181,7 @@ function HallOfFame() {
       const isSum = sumStats.includes(stat);
       const map = new Map<string, number>();
       for (const r of rows) {
-        const v = Number((r as any)[stat] ?? 0);
+        const v = Number((r as never)[stat] ?? 0);
         if (!v) continue;
         const cur = map.get(r.player_name) ?? (isSum ? 0 : -Infinity);
         map.set(r.player_name, isSum ? cur + v : Math.max(cur, v));
@@ -213,96 +230,89 @@ function HallOfFame() {
     return <p className="text-muted-foreground">Sem dados. Importe uma época primeiro.</p>;
   }
 
+  const toRow = (e: RankingEntry): PodiumRow => ({ name: e.name, value: e.weighted, badge: e.titles });
+  const toPlayerRow = (r: PlayerStatRow): PodiumRow => ({ name: r.name, value: r.total });
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
           <Trophy className="size-6 text-gold" /> Hall of Fame
         </h1>
-        <p className="text-muted-foreground text-sm mt-1">Os maiores de sempre, por pontuação ponderada</p>
+        <p className="text-muted-foreground text-sm mt-1">Os maiores de sempre, agrupados em três vistas.</p>
       </div>
-      <div className="flex items-center justify-end gap-2">
-        <span className="text-sm text-muted-foreground">Filtrar clubes / treinadores / países:</span>
-        <SeasonFilter value={entityYear} onChange={setEntityYear} years={entityYears} />
-      </div>
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Podium title="Clubes" icon={Shield} entries={entityRanks.clubs} to="/clubes/$name" />
-        <Podium title="Treinadores" icon={Users} entries={entityRanks.coaches} to="/treinadores/$name" />
-        <Podium title="Países" icon={Globe2} entries={entityRanks.countries} to="/paises/$name" />
-      </div>
-      <div>
-        <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
-          <h2 className="text-xl font-bold tracking-tight flex items-center gap-2">
-            <Trophy className="size-5 text-gold" /> Jogadores
-          </h2>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Filtrar:</span>
+
+      <Tabs defaultValue="entidades" className="space-y-4">
+        <TabsList className="flex-wrap h-auto">
+          <TabsTrigger value="entidades"><Shield className="size-3.5 mr-1" /> Entidades</TabsTrigger>
+          <TabsTrigger value="jogadores"><Trophy className="size-3.5 mr-1" /> Jogadores (rankings)</TabsTrigger>
+          <TabsTrigger value="estatisticas"><Star className="size-3.5 mr-1" /> Estatísticas (Jogadores)</TabsTrigger>
+        </TabsList>
+
+        {/* Entidades: clubes, treinadores, países */}
+        <TabsContent value="entidades" className="space-y-4">
+          <div className="flex items-center justify-end gap-2">
+            <span className="text-sm text-muted-foreground">Filtrar época:</span>
+            <SeasonFilter value={entityYear} onChange={setEntityYear} years={entityYears} />
+          </div>
+          <div className="grid gap-4 lg:grid-cols-3">
+            <UnifiedPodium title="Clubes" icon={Shield} rows={entityRanks.clubs.map(toRow)} linkKind="clubes" fmt={fmtPts} />
+            <UnifiedPodium title="Treinadores" icon={Users} rows={entityRanks.coaches.map(toRow)} linkKind="treinadores" fmt={fmtPts} />
+            <UnifiedPodium title="Países" icon={Globe2} rows={entityRanks.countries.map(toRow)} linkKind="paises" fmt={fmtPts} />
+          </div>
+        </TabsContent>
+
+        {/* Jogadores clássicos: golos + assistências */}
+        <TabsContent value="jogadores" className="space-y-4">
+          <div className="flex items-center justify-end gap-2">
+            <span className="text-sm text-muted-foreground">Filtrar época:</span>
             <SeasonFilter value={year} onChange={setYear} years={years} />
           </div>
-        </div>
-        <div className="grid gap-4 lg:grid-cols-2">
-          <PlayerPodium title="Golos" icon={Goal} rows={goals.rows} unit="gls" />
-          <PlayerPodium title="Assistências" icon={Handshake} rows={assists.rows} unit="ast" />
-        </div>
-      </div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <UnifiedPodium
+              title="Golos"
+              icon={Goal}
+              rows={goals.rows.map(toPlayerRow)}
+              linkKind="jogadores"
+              fmt={(v) => `${v.toLocaleString("pt-PT")} gls`}
+              emptyText="Sem dados de golos."
+            />
+            <UnifiedPodium
+              title="Assistências"
+              icon={Handshake}
+              rows={assists.rows.map(toPlayerRow)}
+              linkKind="jogadores"
+              fmt={(v) => `${v.toLocaleString("pt-PT")} ast`}
+              emptyText="Sem dados de assistências."
+            />
+          </div>
+        </TabsContent>
 
-      <div>
-        <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
-          <h2 className="text-xl font-bold tracking-tight flex items-center gap-2">
-            <Star className="size-5 text-gold" /> Estatísticas (Jogadores & Competições)
-          </h2>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Filtrar:</span>
+        {/* Estatísticas jogadores (importador multi-folha) */}
+        <TabsContent value="estatisticas" className="space-y-4">
+          <div className="flex items-center justify-end gap-2">
+            <span className="text-sm text-muted-foreground">Filtrar época:</span>
             <SeasonFilter value={newYear} onChange={setNewYear} years={newStatYears} />
           </div>
-        </div>
-        {newStatYears.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Sem dados. Importe um ficheiro multi-folha em /importar.</p>
-        ) : (
-          <div className="grid gap-4 lg:grid-cols-3">
-            <NewStatPodium title="Golos" icon={Goal} rows={newStatsPodiums.gls} fmt={(n) => fmtNum(n, 2)} />
-            <NewStatPodium title="Assistências" icon={Handshake} rows={newStatsPodiums.ast} fmt={(n) => fmtNum(n, 2)} />
-            <NewStatPodium title="Jogos" icon={Trophy} rows={newStatsPodiums.games} fmt={(n) => fmtNum(n, 2)} />
-            <NewStatPodium title="Homem do Jogo" icon={Star} rows={newStatsPodiums.hdj} fmt={(n) => fmtNum(n, 2)} />
-            <NewStatPodium title="CA (melhor)" icon={Star} rows={newStatsPodiums.ca} fmt={(n) => fmtNum(n, 2)} />
-            <NewStatPodium title="CP (melhor)" icon={Star} rows={newStatsPodiums.cp} fmt={(n) => fmtNum(n, 2)} />
-            <NewStatPodium title="RM (melhor)" icon={Star} rows={newStatsPodiums.rm} fmt={(n) => fmtNum(n, 2)} />
-            <NewStatPodium title="Valor (VP)" icon={Star} rows={newStatsPodiums.vp} fmt={fmtMoney} />
-            <NewStatPodium title="Salário" icon={Star} rows={newStatsPodiums.salary} fmt={fmtMoney} />
-          </div>
-        )}
-      </div>
+          {newStatYears.length === 0 ? (
+            <Card className="p-8 text-center text-sm text-muted-foreground">
+              Sem dados. Importa um ficheiro de jogadores em <Link to="/importar" className="underline hover:text-primary">Importar</Link>.
+            </Card>
+          ) : (
+            <div className="grid gap-4 lg:grid-cols-3">
+              <UnifiedPodium title="Golos" icon={Goal} rows={newStatsPodiums.gls} linkKind="jogadores" fmt={(v) => fmtNum(v, 2)} hero={false} />
+              <UnifiedPodium title="Assistências" icon={Handshake} rows={newStatsPodiums.ast} linkKind="jogadores" fmt={(v) => fmtNum(v, 2)} hero={false} />
+              <UnifiedPodium title="Jogos" icon={Trophy} rows={newStatsPodiums.games} linkKind="jogadores" fmt={(v) => fmtNum(v, 2)} hero={false} />
+              <UnifiedPodium title="Homem do Jogo" icon={Star} rows={newStatsPodiums.hdj} linkKind="jogadores" fmt={(v) => fmtNum(v, 2)} hero={false} />
+              <UnifiedPodium title="CA (melhor)" icon={Star} rows={newStatsPodiums.ca} linkKind="jogadores" fmt={(v) => fmtNum(v, 2)} hero={false} />
+              <UnifiedPodium title="CP (melhor)" icon={Star} rows={newStatsPodiums.cp} linkKind="jogadores" fmt={(v) => fmtNum(v, 2)} hero={false} />
+              <UnifiedPodium title="RM (melhor)" icon={Star} rows={newStatsPodiums.rm} linkKind="jogadores" fmt={(v) => fmtNum(v, 2)} hero={false} />
+              <UnifiedPodium title="Valor (VP)" icon={Star} rows={newStatsPodiums.vp} linkKind="jogadores" fmt={fmtMoney} hero={false} />
+              <UnifiedPodium title="Salário" icon={Star} rows={newStatsPodiums.salary} linkKind="jogadores" fmt={fmtMoney} hero={false} />
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
-  );
-}
-
-function NewStatPodium({ title, icon: Icon, rows, fmt }: {
-  title: string;
-  icon: typeof Goal;
-  rows: { name: string; value: number }[];
-  fmt: (n: number) => string;
-}) {
-  const medals = ["text-gold", "text-muted-foreground", "text-amber-700"];
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base flex items-center gap-2"><Icon className="size-5 text-primary" /> {title}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {rows.length === 0 && <p className="text-sm text-muted-foreground">Sem dados.</p>}
-        {rows.map((r, i) => (
-          <Link
-            to="/jogadores/$name"
-            params={{ name: r.name }}
-            key={r.name + i}
-            className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted/60 transition-colors"
-          >
-            <span className={`w-6 text-center font-bold ${i < 3 ? medals[i] : "text-muted-foreground"}`}>{i + 1}</span>
-            <span className="flex-1 font-medium truncate">{r.name}</span>
-            <span className="text-sm font-semibold tabular-nums">{fmt(r.value)}</span>
-          </Link>
-        ))}
-      </CardContent>
-    </Card>
   );
 }
