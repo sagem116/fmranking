@@ -400,18 +400,17 @@ export function SeasonsRankTable({
                   <div className={`${cellPad} text-right font-semibold tabular-nums`}>
                     {fmtPts(mode === "raw" ? e.raw : e.weighted)}
                   </div>
-                  <div className={`${cellPad} text-right font-semibold tabular-nums`}>
-                    {fmtPts(mode === "raw" ? e.raw : e.weighted)}
-                  </div>
                   {years.map((y) => {
                     const v = evo[y] ?? 0;
                     const yearItems = bdItems.filter((it) => it.season_year === y);
-                    const cell = (
-                      <div className={`${cellPad} text-right tabular-nums ${v ? "" : "text-muted-foreground/30"}`}>
-                        {v ? fmtPts(v) : "—"}
+                    const dY = dByYear[y] ?? null;
+                    const inner = (
+                      <div className={`${cellPad} text-right tabular-nums leading-tight ${v ? "" : "text-muted-foreground/30"}`}>
+                        <div>{v ? fmtPts(v) : "—"}</div>
+                        {v && dY ? <MiniDelta ptsDelta={dY.ptsDelta} rankDelta={dY.rankDelta} /> : null}
                       </div>
                     );
-                    if (!v || yearItems.length === 0) return <div key={y}>{cell}</div>;
+                    if (!v || yearItems.length === 0) return <div key={y}>{inner}</div>;
                     // Build lines: aggregate raw/weighted points per club/division.
                     type Line = { text: string; comp: string; raw: number; weighted: number; mult?: { compW: number; divW: number; decay: number } };
                     const groups = new Map<string, Line>();
@@ -446,8 +445,9 @@ export function SeasonsRankTable({
                     return (
                       <Tooltip key={y}>
                         <TooltipTrigger asChild>
-                          <div className={`${cellPad} text-right tabular-nums cursor-help ${v ? "" : "text-muted-foreground/30"}`}>
-                            {fmtPts(v)}
+                          <div className={`${cellPad} text-right tabular-nums cursor-help leading-tight ${v ? "" : "text-muted-foreground/30"}`}>
+                            <div>{fmtPts(v)}</div>
+                            {dY ? <MiniDelta ptsDelta={dY.ptsDelta} rankDelta={dY.rankDelta} /> : null}
                           </div>
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
@@ -468,6 +468,14 @@ export function SeasonsRankTable({
                                 )}
                               </div>
                             ))}
+                            {dY && (
+                              <div className="text-muted-foreground/80 text-[10px] pt-1 border-t border-border/40">
+                                Δ vs época anterior: {dY.ptsDelta > 0 ? "+" : ""}{fmtPts(dY.ptsDelta)} pts
+                                {dY.rankDelta !== null && dY.rankDelta !== 0 && (
+                                  <> · posição {dY.rankDelta > 0 ? "▲" : "▼"}{Math.abs(dY.rankDelta)}</>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </TooltipContent>
                       </Tooltip>
